@@ -3,6 +3,7 @@ API Router — aggregates all API endpoints.
 """
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -155,3 +156,66 @@ async def team_stats(db: AsyncSession = Depends(get_db)):
     """Get team task statistics."""
     stats = await task_service.get_team_stats(db)
     return {"stats": stats}
+
+
+# ─── Board View ───
+@router.get("/board")
+async def task_board(db: AsyncSession = Depends(get_db)):
+    """Get tasks grouped by status for Kanban board."""
+    board = await task_service.get_board(db)
+    result = {}
+    for status, tasks in board.items():
+        result[status] = [
+            {
+                "id": t.id, "title": t.title, "description": t.description,
+                "status": t.status.value, "priority": t.priority.value,
+                "assignee": t.assignee_name, "label": t.label,
+                "due_date": t.due_date.isoformat() if t.due_date else None,
+                "created_at": t.created_at.isoformat(),
+            }
+            for t in tasks
+        ]
+    return {"board": result}
+
+
+# ─── Dashboard Summary ───
+@router.get("/dashboard")
+async def dashboard_summary(db: AsyncSession = Depends(get_db)):
+    """Get dashboard overview data."""
+    from app.models.message import Message
+    from sqlalchemy import func as sqlfunc, desc
+
+    stats = await task_service.get_team_stats(db)
+    overdue = await task_service.get_overdue_tasks(db)
+    all_tasks = await task_service.get_all_tasks(db, limit=50)
+
+    # Recent messages count
+    msg_result = await db.execute(
+        select(sqlfunc.count(Message.id)).where(Message.is_command == False)
+    )
+    total_messages = msg_result.scalar() or 0
+
+    # Task counts
+    todo = sum(s.get("todo", 0) for s in stats.values())
+    in_progress = sum(s.get("in_progress", 0) for s in stats.values())
+    review = sum(s.get("review", 0) for s in stats.values())
+    done = sum(s.get("done", 0) for s in stats.values())
+
+    return {
+        "stats": {
+            "total_tasks": todo + in_progress + review + done,
+            "todo": todo, "in_progress": in_progress, "review": review, "done": done,
+            "overdue": len(overdue),
+            "total_messages": total_messages,
+        },
+        "team_stats": stats,
+        "overdue_tasks": [
+            {"id": t.id, "title": t.title, "assignee": t.assignee_name, "due_date": t.due_date.isoformat() if t.due_date else None}
+            for t in overdue
+        ],
+        "recent_tasks": [
+            {"id": t.id, "title": t.title, "status": t.status.value, "priority": t.priority.value,
+             "assignee": t.assignee_name, "label": t.label}
+            for t in all_tasks[:10]
+        ],
+    }
