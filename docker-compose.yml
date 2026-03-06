@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+  # ── Application ──
+  app:
+    build: .
+    container_name: ai-assistant
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./app:/app/app  # Hot reload in development
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── PostgreSQL ──
+  db:
+    image: postgres:16-alpine
+    container_name: ai-assistant-db
+    environment:
+      POSTGRES_DB: ai_assistant
+      POSTGRES_USER: assistant
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U assistant -d ai_assistant"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ──
+  redis:
+    image: redis:7-alpine
+    container_name: ai-assistant-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  # ── Celery Worker (background tasks) ──
+  celery:
+    build: .
+    container_name: ai-assistant-celery
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    command: celery -A app.worker worker --loglevel=info --beat
+
+volumes:
+  pgdata:
+  redisdata:

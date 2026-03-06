@@ -1,0 +1,3 @@
+https://sotso-assistant.duckdns.org              (main site)
+https://sotso-assistant.duckdns.org/api/v1/health (health check)
+https://sotso-assistant.duckdns.org/docs          (API docs)
