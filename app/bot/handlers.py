@@ -1,5 +1,5 @@
 """
-Telegram Bot Command Handlers — processes incoming messages and commands.
+Telegram Bot Command Handlers — Phase 3: Full team collaboration.
 """
 import re
 import logging
@@ -18,15 +18,16 @@ from app.core.security import is_admin
 
 logger = logging.getLogger(__name__)
 
-# Task-related keywords for auto-detection
 TASK_KEYWORDS = re.compile(r"\b(TODO|ACTION|DEADLINE|URGENT|ASAP|FOLLOW.?UP|ASSIGNED)\b", re.IGNORECASE)
+
+STATUS_ICONS = {"todo": "\U0001F4CB", "in_progress": "\U0001F504", "review": "\U0001F440", "done": "\u2705"}
+PRIORITY_ICONS = {"low": "\U0001F7E2", "medium": "\U0001F7E1", "high": "\U0001F7E0", "urgent": "\U0001F534"}
 
 
 class BotHandlers:
     """Processes Telegram updates and routes to appropriate handlers."""
 
     async def handle_update(self, update: dict, db: AsyncSession):
-        """Main entry point for processing a Telegram update."""
         message = update.get("message")
         if not message:
             return
@@ -36,21 +37,16 @@ class BotHandlers:
         user = message.get("from", {})
         user_id = user.get("id")
         user_name = user.get("first_name", "Unknown")
-        chat_title = message["chat"].get("title", "Private")
 
-        # Store message in database
         await self._store_message(db, message)
 
-        # Handle commands
         if text.startswith("/"):
             await self._handle_command(db, chat_id, user_id, user_name, text, message)
         else:
-            # For non-command messages in private chats, treat as AI conversation
             if message["chat"]["type"] == "private":
                 await self._handle_ai_chat(db, chat_id, user_id, user_name, text)
 
     async def _store_message(self, db: AsyncSession, message: dict):
-        """Store a Telegram message in the database."""
         text = message.get("text", "")
         msg = Message(
             telegram_message_id=message["message_id"],
@@ -64,10 +60,9 @@ class BotHandlers:
         )
         db.add(msg)
 
-    async def _handle_command(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, text: str, message: dict):
-        """Route commands to their handlers."""
+    async def _handle_command(self, db, chat_id, user_id, user_name, text, message):
         parts = text.strip().split(maxsplit=1)
-        command = parts[0].lower().split("@")[0]  # Remove @botname suffix
+        command = parts[0].lower().split("@")[0]
         args = parts[1] if len(parts) > 1 else ""
 
         handlers = {
@@ -76,6 +71,10 @@ class BotHandlers:
             "/status": self._cmd_status,
             "/summary": self._cmd_summary,
             "/task": self._cmd_task,
+            "/board": self._cmd_board,
+            "/progress": self._cmd_progress,
+            "/track": self._cmd_track,
+            "/report": self._cmd_report,
             "/remind": self._cmd_remind,
             "/send": self._cmd_send,
             "/connect": self._cmd_calendar,
@@ -90,15 +89,11 @@ class BotHandlers:
         if handler:
             await handler(db, chat_id, user_id, user_name, args, message)
         else:
-            await telegram_service.send_message(
-                chat_id, f"Unknown command: `{command}`\nType /help to see available commands."
-            )
+            await telegram_service.send_message(chat_id, f"Unknown command: `{command}`\nType /help to see available commands.")
 
-    # ─── Command Implementations ───
+    # ─── GENERAL COMMANDS ───
 
-    async def _cmd_start(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, args: str, message: dict):
-        """Register user and show welcome message."""
-        # Upsert user
+    async def _cmd_start(self, db, chat_id, user_id, user_name, args, message):
         result = await db.execute(select(User).where(User.telegram_id == user_id))
         user = result.scalar_one_or_none()
         if not user:
@@ -110,200 +105,471 @@ class BotHandlers:
                 is_admin=is_admin(user_id),
             )
             db.add(user)
-            status = "registered"
+            reg = "registered"
         else:
-            status = "already registered"
+            reg = "already registered"
 
-        await telegram_service.send_message(chat_id, f"""👋 *Welcome to AI Personal Assistant!*
+        await telegram_service.send_message(chat_id, f"""\U0001F44B *Welcome to AI Personal Assistant!*
 
-You are {status} as *{user_name}*.
+You are {reg} as *{user_name}*.
 
 I can help you with:
-• 📬 Summarize group messages
-• ✅ Manage tasks and assignments
-• ⏰ Set reminders
-• 📅 Check your calendar _(coming soon)_
-• 🤖 Chat with AI for anything else
+\u2022 \U0001F4AC Summarize group messages
+\u2022 \u2705 Manage tasks and assignments
+\u2022 \U0001F4CB View task board and team progress
+\u2022 \u23F0 Set reminders
+\u2022 \U0001F4C5 Check your calendar
+\u2022 \U0001F916 Chat with AI for anything else
 
 Type /help to see all commands.""")
 
-    async def _cmd_help(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, args: str, message: dict):
-        await telegram_service.send_message(chat_id, """📖 *Available Commands*
+    async def _cmd_help(self, db, chat_id, user_id, user_name, args, message):
+        await telegram_service.send_message(chat_id, """\U0001F4D6 *Available Commands*
 
 *General*
-/start — Register and get started
-/help — Show this help message
-/status — Your stats and system status
-
-*Messages*
-/summary — Summarize recent messages in this group
-/send <group\\_name> <message> — Send message on your behalf
+/start \u2014 Register and get started
+/help \u2014 Show this help message
+/status \u2014 Your task stats and system status
 
 *Tasks*
-/task add <title> — Create a new task
-/task list — Show your pending tasks
-/task done <id> — Mark task as completed
-/task assign <id> @user — Assign task to someone
+/task add <title> \u2014 Create a new task
+/task list \u2014 Show your pending tasks
+/task all \u2014 Show all team tasks
+/task done <id> \u2014 Mark task as completed
+/task wip <id> \u2014 Set task to In Progress
+/task assign <id> @user \u2014 Assign task to someone
+/task priority <id> high \u2014 Set priority (low/medium/high/urgent)
+/task label <id> ETL \u2014 Add a label/category
+/task describe <id> <text> \u2014 Add description
+/task comment <id> <text> \u2014 Add a comment
+/task detail <id> \u2014 View full task details
+/task delete <id> \u2014 Delete a task
+
+*Team Collaboration*
+/board \u2014 Visual task board (To Do / In Progress / Review / Done)
+/progress \u2014 Team progress with completion percentages
+/track \u2014 Reply to a message to create a task from it
+/report \u2014 Generate team daily/weekly report (AI)
+
+*Messages*
+/summary \u2014 Summarize recent messages in this group
+/send <chat\\_id> <message> \u2014 Send message on your behalf
+
+*Calendar*
+/connect \u2014 Link Google Calendar
+/today \u2014 Today's schedule
+/week \u2014 7-day schedule
+/free \u2014 Find available time slots
+/event <title> at <time> for <dur> \u2014 Create event
+/cancel <name> \u2014 Cancel an event
 
 *Reminders*
-/remind <minutes> <message> — Set a reminder
+/remind <minutes> <message> \u2014 Set a reminder
 
 *AI Chat*
-Just send me any message in private chat and I'll help!""")
+Just send me any message in private chat!""")
 
-    async def _cmd_status(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, args: str, message: dict):
-        """Show user stats and system status."""
-        # Count user's tasks
-        tasks = await task_service.get_tasks(db, user_id=user_id, limit=100)
-        todo = sum(1 for t in tasks if t.status == TaskStatus.TODO)
-        in_prog = sum(1 for t in tasks if t.status == TaskStatus.IN_PROGRESS)
-        done = sum(1 for t in tasks if t.status == TaskStatus.DONE)
+    async def _cmd_status(self, db, chat_id, user_id, user_name, args, message):
+        my_tasks = await task_service.get_tasks(db, user_id=user_id, limit=100)
+        todo = sum(1 for t in my_tasks if t.status == TaskStatus.TODO)
+        wip = sum(1 for t in my_tasks if t.status == TaskStatus.IN_PROGRESS)
+        review = sum(1 for t in my_tasks if t.status == TaskStatus.REVIEW)
+        done = sum(1 for t in my_tasks if t.status == TaskStatus.DONE)
+        overdue = await task_service.get_overdue_tasks(db)
+        my_overdue = [t for t in overdue if t.assignee_id == user_id]
 
-        await telegram_service.send_message(chat_id, f"""📊 *Status for {user_name}*
+        text = f"""\U0001F4CA *Status for {user_name}*
 
 *Your Tasks:*
-• 📋 To Do: {todo}
-• 🔄 In Progress: {in_prog}
-• ✅ Completed: {done}
+\u2022 \U0001F4CB To Do: {todo}
+\u2022 \U0001F504 In Progress: {wip}
+\u2022 \U0001F440 Review: {review}
+\u2022 \u2705 Completed: {done}"""
 
-*System:* 🟢 Online
-*AI Engine:* 🟢 Ready""")
+        if my_overdue:
+            text += f"\n\u2022 \U0001F534 Overdue: {len(my_overdue)}"
 
-    async def _cmd_summary(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, args: str, message: dict):
-        """Summarize recent messages in the current group."""
-        result = await db.execute(
-            select(Message)
-            .where(Message.chat_id == chat_id, Message.is_command == False)
-            .order_by(desc(Message.created_at))
-            .limit(50)
-        )
-        messages = result.scalars().all()
+        text += "\n\n*System:* \U0001F7E2 Online\n*AI Engine:* \U0001F7E2 Ready"
+        await telegram_service.send_message(chat_id, text)
 
-        if not messages:
-            await telegram_service.send_message(chat_id, "No messages to summarize yet. I'll start tracking from now!")
-            return
+    # ─── TASK COMMANDS (Enhanced) ───
 
-        msg_dicts = [{"sender": m.sender_name, "text": m.text} for m in reversed(messages) if m.text]
-        await telegram_service.send_message(chat_id, "🔄 Generating summary...")
-
-        summary = await ai_engine.summarize_messages(msg_dicts)
-        await telegram_service.send_message(chat_id, f"📋 *Message Summary*\n\n{summary}")
-
-    async def _cmd_task(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, args: str, message: dict):
-        """Handle task subcommands: add, list, done, assign."""
+    async def _cmd_task(self, db, chat_id, user_id, user_name, args, message):
         if not args:
-            await telegram_service.send_message(chat_id, "Usage: `/task add <title>`, `/task list`, `/task done <id>`, `/task assign <id> @user`")
+            await telegram_service.send_message(chat_id, "Usage: `/task add|list|all|done|wip|assign|priority|label|describe|comment|detail|delete`\nType /help for full details.")
             return
 
         parts = args.split(maxsplit=1)
         subcmd = parts[0].lower()
         subargs = parts[1] if len(parts) > 1 else ""
 
-        if subcmd == "add" and subargs:
-            task = await task_service.create_task(
-                db, title=subargs, creator_id=user_id, creator_name=user_name,
-                source_chat_id=chat_id, source_message_id=message["message_id"],
-            )
-            await telegram_service.send_message(
-                chat_id, f"✅ Task #{task.id} created: *{task.title}*\nAssigned to: {user_name}"
-            )
+        subcmds = {
+            "add": self._task_add,
+            "list": self._task_list,
+            "all": self._task_all,
+            "done": self._task_done,
+            "wip": self._task_wip,
+            "assign": self._task_assign,
+            "priority": self._task_priority,
+            "label": self._task_label,
+            "describe": self._task_describe,
+            "comment": self._task_comment,
+            "detail": self._task_detail,
+            "delete": self._task_delete,
+        }
 
-        elif subcmd == "list":
-            tasks = await task_service.get_tasks(db, user_id=user_id)
-            if not tasks:
-                await telegram_service.send_message(chat_id, "No pending tasks! 🎉")
-                return
-            status_icons = {"todo": "📋", "in_progress": "🔄", "review": "👀", "done": "✅"}
-            lines = []
-            for t in tasks:
-                icon = status_icons.get(t.status.value, "•")
-                lines.append(f"{icon} #{t.id} {t.title}")
-            await telegram_service.send_message(chat_id, f"*Your Tasks:*\n\n" + "\n".join(lines))
-
-        elif subcmd == "done" and subargs:
-            try:
-                task_id = int(subargs.strip())
-                task = await task_service.update_status(db, task_id, TaskStatus.DONE)
-                if task:
-                    await telegram_service.send_message(chat_id, f"✅ Task #{task_id} completed: *{task.title}*")
-                else:
-                    await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
-            except ValueError:
-                await telegram_service.send_message(chat_id, "Usage: `/task done <id>`")
-
-        elif subcmd == "assign" and subargs:
-            # Parse: <task_id> @username or name
-            match = re.match(r"(\d+)\s+@?(\S+)", subargs)
-            if match:
-                task_id = int(match.group(1))
-                assignee = match.group(2)
-                task = await task_service.assign_task(db, task_id, 0, assignee)
-                if task:
-                    await telegram_service.send_message(chat_id, f"👤 Task #{task_id} assigned to *{assignee}*")
-                else:
-                    await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
-            else:
-                await telegram_service.send_message(chat_id, "Usage: `/task assign <id> @username`")
+        handler = subcmds.get(subcmd)
+        if handler:
+            await handler(db, chat_id, user_id, user_name, subargs, message)
         else:
-            await telegram_service.send_message(chat_id, "Unknown task command. Try: `add`, `list`, `done`, `assign`")
+            await telegram_service.send_message(chat_id, f"Unknown task command: `{subcmd}`\nTry: add, list, all, done, wip, assign, priority, label, describe, comment, detail, delete")
 
-    async def _cmd_remind(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, args: str, message: dict):
-        """Set a reminder: /remind <minutes> <message>."""
+    async def _task_add(self, db, chat_id, user_id, user_name, args, message):
+        if not args:
+            await telegram_service.send_message(chat_id, "Usage: `/task add <title>`")
+            return
+        task = await task_service.create_task(
+            db, title=args, creator_id=user_id, creator_name=user_name,
+            source_chat_id=chat_id, source_message_id=message["message_id"],
+        )
+        await telegram_service.send_message(chat_id, f"\u2705 Task *#{task.id}* created: *{task.title}*\nAssigned to: {user_name}\nSet priority: `/task priority {task.id} high`")
+
+    async def _task_list(self, db, chat_id, user_id, user_name, args, message):
+        tasks = await task_service.get_tasks(db, user_id=user_id, exclude_done=True)
+        if not tasks:
+            await telegram_service.send_message(chat_id, "No pending tasks! \U0001F389")
+            return
+        lines = [f"*Your Tasks ({len(tasks)}):*\n"]
+        for t in tasks:
+            icon = STATUS_ICONS.get(t.status.value, "\u2022")
+            prio = PRIORITY_ICONS.get(t.priority.value, "")
+            due = f" \u23F0{t.due_date.strftime('%b %d')}" if t.due_date else ""
+            lbl = f" [{t.label}]" if t.label else ""
+            lines.append(f"{icon}{prio} *#{t.id}* {t.title}{lbl}{due}")
+        await telegram_service.send_message(chat_id, "\n".join(lines))
+
+    async def _task_all(self, db, chat_id, user_id, user_name, args, message):
+        tasks = await task_service.get_all_tasks(db, exclude_done=True)
+        if not tasks:
+            await telegram_service.send_message(chat_id, "No active tasks across the team! \U0001F389")
+            return
+        lines = [f"*All Team Tasks ({len(tasks)}):*\n"]
+        for t in tasks:
+            icon = STATUS_ICONS.get(t.status.value, "\u2022")
+            prio = PRIORITY_ICONS.get(t.priority.value, "")
+            assignee = t.assignee_name or "Unassigned"
+            due = f" \u23F0{t.due_date.strftime('%b %d')}" if t.due_date else ""
+            lines.append(f"{icon}{prio} *#{t.id}* {t.title} \u2192 _{assignee}_{due}")
+        await telegram_service.send_message(chat_id, "\n".join(lines))
+
+    async def _task_done(self, db, chat_id, user_id, user_name, args, message):
+        try:
+            task_id = int(args.strip())
+            task = await task_service.update_status(db, task_id, TaskStatus.DONE)
+            if task:
+                await telegram_service.send_message(chat_id, f"\u2705 Task *#{task_id}* completed: *{task.title}*\nGreat work! \U0001F389")
+            else:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+        except ValueError:
+            await telegram_service.send_message(chat_id, "Usage: `/task done <id>`")
+
+    async def _task_wip(self, db, chat_id, user_id, user_name, args, message):
+        try:
+            task_id = int(args.strip())
+            task = await task_service.update_status(db, task_id, TaskStatus.IN_PROGRESS)
+            if task:
+                await telegram_service.send_message(chat_id, f"\U0001F504 Task *#{task_id}* set to *In Progress*: {task.title}")
+            else:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+        except ValueError:
+            await telegram_service.send_message(chat_id, "Usage: `/task wip <id>`")
+
+    async def _task_assign(self, db, chat_id, user_id, user_name, args, message):
+        match = re.match(r"(\d+)\s+@?(\S+)", args)
+        if match:
+            task_id = int(match.group(1))
+            assignee = match.group(2)
+            task = await task_service.assign_task(db, task_id, 0, assignee)
+            if task:
+                await telegram_service.send_message(chat_id, f"\U0001F464 Task *#{task_id}* assigned to *{assignee}*: {task.title}")
+            else:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+        else:
+            await telegram_service.send_message(chat_id, "Usage: `/task assign <id> @username`")
+
+    async def _task_priority(self, db, chat_id, user_id, user_name, args, message):
+        match = re.match(r"(\d+)\s+(low|medium|high|urgent)", args, re.IGNORECASE)
+        if match:
+            task_id = int(match.group(1))
+            priority = TaskPriority(match.group(2).lower())
+            task = await task_service.update_task(db, task_id, priority=priority)
+            if task:
+                icon = PRIORITY_ICONS.get(priority.value, "")
+                await telegram_service.send_message(chat_id, f"{icon} Task *#{task_id}* priority set to *{priority.value}*")
+            else:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+        else:
+            await telegram_service.send_message(chat_id, "Usage: `/task priority <id> low|medium|high|urgent`")
+
+    async def _task_label(self, db, chat_id, user_id, user_name, args, message):
+        match = re.match(r"(\d+)\s+(\S+)", args)
+        if match:
+            task_id = int(match.group(1))
+            label = match.group(2)
+            task = await task_service.update_task(db, task_id, label=label)
+            if task:
+                await telegram_service.send_message(chat_id, f"\U0001F3F7 Task *#{task_id}* labeled *[{label}]*")
+            else:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+        else:
+            await telegram_service.send_message(chat_id, "Usage: `/task label <id> <label>`\nExample: `/task label 3 ETL`")
+
+    async def _task_describe(self, db, chat_id, user_id, user_name, args, message):
+        match = re.match(r"(\d+)\s+(.+)", args, re.DOTALL)
+        if match:
+            task_id = int(match.group(1))
+            desc = match.group(2).strip()
+            task = await task_service.update_task(db, task_id, description=desc)
+            if task:
+                await telegram_service.send_message(chat_id, f"\U0001F4DD Description added to task *#{task_id}*")
+            else:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+        else:
+            await telegram_service.send_message(chat_id, "Usage: `/task describe <id> <description text>`")
+
+    async def _task_comment(self, db, chat_id, user_id, user_name, args, message):
+        match = re.match(r"(\d+)\s+(.+)", args, re.DOTALL)
+        if match:
+            task_id = int(match.group(1))
+            text = match.group(2).strip()
+            comment = await task_service.add_comment(db, task_id, user_id, user_name, text)
+            if comment:
+                await telegram_service.send_message(chat_id, f"\U0001F4AC Comment added to task *#{task_id}* by {user_name}")
+            else:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+        else:
+            await telegram_service.send_message(chat_id, "Usage: `/task comment <id> <your comment>`")
+
+    async def _task_detail(self, db, chat_id, user_id, user_name, args, message):
+        try:
+            task_id = int(args.strip())
+            task = await task_service.get_task_by_id(db, task_id)
+            if not task:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+                return
+
+            icon = STATUS_ICONS.get(task.status.value, "")
+            prio_icon = PRIORITY_ICONS.get(task.priority.value, "")
+            lines = [
+                f"{icon} *Task #{task.id}: {task.title}*\n",
+                f"\U0001F4CC Status: *{task.status.value.replace('_', ' ').title()}*",
+                f"{prio_icon} Priority: *{task.priority.value.title()}*",
+                f"\U0001F464 Assigned to: *{task.assignee_name or 'Unassigned'}*",
+                f"\U0001F464 Created by: {task.creator_name or 'Unknown'}",
+            ]
+            if task.label:
+                lines.append(f"\U0001F3F7 Label: *[{task.label}]*")
+            if task.description:
+                lines.append(f"\n\U0001F4DD *Description:*\n{task.description}")
+            if task.due_date:
+                lines.append(f"\n\u23F0 Due: {task.due_date.strftime('%B %d, %Y %I:%M %p')}")
+            lines.append(f"\n\U0001F4C5 Created: {task.created_at.strftime('%B %d, %Y')}")
+
+            # Comments
+            comments = await task_service.get_comments(db, task_id)
+            if comments:
+                lines.append(f"\n\U0001F4AC *Comments ({len(comments)}):*")
+                for c in comments[-5:]:  # Last 5 comments
+                    lines.append(f"  \u2022 *{c.user_name}*: {c.text}")
+
+            await telegram_service.send_message(chat_id, "\n".join(lines))
+        except ValueError:
+            await telegram_service.send_message(chat_id, "Usage: `/task detail <id>`")
+
+    async def _task_delete(self, db, chat_id, user_id, user_name, args, message):
+        try:
+            task_id = int(args.strip())
+            deleted = await task_service.delete_task(db, task_id)
+            if deleted:
+                await telegram_service.send_message(chat_id, f"\U0001F5D1 Task *#{task_id}* deleted.")
+            else:
+                await telegram_service.send_message(chat_id, f"Task #{task_id} not found.")
+        except ValueError:
+            await telegram_service.send_message(chat_id, "Usage: `/task delete <id>`")
+
+    # ─── BOARD COMMAND ───
+
+    async def _cmd_board(self, db, chat_id, user_id, user_name, args, message):
+        board = await task_service.get_board(db)
+        sections = [
+            ("\U0001F4CB TO DO", board["todo"]),
+            ("\U0001F504 IN PROGRESS", board["in_progress"]),
+            ("\U0001F440 REVIEW", board["review"]),
+            ("\u2705 DONE (recent)", board["done"][:5]),
+        ]
+        lines = ["\U0001F4CB *Task Board*\n"]
+        for title, tasks in sections:
+            lines.append(f"\n*{title}* ({len(tasks)})")
+            if not tasks:
+                lines.append("  _No tasks_")
+            for t in tasks[:10]:
+                prio = PRIORITY_ICONS.get(t.priority.value, "")
+                assignee = t.assignee_name or "?"
+                lines.append(f"  {prio} #{t.id} {t.title} \u2192 _{assignee}_")
+
+        await telegram_service.send_message(chat_id, "\n".join(lines))
+
+    # ─── PROGRESS COMMAND ───
+
+    async def _cmd_progress(self, db, chat_id, user_id, user_name, args, message):
+        stats = await task_service.get_team_stats(db)
+        if not stats:
+            await telegram_service.send_message(chat_id, "No tasks yet. Create one with `/task add <title>`")
+            return
+
+        lines = ["\U0001F4CA *Team Progress*\n"]
+        for name, s in stats.items():
+            total = s["total"]
+            done = s["done"]
+            pct = round((done / total) * 100) if total > 0 else 0
+            bar_filled = round(pct / 10)
+            bar = "\u2588" * bar_filled + "\u2591" * (10 - bar_filled)
+            lines.append(f"\n*{name}*")
+            lines.append(f"  {bar} {pct}% ({done}/{total})")
+            details = []
+            if s["todo"] > 0: details.append(f"{s['todo']} todo")
+            if s["in_progress"] > 0: details.append(f"{s['in_progress']} active")
+            if s["review"] > 0: details.append(f"{s['review']} review")
+            if details:
+                lines.append(f"  _{', '.join(details)}_")
+
+        # Overdue warning
+        overdue = await task_service.get_overdue_tasks(db)
+        if overdue:
+            lines.append(f"\n\U0001F534 *{len(overdue)} overdue task(s):*")
+            for t in overdue[:5]:
+                lines.append(f"  \u2022 #{t.id} {t.title} \u2192 _{t.assignee_name}_")
+
+        await telegram_service.send_message(chat_id, "\n".join(lines))
+
+    # ─── TRACK COMMAND (create task from message reply) ───
+
+    async def _cmd_track(self, db, chat_id, user_id, user_name, args, message):
+        reply = message.get("reply_to_message")
+        if not reply:
+            await telegram_service.send_message(chat_id, "\u2757 Reply to a message with /track to create a task from it.")
+            return
+
+        reply_text = reply.get("text", "")
+        if not reply_text:
+            await telegram_service.send_message(chat_id, "The replied message has no text to track.")
+            return
+
+        task = await task_service.create_task_from_message(
+            db, message_text=reply_text, creator_id=user_id, creator_name=user_name,
+            chat_id=chat_id, message_id=reply["message_id"],
+        )
+        sender_name = reply.get("from", {}).get("first_name", "Unknown")
+        await telegram_service.send_message(
+            chat_id,
+            f"\U0001F4CC Task *#{task.id}* created from {sender_name}'s message:\n*{task.title[:100]}*\nAssigned to: {user_name}"
+        )
+
+    # ─── REPORT COMMAND (AI-generated) ───
+
+    async def _cmd_report(self, db, chat_id, user_id, user_name, args, message):
+        report_type = args.strip().lower() if args else "daily"
+        await telegram_service.send_message(chat_id, "\U0001F504 Generating report...")
+
+        if report_type == "weekly":
+            data = await task_service.get_weekly_report_data(db)
+            completed = [{"title": t.title, "assignee": t.assignee_name or "?"} for t in data["completed_week"]]
+            in_progress = [{"title": t.title, "assignee": t.assignee_name or "?"} for t in data["active_tasks"]]
+            report = await ai_engine.generate_weekly_report(completed, in_progress, data["team_stats"])
+            await telegram_service.send_message(chat_id, f"\U0001F4CA *Weekly Team Report*\n\n{report}")
+        else:
+            data = await task_service.get_daily_report_data(db)
+            completed = [{"title": t.title, "assignee": t.assignee_name or "?"} for t in data["completed_today"]]
+            events = []  # Calendar events would be added here
+            report = await ai_engine.generate_daily_summary(
+                [{"title": t.title, "status": t.status.value, "assignee": t.assignee_name or "?"} for t in data["active_tasks"]],
+                events,
+                0,
+            )
+            lines = [f"\U0001F4CA *Daily Report*\n\n{report}"]
+            if data["overdue_tasks"]:
+                lines.append(f"\n\U0001F534 *Overdue ({len(data['overdue_tasks'])}):*")
+                for t in data["overdue_tasks"][:5]:
+                    lines.append(f"  \u2022 #{t.id} {t.title} \u2192 _{t.assignee_name}_")
+            await telegram_service.send_message(chat_id, "\n".join(lines))
+
+    # ─── EXISTING COMMANDS ───
+
+    async def _cmd_summary(self, db, chat_id, user_id, user_name, args, message):
+        result = await db.execute(
+            select(Message).where(Message.chat_id == chat_id, Message.is_command == False)
+            .order_by(desc(Message.created_at)).limit(50)
+        )
+        messages = result.scalars().all()
+        if not messages:
+            await telegram_service.send_message(chat_id, "No messages to summarize yet.")
+            return
+        msg_dicts = [{"sender": m.sender_name, "text": m.text} for m in reversed(messages) if m.text]
+        await telegram_service.send_message(chat_id, "\U0001F504 Generating summary...")
+        summary = await ai_engine.summarize_messages(msg_dicts)
+        await telegram_service.send_message(chat_id, f"\U0001F4CB *Message Summary*\n\n{summary}")
+
+    async def _cmd_remind(self, db, chat_id, user_id, user_name, args, message):
         match = re.match(r"(\d+)\s+(.+)", args)
         if not match:
             await telegram_service.send_message(chat_id, "Usage: `/remind <minutes> <message>`\nExample: `/remind 30 Check deployment status`")
             return
-
         minutes = int(match.group(1))
         reminder_text = match.group(2)
         remind_at = datetime.now(timezone.utc) + timedelta(minutes=minutes)
-
-        reminder = Reminder(
-            user_id=user_id,
-            chat_id=chat_id,
-            message=reminder_text,
-            remind_at=remind_at,
-        )
+        reminder = Reminder(user_id=user_id, chat_id=chat_id, message=reminder_text, remind_at=remind_at)
         db.add(reminder)
+        await telegram_service.send_message(chat_id, f"\u23F0 Reminder set for *{minutes} minutes* from now:\n_{reminder_text}_")
 
-        await telegram_service.send_message(
-            chat_id, f"⏰ Reminder set for *{minutes} minutes* from now:\n_{reminder_text}_"
-        )
-
-    async def _cmd_send(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, args: str, message: dict):
-        """Send a message to a group on the user's behalf (admin only)."""
+    async def _cmd_send(self, db, chat_id, user_id, user_name, args, message):
         if not is_admin(user_id):
-            await telegram_service.send_message(chat_id, "⛔ Only the admin can use /send.")
+            await telegram_service.send_message(chat_id, "\u26D4 Only the admin can use /send.")
             return
-
         match = re.match(r"(-?\d+)\s+(.+)", args)
         if not match:
             await telegram_service.send_message(chat_id, "Usage: `/send <chat_id> <message>`")
             return
-
         target_chat = int(match.group(1))
         msg_text = match.group(2)
         result = await telegram_service.send_message(target_chat, msg_text)
         if result.get("ok"):
-            await telegram_service.send_message(chat_id, "✅ Message sent!")
+            await telegram_service.send_message(chat_id, "\u2705 Message sent!")
         else:
-            await telegram_service.send_message(chat_id, f"❌ Failed: {result.get('description', 'Unknown error')}")
+            await telegram_service.send_message(chat_id, f"\u274C Failed: {result.get('description', 'Unknown error')}")
 
-    async def _handle_ai_chat(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, text: str):
-        """Handle free-form AI conversation in private chat."""
-        # Build context
+    async def _handle_ai_chat(self, db, chat_id, user_id, user_name, text):
         tasks = await task_service.get_tasks(db, user_id=user_id, limit=10)
-        task_context = "\n".join([f"- [{t.status.value}] {t.title}" for t in tasks]) if tasks else "No tasks"
+        all_tasks = await task_service.get_all_tasks(db, exclude_done=True, limit=20)
+        overdue = await task_service.get_overdue_tasks(db)
+
+        task_context = "\n".join([f"- [{t.status.value}] {t.title} (assigned: {t.assignee_name})" for t in tasks]) if tasks else "No personal tasks"
+        team_context = "\n".join([f"- [{t.status.value}] {t.title} -> {t.assignee_name}" for t in all_tasks]) if all_tasks else "No team tasks"
+        overdue_context = "\n".join([f"- OVERDUE: {t.title} -> {t.assignee_name}" for t in overdue]) if overdue else "No overdue tasks"
 
         context = f"""User: {user_name}
-Pending tasks:
-{task_context}"""
+
+Your tasks:
+{task_context}
+
+All team tasks:
+{team_context}
+
+{overdue_context}"""
 
         response = await ai_engine.chat(text, context=context)
         await telegram_service.send_message(chat_id, response)
 
-    async def _cmd_calendar(self, db: AsyncSession, chat_id: int, user_id: int, user_name: str, args: str, message: dict):
-        """Route calendar commands to CalendarHandlers."""
+    async def _cmd_calendar(self, db, chat_id, user_id, user_name, args, message):
         from app.bot.calendar_cmds import calendar_handlers
         text = message.get("text", "")
         command = text.strip().split()[0].lower().split("@")[0]
@@ -320,5 +586,4 @@ Pending tasks:
             await handler(db, chat_id, user_id, user_name, args, message)
 
 
-# Singleton
 bot_handlers = BotHandlers()

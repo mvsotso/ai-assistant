@@ -35,14 +35,18 @@ async def lifespan(app: FastAPI):
     try:
         from sqlalchemy import text
         async with engine.begin() as conn:
-            # Add google_token column if missing
-            result = await conn.execute(text(
-                "SELECT column_name FROM information_schema.columns "
-                "WHERE table_name='users' AND column_name='google_token'"
-            ))
-            if not result.fetchall():
-                await conn.execute(text("ALTER TABLE users ADD COLUMN google_token TEXT"))
-                logger.info("🔧 Added google_token column to users table")
+            migrations = [
+                ("users", "google_token", "ALTER TABLE users ADD COLUMN google_token TEXT"),
+                ("tasks", "label", "ALTER TABLE tasks ADD COLUMN label VARCHAR(100)"),
+            ]
+            for table, col, sql in migrations:
+                result = await conn.execute(text(
+                    f"SELECT column_name FROM information_schema.columns "
+                    f"WHERE table_name='{table}' AND column_name='{col}'"
+                ))
+                if not result.fetchall():
+                    await conn.execute(text(sql))
+                    logger.info(f"🔧 Added {col} column to {table} table")
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 

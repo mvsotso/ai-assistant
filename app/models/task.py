@@ -29,6 +29,7 @@ class Task(Base):
     description = Column(Text, nullable=True)
     status = Column(Enum(TaskStatus), default=TaskStatus.TODO, nullable=False)
     priority = Column(Enum(TaskPriority), default=TaskPriority.MEDIUM, nullable=False)
+    label = Column(String(100), nullable=True)  # Phase 3: category label (e.g., "ETL", "Kado24", "GDT")
 
     # Creator and assignee (Telegram IDs)
     creator_id = Column(BigInteger, nullable=False)

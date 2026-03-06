@@ -18,6 +18,28 @@ MIGRATIONS = [
         "check": "SELECT column_name FROM information_schema.columns WHERE table_name='users' AND column_name='google_token'",
         "sql": "ALTER TABLE users ADD COLUMN google_token TEXT",
     },
+    {
+        "name": "Add label column to tasks table",
+        "check": "SELECT column_name FROM information_schema.columns WHERE table_name='tasks' AND column_name='label'",
+        "sql": "ALTER TABLE tasks ADD COLUMN label VARCHAR(100)",
+    },
+    {
+        "name": "Create task_comments table",
+        "check": "SELECT table_name FROM information_schema.tables WHERE table_name='task_comments'",
+        "sql": """CREATE TABLE IF NOT EXISTS task_comments (
+            id SERIAL PRIMARY KEY,
+            task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            user_id BIGINT NOT NULL,
+            user_name VARCHAR(255),
+            text TEXT NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )""",
+    },
+    {
+        "name": "Add index on task_comments.task_id",
+        "check": "SELECT indexname FROM pg_indexes WHERE tablename='task_comments' AND indexname='ix_task_comments_task_id'",
+        "sql": "CREATE INDEX ix_task_comments_task_id ON task_comments(task_id)",
+    },
 ]
 
 
