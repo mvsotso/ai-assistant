@@ -77,6 +77,10 @@ class BotHandlers:
             "/report": self._cmd_report,
             "/remind": self._cmd_remind,
             "/send": self._cmd_send,
+            "/translate": self._cmd_translate,
+            "/extract": self._cmd_extract,
+            "/insights": self._cmd_insights,
+            "/draft": self._cmd_draft,
             "/connect": self._cmd_calendar,
             "/today": self._cmd_calendar,
             "/week": self._cmd_calendar,
@@ -547,27 +551,122 @@ Just send me any message in private chat!""")
         else:
             await telegram_service.send_message(chat_id, f"\u274C Failed: {result.get('description', 'Unknown error')}")
 
+    # ─── PHASE 4: AI INTELLIGENCE COMMANDS ───
+
+    async def _cmd_translate(self, db, chat_id, user_id, user_name, args, message):
+        reply = message.get("reply_to_message")
+        text_to_translate = args or (reply.get("text", "") if reply else "")
+        if not text_to_translate:
+            await telegram_service.send_message(chat_id, "\U0001F30F `/translate <text>` or reply to a message with /translate")
+            return
+        translation = await ai_engine.translate(text_to_translate)
+        await telegram_service.send_message(chat_id, f"\U0001F30F *Translation:*\n\n{translation}")
+
+    async def _cmd_extract(self, db, chat_id, user_id, user_name, args, message):
+        reply = message.get("reply_to_message")
+        text = args or (reply.get("text", "") if reply else "")
+        if not text:
+            await telegram_service.send_message(chat_id, "\U0001F9E0 Reply to a message with /extract or: `/extract <text>`")
+            return
+        await telegram_service.send_message(chat_id, "\U0001F504 Analyzing for tasks...")
+        tasks = await ai_engine.extract_tasks(text)
+        if not tasks:
+            await telegram_service.send_message(chat_id, "No actionable tasks detected.")
+            return
+        lines = [f"\U0001F9E0 *Detected {len(tasks)} task(s):*\n"]
+        for t in tasks:
+            title = t.get("title", "Untitled")
+            assignee = t.get("assignee", "unassigned")
+            priority_str = t.get("priority", "medium")
+            try:
+                priority = TaskPriority(priority_str)
+            except ValueError:
+                priority = TaskPriority.MEDIUM
+            task = await task_service.create_task(
+                db, title=title, creator_id=user_id, creator_name=user_name,
+                priority=priority, label=t.get("label"),
+                assignee_name=assignee if assignee != "unassigned" else user_name,
+                source_chat_id=chat_id,
+            )
+            prio_icon = PRIORITY_ICONS.get(priority.value, "")
+            lines.append(f"  {prio_icon} *#{task.id}* {title} \u2192 _{task.assignee_name}_")
+        lines.append(f"\n\u2705 All {len(tasks)} tasks created!")
+        await telegram_service.send_message(chat_id, "\n".join(lines))
+
+    async def _cmd_insights(self, db, chat_id, user_id, user_name, args, message):
+        tasks = await task_service.get_all_tasks(db, exclude_done=True, limit=30)
+        overdue = await task_service.get_overdue_tasks(db)
+        stats = await task_service.get_team_stats(db)
+        context = f"User: {user_name}\nActive tasks ({len(tasks)}):\n"
+        context += "\n".join([f"- [{t.status.value}] {t.title} -> {t.assignee_name} (priority: {t.priority.value})" + (f" DUE: {t.due_date}" if t.due_date else "") for t in tasks])
+        if overdue:
+            context += f"\n\nOverdue ({len(overdue)}):\n" + "\n".join([f"- OVERDUE: {t.title} -> {t.assignee_name}" for t in overdue])
+        context += f"\n\nTeam stats: {stats}"
+        insights = await ai_engine.get_proactive_insights(context)
+        if insights:
+            await telegram_service.send_message(chat_id, f"\U0001F4A1 *Work Insights:*\n\n{insights}")
+        else:
+            await telegram_service.send_message(chat_id, "\u2705 Everything looks good! No urgent insights.")
+
+    async def _cmd_draft(self, db, chat_id, user_id, user_name, args, message):
+        if not args:
+            await telegram_service.send_message(chat_id, "\u270D\uFE0F `/draft <what you want to say>`\n\nExamples:\n\u2022 `/draft remind team about Friday deadline`\n\u2022 `/draft ask Dara for ETL update`")
+            return
+        await telegram_service.send_message(chat_id, "\u270D\uFE0F Drafting...")
+        draft = await ai_engine.draft_message(args)
+        await telegram_service.send_message(chat_id, f"\u270D\uFE0F *Draft:*\n\n{draft}")
+
+    # ─── ENHANCED AI CHAT (Phase 4) ───
+
     async def _handle_ai_chat(self, db, chat_id, user_id, user_name, text):
         tasks = await task_service.get_tasks(db, user_id=user_id, limit=10)
         all_tasks = await task_service.get_all_tasks(db, exclude_done=True, limit=20)
         overdue = await task_service.get_overdue_tasks(db)
-
-        task_context = "\n".join([f"- [{t.status.value}] {t.title} (assigned: {t.assignee_name})" for t in tasks]) if tasks else "No personal tasks"
-        team_context = "\n".join([f"- [{t.status.value}] {t.title} -> {t.assignee_name}" for t in all_tasks]) if all_tasks else "No team tasks"
-        overdue_context = "\n".join([f"- OVERDUE: {t.title} -> {t.assignee_name}" for t in overdue]) if overdue else "No overdue tasks"
-
-        context = f"""User: {user_name}
-
-Your tasks:
-{task_context}
-
-All team tasks:
-{team_context}
-
-{overdue_context}"""
-
-        response = await ai_engine.chat(text, context=context)
+        task_context = "\n".join([f"- [{t.status.value}] #{t.id} {t.title} (assigned: {t.assignee_name}, priority: {t.priority.value})" for t in tasks]) if tasks else "No personal tasks"
+        team_context = "\n".join([f"- [{t.status.value}] #{t.id} {t.title} -> {t.assignee_name}" for t in all_tasks]) if all_tasks else "No team tasks"
+        overdue_context = "\n".join([f"- OVERDUE: #{t.id} {t.title} -> {t.assignee_name}" for t in overdue]) if overdue else ""
+        context = f"User: {user_name}\n\nYour tasks:\n{task_context}\n\nAll team tasks:\n{team_context}"
+        if overdue_context:
+            context += f"\n\nOverdue:\n{overdue_context}"
+        response, actions = await ai_engine.chat_with_actions(text, context)
+        action_results = []
+        for action in actions:
+            result = await self._execute_action(db, action, user_id, user_name, chat_id)
+            if result:
+                action_results.append(result)
         await telegram_service.send_message(chat_id, response)
+        for r in action_results:
+            await telegram_service.send_message(chat_id, r)
+
+    async def _execute_action(self, db, action, user_id, user_name, chat_id):
+        try:
+            a = action.get("action")
+            if a == "create_task":
+                try:
+                    priority = TaskPriority(action.get("priority", "medium"))
+                except ValueError:
+                    priority = TaskPriority.MEDIUM
+                task = await task_service.create_task(
+                    db, title=action.get("title", "New task"), creator_id=user_id, creator_name=user_name,
+                    priority=priority, label=action.get("label"), assignee_name=action.get("assignee") or user_name,
+                    source_chat_id=chat_id,
+                )
+                return f"\u2705 Task *#{task.id}* created: *{task.title}*"
+            elif a == "complete_task":
+                task = await task_service.update_status(db, int(action.get("task_id", 0)), TaskStatus.DONE)
+                return f"\u2705 Task completed!" if task else None
+            elif a == "assign_task":
+                task = await task_service.assign_task(db, int(action.get("task_id", 0)), 0, action.get("assignee", ""))
+                return f"\U0001F464 Task assigned to *{action.get('assignee')}*" if task else None
+            elif a == "set_reminder":
+                minutes = int(action.get("minutes", 30))
+                msg = action.get("message", "Reminder")
+                reminder = Reminder(user_id=user_id, chat_id=chat_id, message=msg, remind_at=datetime.now(timezone.utc) + timedelta(minutes=minutes))
+                db.add(reminder)
+                return f"\u23F0 Reminder set: {minutes}min \u2014 _{msg}_"
+        except Exception as e:
+            logger.error(f"Action error: {e}")
+        return None
 
     async def _cmd_calendar(self, db, chat_id, user_id, user_name, args, message):
         from app.bot.calendar_cmds import calendar_handlers
