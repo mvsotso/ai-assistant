@@ -1,153 +1,151 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════
-# AI Personal Assistant — GCP Deployment Script
-# Run this on a fresh Google Cloud e2-standard-2 VM
-# (Ubuntu 22.04 LTS, Singapore region)
+# AI Personal Assistant — GCP Deployment Script (v2)
+# Fixed version with all deployment issues resolved
 # ══════════════════════════════════════════════════════
 
 set -e
 
 echo "══════════════════════════════════════"
-echo "  AI Assistant — GCP Deployment"
+echo "  AI Assistant — GCP Deployment v2"
 echo "══════════════════════════════════════"
 
 # ── Configuration (edit these) ──
-DOMAIN="your-domain.com"       # Your domain pointing to this VM
-EMAIL="your-email@gmail.com"   # For Let's Encrypt notifications
-REPO="https://github.com/mvsotso/ai-assistant.git"
+DOMAIN="${1:-your-domain.duckdns.org}"
+EMAIL="${2:-your-email@gmail.com}"
 
-# ── Step 1: System Update ──
-echo ""
-echo "▶ Step 1: Updating system packages..."
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y curl git ufw
+if [ "$DOMAIN" = "your-domain.duckdns.org" ]; then
+    echo ""
+    echo "Usage: bash scripts/deploy-gcp.sh <domain> <email>"
+    echo "Example: bash scripts/deploy-gcp.sh sotso-assistant.duckdns.org mvsotso@gmail.com"
+    echo ""
+    exit 1
+fi
 
-# ── Step 2: Install Docker ──
+echo "  Domain: $DOMAIN"
+echo "  Email: $EMAIL"
 echo ""
-echo "▶ Step 2: Installing Docker..."
+
+# ── Step 1: Install Docker ──
+echo "▶ Step 1: Installing Docker..."
 if ! command -v docker &> /dev/null; then
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sudo sh get-docker.sh
+    curl -fsSL https://get.docker.com | sudo sh
     sudo usermod -aG docker $USER
-    rm get-docker.sh
     echo "  ✅ Docker installed"
+    echo "  ⚠️  Run 'newgrp docker' after this script, or log out and back in"
 else
     echo "  ✅ Docker already installed"
 fi
 
-# Install Docker Compose plugin
-echo "  Installing Docker Compose..."
-sudo apt install -y docker-compose-plugin
-echo "  ✅ Docker Compose installed"
-
-# ── Step 3: Firewall ──
+# ── Step 2: Install Docker Compose ──
 echo ""
-echo "▶ Step 3: Configuring firewall..."
-sudo ufw allow OpenSSH
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw --force enable
-echo "  ✅ Firewall configured (SSH, HTTP, HTTPS)"
-
-# ── Step 4: Clone Repository ──
-echo ""
-echo "▶ Step 4: Cloning repository..."
-cd /home/$USER
-if [ -d "ai-assistant" ]; then
-    cd ai-assistant && git pull
-    echo "  ✅ Repository updated"
+echo "▶ Step 2: Installing Docker Compose..."
+if ! docker compose version &> /dev/null; then
+    sudo apt install -y docker-compose-plugin
+    echo "  ✅ Docker Compose installed"
 else
-    git clone $REPO
-    cd ai-assistant
-    echo "  ✅ Repository cloned"
+    echo "  ✅ Docker Compose already installed"
 fi
 
-# ── Step 5: Configure Environment ──
+# ── Step 3: Configure .env ──
 echo ""
-echo "▶ Step 5: Setting up environment..."
+echo "▶ Step 3: Checking .env configuration..."
 if [ ! -f ".env" ]; then
     cp config/.env.example .env
+    # Auto-generate secret key
+    SECRET=$(openssl rand -hex 32)
+    sed -i "s|APP_SECRET_KEY=.*|APP_SECRET_KEY=$SECRET|" .env
+    # Set domain in URLs
+    sed -i "s|YOUR_DOMAIN|$DOMAIN|g" .env
     echo ""
-    echo "  ⚠️  IMPORTANT: Edit .env with your actual credentials:"
-    echo "     nano .env"
+    echo "  ⚠️  .env created with domain=$DOMAIN"
+    echo "  ⚠️  You MUST edit .env to add your API keys:"
+    echo "     vim .env"
     echo ""
-    echo "  Required values:"
-    echo "    - TELEGRAM_BOT_TOKEN"
-    echo "    - ANTHROPIC_API_KEY"
-    echo "    - ADMIN_TELEGRAM_ID"
-    echo "    - WEBHOOK_URL=https://$DOMAIN/api/v1/webhook/telegram"
-    echo "    - APP_ENV=production"
-    echo "    - APP_DEBUG=false"
+    echo "  Required values to fill in:"
+    echo "    - TELEGRAM_BOT_TOKEN (from @BotFather)"
+    echo "    - ADMIN_TELEGRAM_ID (from @userinfobot)"
+    echo "    - ANTHROPIC_API_KEY (from console.anthropic.com)"
+    echo "    - GOOGLE_CLIENT_ID (from GCP Console)"
+    echo "    - GOOGLE_CLIENT_SECRET (from GCP Console)"
     echo ""
-    read -p "  Press Enter after editing .env to continue..."
+    read -p "  Edit .env now, then press Enter to continue..."
+else
+    echo "  ✅ .env already exists"
 fi
 
-# ── Step 6: SSL Certificate ──
+# ── Step 4: Update nginx config ──
 echo ""
-echo "▶ Step 6: Setting up SSL certificate..."
-# Update nginx config with actual domain
-sed -i "s/YOUR_DOMAIN.com/$DOMAIN/g" nginx/nginx.conf
+echo "▶ Step 4: Configuring nginx..."
+sed -i "s/YOUR_DOMAIN.com/$DOMAIN/g" nginx/nginx.conf 2>/dev/null || true
+sed -i "s/YOUR_DOMAIN/$DOMAIN/g" nginx/nginx.conf 2>/dev/null || true
+echo "  ✅ Nginx configured for $DOMAIN"
 
-# Create SSL directory
+# ── Step 5: SSL Certificate ──
+echo ""
+echo "▶ Step 5: Getting SSL certificate..."
 mkdir -p nginx/ssl
+if [ -d "nginx/ssl/live/$DOMAIN" ]; then
+    echo "  ✅ SSL certificate already exists"
+else
+    sudo docker run --rm -p 80:80 \
+        -v $(pwd)/nginx/ssl:/etc/letsencrypt \
+        certbot/certbot certonly \
+        --standalone --preferred-challenges http \
+        --email $EMAIL --agree-tos --no-eff-email \
+        -d $DOMAIN
+    # Fix permissions (common issue!)
+    sudo chmod -R 755 nginx/ssl
+    sudo chown -R $USER:$USER nginx/ssl
+    echo "  ✅ SSL certificate obtained"
+fi
 
-# First, start nginx without SSL for certbot verification
-echo "  Starting temporary HTTP server for verification..."
-
-# Get certificate
-sudo docker run --rm \
-    -v $(pwd)/nginx/ssl:/etc/letsencrypt \
-    -v $(pwd)/certbot-webroot:/var/www/certbot \
-    -p 80:80 \
-    certbot/certbot certonly \
-    --standalone \
-    --preferred-challenges http \
-    --email $EMAIL \
-    --agree-tos \
-    --no-eff-email \
-    -d $DOMAIN
-
-echo "  ✅ SSL certificate obtained"
-
-# ── Step 7: Build and Deploy ──
+# ── Step 6: Build and Deploy ──
 echo ""
-echo "▶ Step 7: Building and deploying..."
-sudo docker compose -f docker-compose.prod.yml build
-sudo docker compose -f docker-compose.prod.yml up -d
+echo "▶ Step 6: Building and deploying..."
+docker compose -f docker-compose.prod.yml up -d --build
 
 echo ""
 echo "  ⏳ Waiting for services to start..."
-sleep 10
+sleep 15
+
+# ── Step 7: Run Database Migrations ──
+echo ""
+echo "▶ Step 7: Running database migrations..."
+docker exec ai-assistant python scripts/migrate_db.py 2>/dev/null || echo "  ⚠️  Migration skipped (will run on next restart)"
 
 # ── Step 8: Verify ──
 echo ""
 echo "▶ Step 8: Verifying deployment..."
-HEALTH=$(curl -s http://localhost:8000/api/v1/health)
+echo "  Services:"
+docker compose -f docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}" 2>/dev/null || docker compose -f docker-compose.prod.yml ps
+echo ""
+HEALTH=$(curl -s -k https://$DOMAIN/api/v1/health 2>/dev/null || curl -s http://localhost:8000/api/v1/health 2>/dev/null || echo "FAILED")
 echo "  Health check: $HEALTH"
 
 # ── Step 9: Set Telegram Webhook ──
 echo ""
 echo "▶ Step 9: Registering Telegram webhook..."
 source .env
-curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
-    -H "Content-Type: application/json" \
-    -d "{\"url\": \"https://$DOMAIN/api/v1/webhook/telegram\"}"
-echo ""
+if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ "$TELEGRAM_BOT_TOKEN" != "your-bot-token-from-botfather" ]; then
+    RESULT=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
+        -H "Content-Type: application/json" \
+        -d "{\"url\": \"https://$DOMAIN/api/v1/webhook/telegram\"}")
+    echo "  Webhook: $RESULT"
+else
+    echo "  ⚠️  Skipped — set TELEGRAM_BOT_TOKEN in .env first"
+fi
 
-# ── Step 10: Setup Auto-Renewal ──
+# ── Step 10: Setup Cron Jobs ──
 echo ""
-echo "▶ Step 10: Setting up SSL auto-renewal..."
-CRON_CMD="0 3 * * * cd $(pwd) && sudo docker compose -f docker-compose.prod.yml run --rm certbot renew && sudo docker compose -f docker-compose.prod.yml restart nginx"
-(crontab -l 2>/dev/null; echo "$CRON_CMD") | crontab -
-echo "  ✅ SSL auto-renewal configured (daily at 3 AM)"
-
-# ── Step 11: Setup Daily Backup ──
-echo ""
-echo "▶ Step 11: Setting up daily database backups..."
+echo "▶ Step 10: Setting up automated tasks..."
+# SSL auto-renewal
+CRON_SSL="0 3 * * * cd $(pwd) && sudo docker run --rm -v $(pwd)/nginx/ssl:/etc/letsencrypt certbot/certbot renew --quiet && docker compose -f docker-compose.prod.yml restart nginx"
+# Daily database backup
+CRON_BACKUP="0 2 * * * docker exec ai-assistant-db pg_dump -U assistant ai_assistant | gzip > /home/$USER/backups/db_\$(date +\%Y\%m\%d).sql.gz && find /home/$USER/backups -name '*.gz' -mtime +7 -delete"
 mkdir -p /home/$USER/backups
-BACKUP_CMD="0 2 * * * docker exec ai-assistant-db pg_dump -U assistant ai_assistant | gzip > /home/$USER/backups/db_\$(date +\%Y\%m\%d).sql.gz && find /home/$USER/backups -name '*.gz' -mtime +7 -delete"
-(crontab -l 2>/dev/null; echo "$BACKUP_CMD") | crontab -
-echo "  ✅ Daily backups configured (2 AM, 7-day retention)"
+(crontab -l 2>/dev/null | grep -v "certbot\|pg_dump"; echo "$CRON_SSL"; echo "$CRON_BACKUP") | crontab -
+echo "  ✅ SSL auto-renewal + daily backups configured"
 
 # ── Done ──
 echo ""
@@ -155,12 +153,13 @@ echo "════════════════════════�
 echo "  ✅ DEPLOYMENT COMPLETE!"
 echo "══════════════════════════════════════════════"
 echo ""
-echo "  🌐 Dashboard: https://$DOMAIN"
-echo "  📡 API Docs:  https://$DOMAIN/docs"
-echo "  🤖 Telegram:  Open your bot and type /start"
+echo "  🌐 Website: https://$DOMAIN"
+echo "  📡 Health:  https://$DOMAIN/api/v1/health"
+echo "  🤖 Bot:     Open @sotso_assistant_bot on Telegram"
 echo ""
 echo "  Useful commands:"
-echo "    docker compose -f docker-compose.prod.yml logs -f    # View logs"
-echo "    docker compose -f docker-compose.prod.yml restart    # Restart all"
-echo "    docker compose -f docker-compose.prod.yml down       # Stop all"
+echo "    docker compose -f docker-compose.prod.yml logs -f app    # App logs"
+echo "    docker compose -f docker-compose.prod.yml restart        # Restart all"
+echo "    docker compose -f docker-compose.prod.yml down           # Stop all"
+echo "    docker exec -it ai-assistant-db psql -U assistant -d ai_assistant  # Database"
 echo ""

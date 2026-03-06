@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.core.database import init_db, close_db
+from app.core.database import init_db, close_db, engine
 from app.api.router import router
 from app.api.calendar_api import calendar_router
 
@@ -30,6 +30,21 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Starting AI Personal Assistant...")
     await init_db()
     logger.info("✅ Database initialized")
+
+    # Run migrations to add any missing columns
+    try:
+        from sqlalchemy import text
+        async with engine.begin() as conn:
+            # Add google_token column if missing
+            result = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='users' AND column_name='google_token'"
+            ))
+            if not result.fetchall():
+                await conn.execute(text("ALTER TABLE users ADD COLUMN google_token TEXT"))
+                logger.info("🔧 Added google_token column to users table")
+    except Exception as e:
+        logger.warning(f"⚠️ Migration check: {e}")
 
     # Set Telegram webhook if configured
     if settings.webhook_url and settings.telegram_bot_token:

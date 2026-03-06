@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   app:
     build: .
@@ -28,7 +26,7 @@ services:
     environment:
       POSTGRES_DB: ai_assistant
       POSTGRES_USER: assistant
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_this_password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
