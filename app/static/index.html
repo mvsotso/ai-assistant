@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Personal Assistant — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0c10; --surface: #13141c; --card: #181a25; --border: #252838;
+    --text: #e8eaf0; --muted: #6b7094;
+    --accent: #3b82f6; --accent-soft: rgba(59,130,246,0.1);
+    --green: #22c55e; --green-soft: rgba(34,197,94,0.1);
+    --orange: #f97316; --orange-soft: rgba(249,115,22,0.1);
+    --red: #ef4444; --red-soft: rgba(239,68,68,0.1);
+    --purple: #a855f7; --purple-soft: rgba(168,85,247,0.1);
+    --yellow: #eab308; --yellow-soft: rgba(234,179,8,0.1);
+    --pink: #ec4899; --pink-soft: rgba(236,72,153,0.1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { width: 64px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 16px; gap: 4px; position: fixed; height: 100vh; z-index: 10; }
+  .logo { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; font-weight: 800; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(59,130,246,0.2); }
+  .nav-btn { width: 46px; height: 46px; border-radius: 10px; border: none; background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: all 0.2s; }
+  .nav-btn.active { background: var(--accent-soft); color: var(--accent); }
+  .nav-btn:hover { background: var(--accent-soft); }
+  .nav-btn span.label { font-size: 8px; font-weight: 600; }
+
+  /* Main */
+  .main { flex: 1; margin-left: 64px; padding: 24px 28px; overflow-y: auto; max-height: 100vh; }
+  .page { display: none; } .page.active { display: block; }
+
+  h2 { font-size: 24px; font-weight: 800; font-family: 'Outfit', sans-serif; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+  /* Stats */
+  .stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: 14px; padding: 18px 20px; border: 1px solid var(--border); flex: 1 1 140px; min-width: 140px; }
+  .stat-icon { width: 34px; height: 34px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; margin-right: 10px; vertical-align: middle; }
+  .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-value { font-size: 26px; font-weight: 800; font-family: 'Outfit', sans-serif; margin-top: 10px; }
+
+  /* Cards */
+  .card { background: var(--card); border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+  .card h3 { font-size: 14px; font-weight: 700; font-family: 'Outfit', sans-serif; margin-bottom: 14px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* Task rows */
+  .task-row { background: var(--card); border-radius: 12px; padding: 12px 16px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .task-prio-bar { width: 4px; height: 28px; border-radius: 2px; flex-shrink: 0; }
+  .task-title { font-size: 13px; font-weight: 600; flex: 1; }
+  .task-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .badge { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+  .status-select { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--accent); padding: 5px 8px; font-size: 11px; font-weight: 600; cursor: pointer; outline: none; }
+
+  /* Board */
+  .board { display: flex; gap: 14px; overflow-x: auto; }
+  .board-col { flex: 1 1 240px; min-width: 240px; }
+  .board-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 0 4px; font-size: 13px; font-weight: 700; }
+  .board-count { font-size: 11px; color: var(--muted); background: var(--surface); padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .board-list { background: var(--surface); border-radius: 12px; padding: 10px; border: 1px solid var(--border); min-height: 100px; display: flex; flex-direction: column; gap: 8px; }
+  .board-card { background: var(--card); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--accent); }
+  .board-card-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .board-card-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 10px; color: var(--muted); }
+
+  /* Progress */
+  .progress-item { background: var(--card); border-radius: 12px; padding: 14px 18px; border: 1px solid var(--border); margin-bottom: 10px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .progress-name { font-size: 13px; font-weight: 600; }
+  .progress-pct { font-size: 12px; font-weight: 700; color: var(--accent); }
+  .progress-bar-bg { height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 0.5s; }
+  .progress-details { display: flex; gap: 12px; margin-top: 6px; font-size: 10px; color: var(--muted); }
+
+  /* Chat */
+  .chat-container { display: flex; flex-direction: column; height: calc(100vh - 100px); }
+  .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 10px; }
+  .chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+  .chat-msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .chat-msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .chat-input-row { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .chat-input { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-size: 13px; outline: none; font-family: 'DM Sans', sans-serif; }
+  .chat-send { width: 42px; height: 42px; border-radius: 10px; border: none; background: var(--accent); color: #fff; font-size: 16px; cursor: pointer; }
+
+  /* Filters */
+  .filters { display: flex; gap: 6px; margin-bottom: 16px; }
+  .filter-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; }
+  .filter-btn.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+  /* Overdue */
+  .overdue-box { background: var(--red-soft); border-radius: 14px; padding: 18px; border: 1px solid rgba(239,68,68,0.2); margin-bottom: 20px; }
+  .overdue-box h3 { color: var(--red); font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+
+  .empty { font-size: 12px; color: var(--muted); text-align: center; padding: 30px; font-style: italic; }
+  .loading { color: var(--muted); padding: 40px; }
+
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .board { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="logo">AI</div>
+  <button class="nav-btn active" data-page="dashboard" onclick="showPage('dashboard')"><span>⊞</span><span class="label">Home</span></button>
+  <button class="nav-btn" data-page="board" onclick="showPage('board')"><span>🗂</span><span class="label">Board</span></button>
+  <button class="nav-btn" data-page="tasks" onclick="showPage('tasks')"><span>☑</span><span class="label">Tasks</span></button>
+  <button class="nav-btn" data-page="chat" onclick="showPage('chat')"><span>✨</span><span class="label">AI Chat</span></button>
+</div>
+
+<div class="main">
+  <!-- Dashboard Page -->
+  <div id="page-dashboard" class="page active">
+    <h2>Dashboard</h2>
+    <p class="subtitle">AI Personal Assistant Overview</p>
+    <div class="stats-row" id="stats-row"></div>
+    <div class="grid-2">
+      <div class="card"><h3>Team Progress</h3><div id="team-progress"></div></div>
+      <div class="card"><h3>Recent Tasks</h3><div id="recent-tasks"></div></div>
+    </div>
+    <div id="overdue-section"></div>
+  </div>
+
+  <!-- Board Page -->
+  <div id="page-board" class="page">
+    <h2>Task Board</h2>
+    <p class="subtitle">Kanban view of all tasks</p>
+    <div class="board" id="board-container"></div>
+  </div>
+
+  <!-- Tasks Page -->
+  <div id="page-tasks" class="page">
+    <h2>Tasks</h2>
+    <p class="subtitle">All team tasks</p>
+    <div class="filters" id="task-filters"></div>
+    <div id="task-list"></div>
+  </div>
+
+  <!-- Chat Page -->
+  <div id="page-chat" class="page">
+    <h2>✨ AI Assistant</h2>
+    <p class="subtitle">Chat with Claude Opus 4.6</p>
+    <div class="chat-container">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-msg bot">Hello! I'm your AI assistant. Ask me anything about tasks, calendar, or team progress. 🇰🇭 ខ្មែរ ឬ English</div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="Ask anything — tasks, calendar, insights..." onkeydown="if(event.key==='Enter')sendChat()" />
+        <button class="chat-send" onclick="sendChat()">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin + '/api/v1';
+const PRIO_COLORS = { urgent: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e' };
+const PRIO_BG = { urgent: 'rgba(239,68,68,0.1)', high: 'rgba(249,115,22,0.1)', medium: 'rgba(234,179,8,0.1)', low: 'rgba(34,197,94,0.1)' };
+const STATUS_ICONS = { todo: '📋', in_progress: '🔄', review: '👀', done: '✅' };
+
+// ─── Navigation ───
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector(`[data-page="${id}"]`).classList.add('active');
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'board') loadBoard();
+  if (id === 'tasks') loadTasks();
+}
+
+// ─── Dashboard ───
+async function loadDashboard() {
+  try {
+    const r = await fetch(API + '/dashboard');
+    const d = await r.json();
+    const s = d.stats;
+
+    document.getElementById('stats-row').innerHTML = [
+      statCard('📋', 'To Do', s.todo, '#6b7094', 'rgba(107,112,148,0.1)'),
+      statCard('🔄', 'In Progress', s.in_progress, '#3b82f6', 'rgba(59,130,246,0.1)'),
+      statCard('👀', 'Review', s.review, '#a855f7', 'rgba(168,85,247,0.1)'),
+      statCard('✅', 'Done', s.done, '#22c55e', 'rgba(34,197,94,0.1)'),
+      statCard('🔴', 'Overdue', s.overdue, '#ef4444', 'rgba(239,68,68,0.1)'),
+      statCard('💬', 'Messages', s.total_messages, '#ec4899', 'rgba(236,72,153,0.1)'),
+    ].join('');
+
+    // Team progress
+    const tp = document.getElementById('team-progress');
+    const entries = Object.entries(d.team_stats || {});
+    tp.innerHTML = entries.length ? entries.map(([name, st]) => {
+      const total = st.total || 1, done = st.done || 0, pct = Math.round((done/total)*100);
+      return `<div class="progress-item">
+        <div class="progress-header"><span class="progress-name">${name}</span><span class="progress-pct">${pct}%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        <div class="progress-details"><span>${st.todo||0} todo</span><span>${st.in_progress||0} active</span><span>${st.review||0} review</span><span>${st.done||0} done</span></div>
+      </div>`;
+    }).join('') : '<div class="empty">No team data yet</div>';
+
+    // Recent tasks
+    const rt = document.getElementById('recent-tasks');
+    rt.innerHTML = (d.recent_tasks||[]).slice(0,8).map(t =>
+      `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:12px">${STATUS_ICONS[t.status]||'•'}</span>
+        <div style="flex:1;font-size:12px;font-weight:500">${t.title}</div>
+        <span style="font-size:10px;color:var(--muted)">${t.assignee||'?'}</span>
+      </div>`
+    ).join('') || '<div class="empty">No tasks yet</div>';
+
+    // Overdue
+    const os = document.getElementById('overdue-section');
+    os.innerHTML = (d.overdue_tasks||[]).length ? `<div class="overdue-box"><h3>⚠️ Overdue Tasks</h3>${d.overdue_tasks.map(t =>
+      `<div style="font-size:12px;padding:4px 0">#${t.id} ${t.title} → ${t.assignee||'?'}</div>`
+    ).join('')}</div>` : '';
+  } catch(e) {
+    document.getElementById('stats-row').innerHTML = '<div class="empty" style="color:var(--red)">Failed to connect to API. Make sure the server is running.</div>';
+  }
+}
+
+function statCard(icon, label, value, color, bg) {
+  return `<div class="stat-card">
+    <div><span class="stat-icon" style="background:${bg}">${icon}</span><span class="stat-label">${label}</span></div>
+    <div class="stat-value" style="color:${color}">${value}</div>
+  </div>`;
+}
+
+// ─── Board ───
+async function loadBoard() {
+  try {
+    const r = await fetch(API + '/board');
+    const d = await r.json();
+    const board = d.board;
+    const cols = [
+      { key: 'todo', title: 'To Do', icon: '📋' },
+      { key: 'in_progress', title: 'In Progress', icon: '🔄' },
+      { key: 'review', title: 'Review', icon: '👀' },
+      { key: 'done', title: 'Done', icon: '✅' },
+    ];
+    document.getElementById('board-container').innerHTML = cols.map(col => {
+      const tasks = board[col.key] || [];
+      return `<div class="board-col">
+        <div class="board-header"><span>${col.icon}</span><span>${col.title}</span><span class="board-count">${tasks.length}</span></div>
+        <div class="board-list">${tasks.length === 0 ? '<div class="empty">No tasks</div>' :
+          tasks.slice(0,15).map(t => {
+            const pc = PRIO_COLORS[t.priority] || PRIO_COLORS.medium;
+            return `<div class="board-card" style="border-left-color:${pc}">
+              <div class="board-card-title">${t.title}</div>
+              <div class="board-card-meta">
+                <span>${t.assignee||'?'}</span>
+                ${t.label ? `<span class="badge" style="background:var(--accent-soft);color:var(--accent)">${t.label}</span>` : ''}
+                <span class="badge" style="background:${PRIO_BG[t.priority]};color:${pc}">${t.priority}</span>
+              </div>
+            </div>`;
+          }).join('')
+        }</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('board-container').innerHTML = '<div class="empty" style="color:var(--red)">Failed to load board</div>';
+  }
+}
+
+// ─── Tasks ───
+let allTasks = [];
+let currentFilter = 'all';
+
+async function loadTasks() {
+  try {
+    const r = await fetch(API + '/tasks?limit=50');
+    const d = await r.json();
+    allTasks = d.tasks || [];
+    renderFilters();
+    renderTasks();
+  } catch(e) {
+    document.getElementById('task-list').innerHTML = '<div class="empty" style="color:var(--red)">Failed to load tasks</div>';
+  }
+}
+
+function renderFilters() {
+  const filters = [{id:'all',l:'All'},{id:'todo',l:'To Do'},{id:'in_progress',l:'Active'},{id:'review',l:'Review'},{id:'done',l:'Done'}];
+  document.getElementById('task-filters').innerHTML = filters.map(f =>
+    `<button class="filter-btn ${currentFilter===f.id?'active':''}" onclick="setFilter('${f.id}')">${f.l}</button>`
+  ).join('');
+}
+
+function setFilter(f) { currentFilter = f; renderFilters(); renderTasks(); }
+
+function renderTasks() {
+  const tasks = currentFilter === 'all' ? allTasks : allTasks.filter(t => t.status === currentFilter);
+  document.getElementById('task-list').innerHTML = tasks.length === 0 ? '<div class="empty">No tasks found</div>' :
+    tasks.map(t => {
+      const pc = PRIO_COLORS[t.priority] || PRIO_COLORS.medium;
+      const pb = PRIO_BG[t.priority] || PRIO_BG.medium;
+      const isDone = t.status === 'done';
+      return `<div class="task-row">
+        <div class="task-prio-bar" style="background:${pc}"></div>
+        <div style="flex:1;min-width:0">
+          <div class="task-title" style="${isDone?'text-decoration:line-through;opacity:0.5':''}">${t.title}</div>
+          <div class="task-meta">${t.assignee||'Unassigned'}${t.label?' · '+t.label:''}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div>
+        </div>
+        <span class="badge" style="background:${pb};color:${pc}">${t.priority}</span>
+        <select class="status-select" onchange="changeStatus(${t.id},this.value)">
+          <option value="todo" ${t.status==='todo'?'selected':''}>To Do</option>
+          <option value="in_progress" ${t.status==='in_progress'?'selected':''}>In Progress</option>
+          <option value="review" ${t.status==='review'?'selected':''}>Review</option>
+          <option value="done" ${t.status==='done'?'selected':''}>Done</option>
+        </select>
+      </div>`;
+    }).join('');
+}
+
+async function changeStatus(id, status) {
+  await fetch(API + '/tasks/' + id, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({status}) });
+  loadTasks();
+}
+
+// ─── Chat ───
+let chatLoading = false;
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg || chatLoading) return;
+  input.value = '';
+
+  const container = document.getElementById('chat-messages');
+  container.innerHTML += `<div class="chat-msg user">${escapeHtml(msg)}</div>`;
+  container.innerHTML += `<div class="chat-msg bot" id="chat-loading" style="color:var(--muted)">Thinking...</div>`;
+  container.scrollTop = container.scrollHeight;
+  chatLoading = true;
+
+  try {
+    const r = await fetch(API + '/ai/chat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({message: msg}) });
+    const d = await r.json();
+    document.getElementById('chat-loading').remove();
+    container.innerHTML += `<div class="chat-msg bot">${escapeHtml(d.response || 'No response')}</div>`;
+  } catch(e) {
+    document.getElementById('chat-loading').remove();
+    container.innerHTML += `<div class="chat-msg bot" style="color:var(--red)">Error connecting to API</div>`;
+  }
+  chatLoading = false;
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+
+// ─── Init ───
+loadDashboard();
+setInterval(loadDashboard, 30000);
+</script>
+</body>
+</html>

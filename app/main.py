@@ -78,10 +78,10 @@ app = FastAPI(
     redoc_url="/redoc" if settings.app_debug else None,
 )
 
-# CORS
+# CORS — allow all origins for dashboard access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if settings.app_debug else [settings.webhook_url],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -94,8 +94,11 @@ app.include_router(calendar_router)
 
 @app.get("/")
 async def root():
-    return {
-        "name": settings.app_name,
-        "status": "running",
-        "docs": "/docs" if settings.app_debug else "disabled",
-    }
+    """Serve the web dashboard."""
+    import os
+    html_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(html_path):
+        from fastapi.responses import HTMLResponse
+        with open(html_path, "r") as f:
+            return HTMLResponse(content=f.read())
+    return {"name": settings.app_name, "status": "running"}
