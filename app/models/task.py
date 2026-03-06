@@ -29,7 +29,9 @@ class Task(Base):
     description = Column(Text, nullable=True)
     status = Column(Enum(TaskStatus), default=TaskStatus.TODO, nullable=False)
     priority = Column(Enum(TaskPriority), default=TaskPriority.MEDIUM, nullable=False)
-    label = Column(String(100), nullable=True)  # Phase 3: category label (e.g., "ETL", "Kado24", "GDT")
+    label = Column(String(100), nullable=True)
+    category = Column(String(100), nullable=True)      # e.g., "GDT", "Kado24", "Personal"
+    subcategory = Column(String(100), nullable=True)    # e.g., "ETL", "Frontend", "Learning"
 
     # Creator and assignee (Telegram IDs)
     creator_id = Column(BigInteger, nullable=False)
@@ -38,8 +40,8 @@ class Task(Base):
     assignee_name = Column(String(255), nullable=True)
 
     # Source context
-    source_chat_id = Column(BigInteger, nullable=True)  # Which group chat it came from
-    source_message_id = Column(BigInteger, nullable=True)  # Original message ID
+    source_chat_id = Column(BigInteger, nullable=True)
+    source_message_id = Column(BigInteger, nullable=True)
 
     due_date = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)

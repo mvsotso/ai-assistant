@@ -40,6 +40,16 @@ MIGRATIONS = [
         "check": "SELECT indexname FROM pg_indexes WHERE tablename='task_comments' AND indexname='ix_task_comments_task_id'",
         "sql": "CREATE INDEX ix_task_comments_task_id ON task_comments(task_id)",
     },
+    {
+        "name": "Add category column to tasks table",
+        "check": "SELECT column_name FROM information_schema.columns WHERE table_name='tasks' AND column_name='category'",
+        "sql": "ALTER TABLE tasks ADD COLUMN category VARCHAR(100)",
+    },
+    {
+        "name": "Add subcategory column to tasks table",
+        "check": "SELECT column_name FROM information_schema.columns WHERE table_name='tasks' AND column_name='subcategory'",
+        "sql": "ALTER TABLE tasks ADD COLUMN subcategory VARCHAR(100)",
+    },
 ]
 
 

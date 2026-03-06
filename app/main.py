@@ -39,6 +39,8 @@ async def lifespan(app: FastAPI):
             migrations = [
                 ("users", "google_token", "ALTER TABLE users ADD COLUMN google_token TEXT"),
                 ("tasks", "label", "ALTER TABLE tasks ADD COLUMN label VARCHAR(100)"),
+                ("tasks", "category", "ALTER TABLE tasks ADD COLUMN category VARCHAR(100)"),
+                ("tasks", "subcategory", "ALTER TABLE tasks ADD COLUMN subcategory VARCHAR(100)"),
             ]
             for table, col, sql in migrations:
                 result = await conn.execute(text(
