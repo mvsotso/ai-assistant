@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     google_redirect_uri: str = ""
 
+    # Dashboard Auth — comma-separated list of allowed Google emails
+    dashboard_allowed_emails: str = "mvsotso@gmail.com"
+
     # Celery
     celery_broker_url: str = "redis://localhost:6379/1"
     celery_result_backend: str = "redis://localhost:6379/2"
