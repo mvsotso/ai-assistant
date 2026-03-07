@@ -511,6 +511,23 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div id="me-attachments" style="display:none;margin-bottom:12px"></div>
 <input type="hidden" id="me-id" value="">
 <div id="me-link" style="display:none;margin-bottom:12px"><a id="me-gcal-link" href="#" target="_blank" style="font-size:11px;color:var(--ac)">Open in Google Calendar ↗</a></div>
+
+<!-- AI Event Actions -->
+<div id="me-ai-section" style="display:none;margin-bottom:12px;padding:10px 12px;border:1px solid rgba(59,130,246,.15);border-radius:10px;background:linear-gradient(135deg,rgba(59,130,246,.02),rgba(168,85,247,.02))">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+    <span style="font-size:13px">✨</span>
+    <span style="font-size:10px;font-weight:700;color:var(--ac)" data-i18n="aiActions">AI Actions</span>
+  </div>
+  <div style="display:flex;gap:5px;flex-wrap:wrap">
+    <button class="btn" style="padding:3px 9px;font-size:9px" onclick="eventAI('keynotes')">📝 <span data-i18n="aiKeyNotes">Key Notes</span></button>
+    <button class="btn" style="padding:3px 9px;font-size:9px" onclick="eventAI('agenda')">📋 <span data-i18n="aiAgenda">Agenda</span></button>
+    <button class="btn" style="padding:3px 9px;font-size:9px" onclick="eventAI('prep')">🎯 <span data-i18n="aiPrep">Prep Brief</span></button>
+    <button class="btn" style="padding:3px 9px;font-size:9px" onclick="eventAI('followup')">📨 <span data-i18n="aiMeetingFollowUp">Follow Up</span></button>
+  </div>
+  <div id="me-ai-result" style="display:none;margin-top:8px;padding:8px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;font-size:11px;line-height:1.7;white-space:pre-wrap">
+  </div>
+</div>
+
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeEventModal()" data-i18n="cancel">Cancel</button><button class="btn d" id="me-del" onclick="deleteEvent()" style="display:none" data-i18n="delete">Delete</button><button class="btn p" id="me-save" onclick="saveEvent()" data-i18n="createEvent">Create Event</button></div></div></div>
 
 <!-- Recurring Task Modal -->
@@ -683,10 +700,10 @@ let evtFile=null;
 function onEvtFileSelect(){const f=$('me-file').files[0];if(f){evtFile=f;$('me-fname').textContent=`${f.name} (${(f.size/1024).toFixed(1)}KB)`;$('me-fname').style.color='var(--ac)'}}
 function clearEvtFile(){evtFile=null;$('me-file').value='';$('me-fname').textContent=t('noFile');$('me-fname').style.color='var(--mt)'}
 function showAttachments(attachments){const el=$('me-attachments');if(attachments&&attachments.length){el.style.display='block';el.innerHTML='<div style="font-size:10px;color:var(--mt);font-weight:600;margin-bottom:4px">ATTACHMENTS</div>'+attachments.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0"><span style="font-size:12px">📄</span><a href="${a.fileUrl}" target="_blank" style="font-size:11px;color:var(--ac)">${esc(a.title)}</a></div>`).join('')}else{el.style.display='none';el.innerHTML=''}}
-function openEventModal(dt,hr){$('modal-event').classList.add('v');$('me-id').value='';$('me-title').value='';$('me-desc').value='';$('me-loc').value='';$('me-del').style.display='none';$('me-link').style.display='none';$('modal-event-title').textContent=t('newEvent');$('me-save').textContent=t('createEvent');clearEvtFile();showAttachments(null);evtDuration=60;const d=dt||fmt(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());const h=hr||9;$('me-date').value=d;$('me-edate').value=d;$('me-time').value=String(h).padStart(2,'0')+':00';$('me-etime').value=String(Math.min(h+1,23)).padStart(2,'0')+':00';setTimeout(()=>$('me-title').focus(),100)}
-function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)return;$('modal-event').classList.add('v');$('me-id').value=ev.id;$('me-title').value=ev.title||'';$('me-desc').value=ev.description||'';$('me-loc').value=ev.location||'';$('me-del').style.display='block';$('modal-event-title').textContent=t('editEvent');$('me-save').textContent=t('updateEvent');clearEvtFile();showAttachments(ev.attachments);if(ev.start_raw){try{const d=new Date(ev.start_raw);$('me-date').value=d.toISOString().split('T')[0];$('me-time').value=d.toTimeString().slice(0,5)}catch{}}if(ev.end_raw){try{const d=new Date(ev.end_raw);$('me-edate').value=d.toISOString().split('T')[0];$('me-etime').value=d.toTimeString().slice(0,5)}catch{}}if(ev.link){$('me-link').style.display='block';$('me-gcal-link').href=ev.link}else $('me-link').style.display='none';calcDuration()}
+function openEventModal(dt,hr){$('modal-event').classList.add('v');$('me-id').value='';$('me-title').value='';$('me-desc').value='';$('me-loc').value='';$('me-del').style.display='none';$('me-link').style.display='none';$('me-ai-section').style.display='none';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('newEvent');$('me-save').textContent=t('createEvent');clearEvtFile();showAttachments(null);evtDuration=60;const d=dt||fmt(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());const h=hr||9;$('me-date').value=d;$('me-edate').value=d;$('me-time').value=String(h).padStart(2,'0')+':00';$('me-etime').value=String(Math.min(h+1,23)).padStart(2,'0')+':00';setTimeout(()=>$('me-title').focus(),100)}
+function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)return;$('modal-event').classList.add('v');$('me-id').value=ev.id;$('me-title').value=ev.title||'';$('me-desc').value=ev.description||'';$('me-loc').value=ev.location||'';$('me-del').style.display='block';$('me-ai-section').style.display='block';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('editEvent');$('me-save').textContent=t('updateEvent');clearEvtFile();showAttachments(ev.attachments);if(ev.start_raw){try{const d=new Date(ev.start_raw);$('me-date').value=d.toISOString().split('T')[0];$('me-time').value=d.toTimeString().slice(0,5)}catch{}}if(ev.end_raw){try{const d=new Date(ev.end_raw);$('me-edate').value=d.toISOString().split('T')[0];$('me-etime').value=d.toTimeString().slice(0,5)}catch{}}if(ev.link){$('me-link').style.display='block';$('me-gcal-link').href=ev.link}else $('me-link').style.display='none';calcDuration()}
 function closeEventModal(){$('modal-event').classList.remove('v');clearEvtFile()}
-async function saveEvent(){const id=$('me-id').value,title=$('me-title').value.trim();if(!title){alert('Title required');return}$('me-save').textContent='Saving...';$('me-save').disabled=true;
+async function saveEvent(){const id=$('me-id').value,title=$('me-title').value.trim(),date=$('me-date').value,time=$('me-time').value;if(!title){alert(curLang==='kh'?'សូមបំពេញចំណងជើង':'Title is required');$('me-title').focus();highlightMissingEventFields();return}if(!date){alert(curLang==='kh'?'សូមបំពេញកាលបរិច្ឆេទ':'Date is required');$('me-date').focus();highlightMissingEventFields();return}if(!time){alert(curLang==='kh'?'សូមបំពេញម៉ោង':'Time is required');$('me-time').focus();highlightMissingEventFields();return}$('me-save').textContent='Saving...';$('me-save').disabled=true;
 try{if(evtFile&&!id){
   const fd=new FormData();fd.append('title',title);fd.append('start_time',$('me-date').value+'T'+$('me-time').value+':00');fd.append('end_time',$('me-edate').value+'T'+$('me-etime').value+':00');if($('me-desc').value)fd.append('description',$('me-desc').value);if($('me-loc').value)fd.append('location',$('me-loc').value);fd.append('file',evtFile);
   await fetch(A+'/calendar/events/create-with-file',{method:'POST',headers:hdr(),body:fd});
@@ -1174,6 +1191,85 @@ function sendAIMsgToChat(){
   },300);
 }
 
+// ═══ AI EVENT ACTIONS ═══
+let lastEvtAIMsg='';
+async function eventAI(action){
+  const el=$('me-ai-result');
+  el.style.display='block';
+  el.innerHTML='<div style="text-align:center;color:var(--mt);padding:6px">⏳ '+t('loadingInsights')+'</div>';
+
+  const title=$('me-title').value.trim()||'Untitled Event';
+  const desc=$('me-desc').value.trim();
+  const loc=$('me-loc').value.trim();
+  const date=$('me-date').value;
+  const time=$('me-time').value;
+  const edate=$('me-edate').value;
+  const etime=$('me-etime').value;
+  const lang=curLang==='kh'?'Khmer':'English';
+
+  const evtCtx=`Event: "${title}"
+Date: ${date} ${time} to ${edate} ${etime}
+Location: ${loc||'Not specified'}
+Description: ${desc||'None'}`;
+
+  const prompts={
+    keynotes:`You are a personal AI assistant. Draft concise key talking points / meeting notes in ${lang} for this event. Include 5-8 bullet points covering likely discussion topics based on the event title and description. Format with bullet points (•). Keep each point to 1-2 sentences.
+
+${evtCtx}
+
+Provide the key notes only, no extra explanation.`,
+
+    agenda:`You are a personal AI assistant. Draft a professional meeting agenda in ${lang} for this event. Include: opening, main discussion items (3-5 items with time estimates), action items, and closing. Format it cleanly with numbered items and time allocations.
+
+${evtCtx}
+
+Provide the agenda only, no extra explanation.`,
+
+    prep:`You are a personal AI assistant. Create a brief preparation guide in ${lang} for this event. Include: what to prepare before the meeting, key questions to address, documents/data to bring, and expected outcomes. Keep it concise and actionable (under 150 words).
+
+${evtCtx}
+
+Provide the prep brief only, no extra explanation.`,
+
+    followup:`You are a personal AI assistant. Draft a professional follow-up message in ${lang} to send after this event/meeting. Thank attendees, summarize key decisions (use placeholders like [decision 1], [decision 2]), list action items with owners, and note the next meeting date if applicable. Keep it concise (5-8 sentences).
+
+${evtCtx}
+
+Draft the follow-up message only, no extra explanation. Start directly with the greeting.`
+  };
+
+  try{
+    const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:prompts[action]||prompts.keynotes})});
+    const d=await r.json();
+    lastEvtAIMsg=d.response||'';
+    el.innerHTML=`<div style="white-space:pre-wrap;line-height:1.7;color:var(--tx)">${esc(lastEvtAIMsg)}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;padding-top:6px;border-top:1px solid var(--bd)">
+        <button class="btn p" style="padding:3px 10px;font-size:9px" onclick="copyEvtAI()">📋 ${t('aiCopyMsg')}</button>
+        <button class="btn" style="padding:3px 10px;font-size:9px" onclick="pasteEvtAIToDesc()">📥 ${t('aiPasteToDesc')}</button>
+        <div style="flex:1"></div>
+        <button class="btn" style="padding:3px 6px;font-size:9px;color:var(--mt)" onclick="$('me-ai-result').style.display='none'">✕</button>
+      </div>`;
+  }catch(e){
+    el.innerHTML='<div style="color:var(--rd);padding:6px">Error: '+e.message+'</div>';
+  }
+}
+
+function copyEvtAI(){
+  if(!lastEvtAIMsg)return;
+  navigator.clipboard.writeText(lastEvtAIMsg).then(()=>{
+    const btn=event.target;const orig=btn.textContent;
+    btn.textContent='✅';setTimeout(()=>btn.textContent=orig,1500);
+  }).catch(()=>alert('Copy failed'));
+}
+
+function pasteEvtAIToDesc(){
+  if(!lastEvtAIMsg)return;
+  const desc=$('me-desc');
+  desc.value=desc.value?(desc.value+'\n\n'+lastEvtAIMsg):lastEvtAIMsg;
+  desc.style.height='auto';desc.style.height=desc.scrollHeight+'px';
+  $('me-ai-result').style.display='none';
+}
+
 function exportCSV(){if(!allT.length){alert('No tasks');return}const h=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];const rows=allT.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);dl([h.join(','),...rows.map(r=>r.join(','))].join('\n'),'tasks_'+new Date().toISOString().split('T')[0]+'.csv','text/csv')}
 function exportJSON(){if(!allT.length){alert('No tasks');return}dl(JSON.stringify(allT.map(t=>({id:t.id,title:t.title,description:t.description,status:t.status,priority:t.priority,assignee:t.assignee,category:t.category,due_date:t.due_date})),null,2),'tasks_'+new Date().toISOString().split('T')[0]+'.json','application/json')}
 function dl(c,f,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)}
@@ -1373,7 +1469,79 @@ let msgCache=[];
 async function loadMsgList(){try{const d=await(await fetch(A+'/messages?chat_id='+curG+'&limit=30',{headers:hdr()})).json();
 msgCache=d.messages||[];
 $('ml').innerHTML=msgCache.length?msgCache.map((m,i)=>`<div style="padding:8px 0;border-bottom:1px solid var(--bd);display:flex;gap:10px"><div style="width:28px;height:28px;border-radius:7px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.sender||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">${m.sender||'?'} <span style="font-weight:400;color:var(--mt)">${m.created_at?new Date(m.created_at).toLocaleTimeString():''}</span></div><div style="font-size:12px;margin-top:2px;word-break:break-word">${esc(m.text||'')}</div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap"><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'event')">📅 Create Event</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'task')">📋 Create Task</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'notes')">📝 Prepare Notes</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'reply')">✍️ Draft Reply</button></div></div>${m.has_task_keyword?'<span class="badge" style="background:var(--os);color:var(--or);flex-shrink:0">ACTION</span>':''}</div>`).join(''):'<div class="empty">'+I18N[curLang].noData+'</div>'}catch{}}
-function msgAction(idx,type){const m=msgCache[idx];if(!m)return;const txt=(m.text||'').substring(0,300);const prompts={event:'Create a calendar event based on this message from '+m.sender+': '+txt,task:'Create a task from this message from '+m.sender+': '+txt,notes:'Prepare key talking points and notes for this meeting/discussion: '+txt,reply:'Draft a professional reply to this message from '+m.sender+': '+txt};nav('chat');setTimeout(()=>{$('chi').value=prompts[type]||txt;sendAI()},500)}
+function msgAction(idx,type){const m=msgCache[idx];if(!m)return;const txt=(m.text||'').substring(0,300);
+  if(type==='event'){
+    // Smart event creation: AI extracts details → pre-fill modal → user reviews
+    smartCreateEvent(txt,m.sender);return;
+  }
+  const prompts={task:'Create a task from this message from '+m.sender+': '+txt,notes:'Prepare key talking points and notes for this meeting/discussion: '+txt,reply:'Draft a professional reply to this message from '+m.sender+': '+txt};nav('chat');setTimeout(()=>{$('chi').value=prompts[type]||txt;sendAI()},500)}
+
+async function smartCreateEvent(text,sender){
+  // Show a loading indicator
+  const lang=curLang==='kh'?'Khmer':'English';
+  const prompt=`Extract event details from this message. Respond ONLY in valid JSON with these fields (use null for missing info):
+{"title": "event title or null", "date": "YYYY-MM-DD or null", "time": "HH:MM or null", "end_time": "HH:MM or null", "location": "venue or null", "description": "brief context or null"}
+
+Message from ${sender}: "${text}"
+
+Respond with JSON only, no markdown, no explanation.`;
+
+  try{
+    const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:prompt})});
+    const d=await r.json();
+    let extracted={};
+    try{
+      // Try to parse AI response as JSON
+      let raw=(d.response||'').trim();
+      // Strip markdown code fences if present
+      raw=raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+      extracted=JSON.parse(raw);
+    }catch{extracted={}}
+
+    // Open event modal and pre-fill what we have
+    nav('calendar');
+    setTimeout(()=>{
+      openEventModal(extracted.date||null, extracted.time?parseInt(extracted.time.split(':')[0]):null);
+      if(extracted.title)$('me-title').value=extracted.title;
+      if(extracted.date)$('me-date').value=extracted.date;
+      if(extracted.date)$('me-edate').value=extracted.date;
+      if(extracted.time)$('me-time').value=extracted.time;
+      if(extracted.end_time)$('me-etime').value=extracted.end_time;
+      if(extracted.location)$('me-loc').value=extracted.location;
+      if(extracted.description)$('me-desc').value=extracted.description;
+      else $('me-desc').value='From '+sender+': '+text;
+
+      // Highlight missing required fields
+      highlightMissingEventFields();
+    },300);
+  }catch(e){
+    // Fallback: just open empty modal with message as description
+    nav('calendar');
+    setTimeout(()=>{
+      openEventModal();
+      $('me-desc').value='From '+sender+': '+text;
+      highlightMissingEventFields();
+    },300);
+  }
+}
+
+function highlightMissingEventFields(){
+  const fields=[
+    {id:'me-title',label:'Title'},
+    {id:'me-date',label:'Date'},
+    {id:'me-time',label:'Time'},
+  ];
+  fields.forEach(f=>{
+    const el=$(f.id);
+    if(!el||el.value)return;
+    el.style.borderColor='var(--or)';
+    el.style.boxShadow='0 0 0 1px rgba(249,115,22,.3)';
+    el.addEventListener('input',function handler(){
+      el.style.borderColor='';el.style.boxShadow='';
+      el.removeEventListener('input',handler);
+    },{once:true});
+  });
+}
 async function loadRemind(){try{const d=await(await fetch(A+'/reminders',{headers:hdr()})).json();$('rl').innerHTML=(d.reminders||[]).map(rm=>`<div class="tr"><span style="font-size:16px">⏰</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${rm.message}</div><div style="font-size:10px;color:var(--mt)">${rm.remind_at?new Date(rm.remind_at).toLocaleString():''}</div></div><button class="btn d" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();delRemind(${rm.id})">✕</button></div>`).join('')||'<div class="empty">'+I18N[curLang].noReminders+'</div>'}catch{$('rl').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
 async function saveReminder(){const msg=$('mr-msg').value,min=$('mr-min').value;if(!msg){alert('Message required');return}await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:msg,minutes:parseInt(min)||30})});closeModal('remind');loadRemind()}
 async function delRemind(id){await fetch(A+'/reminders/'+id,{method:'DELETE',headers:hdr()});loadRemind()}
@@ -1606,6 +1774,8 @@ const I18N={
     actions:'Actions',noActionsYet:'No actions yet. Add one below to start tracking progress.',addAction:'Add an action...',edit:'Edit',
     // AI Task Actions
     aiActions:'AI Actions',aiFollowUp:'Follow Up',aiCheckProgress:'Check Progress',aiSummary:'Summary',aiDelegate:'Delegate',aiCopyMsg:'Copy',aiSendChat:'Send to Chat',
+    // AI Event Actions
+    aiKeyNotes:'Key Notes',aiAgenda:'Agenda',aiPrep:'Prep Brief',aiMeetingFollowUp:'Follow Up',aiPasteToDesc:'Add to Notes',
     // Dependencies
     dependencies:'Dependencies',blockedBy:'Blocked by',blocking:'Blocking',noDeps:'No dependencies',addDep:'Select a task...',linkDep:'Link',blocked:'Blocked',
     // Search
@@ -1650,6 +1820,7 @@ const I18N={
     inviteByTelegram:'📨 អញ្ជើញតាម Telegram',assignRole:'កំណត់តួនាទី',
     actions:'សកម្មភាព',noActionsYet:'មិនទាន់មានសកម្មភាព។ បន្ថែមខាងក្រោមដើម្បីតាមដានវឌ្ឍនភាព។',addAction:'បន្ថែមសកម្មភាព...',edit:'កែ',
     aiActions:'AI សកម្មភាព',aiFollowUp:'តាមដាន',aiCheckProgress:'ពិនិត្យវឌ្ឍនភាព',aiSummary:'សង្ខេប',aiDelegate:'ប៉ុន្តែ',aiCopyMsg:'ចំលង',aiSendChat:'ផ្ញើទៅ Chat',
+    aiKeyNotes:'ចំណុចសំខាន់',aiAgenda:'វារៈរបៀបវារៈ',aiPrep:'សង្ខេបដំណើរ',aiMeetingFollowUp:'តាមដាន',aiPasteToDesc:'បន្ថែមទៅកំណត់ចំណាំ',
     search:'ស្វែងរកភារកិច្ច ព្រឹត្តិការណ៍ សារ...',typeToSearch:'វាយដើម្បីស្វែងរកភារកិច្ច ព្រឹត្តិការណ៍ និងសារ',typeSearch:'វាយដើម្បីស្វែងរក...',noResults:'គ្មានលទ្ធផលសម្រាប់',
     statusDist:'ការចែកចាយស្ថានភាពភារកិច្ច',priorityBreak:'ការវិភាគអាទិភាព',tasksByCategory:'ភារកិច្ចតាមប្រភេទ',teamWorkload:'បន្ទុកការងារក្រុម',completionTrend:'អត្រាបញ្ចប់ (៧ ថ្ងៃចុងក្រោយ)',
     aiInsights:'AI ការវិភាគ និងអនុសាសន៍',loadingInsights:'កំពុងវិភាគទិន្នន័យរបស់អ្នក...',generateInsights:'បង្កើតការវិភាគ AI',
