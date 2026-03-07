@@ -14,10 +14,12 @@ from app.api.calendar_api import calendar_router
 from app.api.recurring_api import recurring_router
 from app.api.task_group_api import router as task_group_router
 from app.api.team_api import router as team_mgmt_router
+from app.api.task_action_api import router as task_action_router
 from app.api.auth import auth_router
 from app.models.recurring_task import RecurringTask  # noqa: ensure table creation
 from app.models.task_group import TaskGroup, TaskSubGroup  # noqa: ensure table creation
 from app.models.team_role import TeamRole  # noqa: ensure table creation
+from app.models.task_action import TaskAction  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -147,6 +149,26 @@ async def lifespan(app: FastAPI):
 
             logger.info("🔧 Team roles migration checked")
 
+            # ── Task Actions migration ──
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_actions (
+                    id SERIAL PRIMARY KEY,
+                    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+                    title VARCHAR(500) NOT NULL,
+                    description TEXT,
+                    is_done BOOLEAN DEFAULT FALSE,
+                    sort_order INTEGER DEFAULT 0,
+                    assignee_name VARCHAR(255),
+                    assignee_id BIGINT,
+                    due_date TIMESTAMPTZ,
+                    completed_at TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_actions_task_id ON task_actions(task_id)'))
+            logger.info("🔧 Task actions migration checked")
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 
@@ -193,6 +215,7 @@ app.include_router(calendar_router)
 app.include_router(recurring_router)
 app.include_router(task_group_router)
 app.include_router(team_mgmt_router)
+app.include_router(task_action_router)
 app.include_router(auth_router)
 
 
