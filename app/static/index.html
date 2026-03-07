@@ -448,6 +448,22 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 <div id="td-desc" style="font-size:12px;color:var(--mt);margin-bottom:8px;display:none"></div>
 
+<!-- AI Quick Actions -->
+<div class="td-section" style="border-top:1px solid rgba(59,130,246,.15);background:linear-gradient(135deg,rgba(59,130,246,.02),rgba(168,85,247,.02));margin:-16px -24px 0;padding:12px 24px;border-radius:0">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+    <span style="font-size:14px">✨</span>
+    <span style="font-size:11px;font-weight:700;color:var(--ac)" data-i18n="aiActions">AI Actions</span>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <button class="btn" style="padding:4px 10px;font-size:10px" onclick="taskAI('followup')">📨 <span data-i18n="aiFollowUp">Follow Up</span></button>
+    <button class="btn" style="padding:4px 10px;font-size:10px" onclick="taskAI('progress')">📊 <span data-i18n="aiCheckProgress">Check Progress</span></button>
+    <button class="btn" style="padding:4px 10px;font-size:10px" onclick="taskAI('summary')">📝 <span data-i18n="aiSummary">Summary</span></button>
+    <button class="btn" style="padding:4px 10px;font-size:10px" onclick="taskAI('delegate')">👥 <span data-i18n="aiDelegate">Delegate</span></button>
+  </div>
+  <div id="td-ai-result" style="display:none;margin-top:10px;padding:10px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;font-size:11px;line-height:1.7;white-space:pre-wrap;position:relative">
+  </div>
+</div>
+
 <!-- Actions Section -->
 <div class="td-section">
   <div class="td-section-hdr">
@@ -831,6 +847,7 @@ async function openTD(taskId){
   $('td-meta').innerHTML=meta;
 
   $('modal-td').classList.add('v');
+  $('td-ai-result').style.display='none';lastAIMsg='';
   await loadTDActions(taskId);
   await loadTDDeps(taskId);
 }
@@ -1063,6 +1080,98 @@ function getDepBadges(taskId){
   else if(d.blocked_by>0)h+=`<span class="dep-badge" style="background:var(--gs);color:var(--gn)">🔓 ${d.blocked_by}</span>`;
   if(d.blocking>0)h+=`<span class="dep-badge dep-blocking">⛓ ${d.blocking}</span>`;
   return h;
+}
+
+// ═══ AI TASK ACTIONS ═══
+let lastAIMsg='';
+async function taskAI(action){
+  if(!tdTask)return;
+  const el=$('td-ai-result');
+  el.style.display='block';
+  el.innerHTML='<div style="text-align:center;color:var(--mt);padding:8px">⏳ '+t('loadingInsights')+'</div>';
+
+  const tk=tdTask;
+  const lang=curLang==='kh'?'Khmer':'English';
+  const dueStr=tk.due_date?new Date(tk.due_date).toLocaleDateString():'no deadline';
+  const statusMap={todo:'To Do',in_progress:'In Progress',review:'Under Review',done:'Completed'};
+  const statusLabel=statusMap[tk.status]||tk.status;
+
+  // Build action stats context
+  const as=actionStats[String(tk.id)];
+  const actProgress=as&&as.total>0?`${as.done}/${as.total} action items completed (${as.progress}%)`:'no action items';
+
+  // Build dependency context
+  const depInfo=depMap[String(tk.id)];
+  const depCtx=depInfo?(depInfo.is_blocked?'This task is BLOCKED by unfinished dependencies.':'')+(depInfo.blocking>0?` This task is blocking ${depInfo.blocking} other task(s).`:''):'';
+
+  const taskCtx=`Task: "${tk.title}"
+Assignee: ${tk.assignee||'Unassigned'}
+Status: ${statusLabel}
+Priority: ${tk.priority}
+Category: ${tk.category||'None'}
+Due: ${dueStr}
+Progress: ${actProgress}
+Description: ${tk.description||'None'}
+${depCtx}`;
+
+  const prompts={
+    followup:`You are a personal AI assistant. Draft a short, professional follow-up message in ${lang} for this task. The message should be sent to the assignee to check on progress and encourage completion. Keep it friendly, concise (3-5 sentences), and actionable. Include the task name and deadline if applicable.
+
+${taskCtx}
+
+Draft the message only, no explanation. Start directly with the greeting.`,
+
+    progress:`You are a personal AI assistant. Draft a professional progress check message in ${lang} for this task. Ask the assignee for a status update — what's done, what's remaining, any blockers. Keep it concise (3-5 sentences) and supportive.
+
+${taskCtx}
+
+Draft the message only, no explanation. Start directly with the greeting.`,
+
+    summary:`You are a personal AI assistant. Provide a brief task status summary in ${lang} for a manager reviewing this task. Include: current status, progress, risk assessment (overdue? blocked?), and one recommendation. Keep it under 100 words.
+
+${taskCtx}`,
+
+    delegate:`You are a personal AI assistant. Draft a delegation message in ${lang} for reassigning or sharing this task with a team member. Explain what needs to be done, the deadline, priority, and any context they need. Keep it professional and clear (4-6 sentences).
+
+${taskCtx}
+
+Draft the message only, no explanation. Start directly with the greeting.`
+  };
+
+  try{
+    const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:prompts[action]||prompts.followup})});
+    const d=await r.json();
+    lastAIMsg=d.response||'';
+    el.innerHTML=`<div style="white-space:pre-wrap;line-height:1.7;color:var(--tx)">${esc(lastAIMsg)}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--bd)">
+        <button class="btn p" style="padding:4px 12px;font-size:10px" onclick="copyAIMsg()">📋 ${t('aiCopyMsg')}</button>
+        <button class="btn" style="padding:4px 12px;font-size:10px" onclick="sendAIMsgToChat()">💬 ${t('aiSendChat')}</button>
+        <div style="flex:1"></div>
+        <button class="btn" style="padding:4px 8px;font-size:10px;color:var(--mt)" onclick="$('td-ai-result').style.display='none'">✕</button>
+      </div>`;
+  }catch(e){
+    el.innerHTML='<div style="color:var(--rd);padding:8px">Error: '+e.message+'</div>';
+  }
+}
+
+function copyAIMsg(){
+  if(!lastAIMsg)return;
+  navigator.clipboard.writeText(lastAIMsg).then(()=>{
+    const btn=event.target;
+    const orig=btn.textContent;
+    btn.textContent='✅ Copied!';
+    setTimeout(()=>btn.textContent=orig,1500);
+  }).catch(()=>alert('Copy failed'));
+}
+
+function sendAIMsgToChat(){
+  if(!lastAIMsg)return;
+  closeTD();
+  nav('chat');
+  setTimeout(()=>{
+    $('chi').value=lastAIMsg;
+    $('chi').focus();
+  },300);
 }
 
 function exportCSV(){if(!allT.length){alert('No tasks');return}const h=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];const rows=allT.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);dl([h.join(','),...rows.map(r=>r.join(','))].join('\n'),'tasks_'+new Date().toISOString().split('T')[0]+'.csv','text/csv')}
@@ -1495,6 +1604,8 @@ const I18N={
     inviteByTelegram:'📨 Invite by Telegram',assignRole:'Assign Role',
     // Task detail
     actions:'Actions',noActionsYet:'No actions yet. Add one below to start tracking progress.',addAction:'Add an action...',edit:'Edit',
+    // AI Task Actions
+    aiActions:'AI Actions',aiFollowUp:'Follow Up',aiCheckProgress:'Check Progress',aiSummary:'Summary',aiDelegate:'Delegate',aiCopyMsg:'Copy',aiSendChat:'Send to Chat',
     // Dependencies
     dependencies:'Dependencies',blockedBy:'Blocked by',blocking:'Blocking',noDeps:'No dependencies',addDep:'Select a task...',linkDep:'Link',blocked:'Blocked',
     // Search
@@ -1538,6 +1649,7 @@ const I18N={
     manageRoles:'🏷️ គ្រប់គ្រងតួនាទី',roleName:'ឈ្មោះតួនាទី',addMemberTitle:'បន្ថែមសមាជិក',editMember:'កែសមាជិក',firstName:'នាមខ្លួន *',lastName:'នាមត្រកូល',telegramUsername:'Telegram ឈ្មោះ',telegramId:'Telegram ID',phone:'ទូរស័ព្ទ',email:'អ៊ីមែល',department:'ដេប៉ាតឺម៉ង់',jobTitle:'មុខតំណែង',role:'តួនាទី',admin:'អ្នកគ្រប់គ្រង',notes:'កំណត់ចំណាំ',noRole:'— គ្មានតួនាទី —',defaultRole:'— លំនាំដើម —',yes:'បាទ/ចាស',no:'ទេ',
     inviteByTelegram:'📨 អញ្ជើញតាម Telegram',assignRole:'កំណត់តួនាទី',
     actions:'សកម្មភាព',noActionsYet:'មិនទាន់មានសកម្មភាព។ បន្ថែមខាងក្រោមដើម្បីតាមដានវឌ្ឍនភាព។',addAction:'បន្ថែមសកម្មភាព...',edit:'កែ',
+    aiActions:'AI សកម្មភាព',aiFollowUp:'តាមដាន',aiCheckProgress:'ពិនិត្យវឌ្ឍនភាព',aiSummary:'សង្ខេប',aiDelegate:'ប៉ុន្តែ',aiCopyMsg:'ចំលង',aiSendChat:'ផ្ញើទៅ Chat',
     search:'ស្វែងរកភារកិច្ច ព្រឹត្តិការណ៍ សារ...',typeToSearch:'វាយដើម្បីស្វែងរកភារកិច្ច ព្រឹត្តិការណ៍ និងសារ',typeSearch:'វាយដើម្បីស្វែងរក...',noResults:'គ្មានលទ្ធផលសម្រាប់',
     statusDist:'ការចែកចាយស្ថានភាពភារកិច្ច',priorityBreak:'ការវិភាគអាទិភាព',tasksByCategory:'ភារកិច្ចតាមប្រភេទ',teamWorkload:'បន្ទុកការងារក្រុម',completionTrend:'អត្រាបញ្ចប់ (៧ ថ្ងៃចុងក្រោយ)',
     aiInsights:'AI ការវិភាគ និងអនុសាសន៍',loadingInsights:'កំពុងវិភាគទិន្នន័យរបស់អ្នក...',generateInsights:'បង្កើតការវិភាគ AI',
