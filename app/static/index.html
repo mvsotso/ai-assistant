@@ -72,39 +72,42 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .modal h3{font-size:16px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:16px}
 .fg{margin-bottom:12px}.fg label{font-size:11px;color:var(--mt);font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase}
 .empty{font-size:11px;color:var(--mt);text-align:center;padding:20px;font-style:italic}
-/* Calendar */
+/* Calendar — Google Calendar Style */
 .cal-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
 .cal-toolbar .left{display:flex;align-items:center;gap:8px}
 .cal-toolbar .right{display:flex;gap:4px;align-items:center}
-.cal-nav-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}.cal-nav-btn:hover{border-color:var(--ac);background:var(--as)}
-.cal-today-btn{padding:5px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);cursor:pointer;font-size:11px;font-weight:600}.cal-today-btn:hover{border-color:var(--ac)}
-.cal-title{font-size:18px;font-weight:800;font-family:'Outfit',sans-serif}
-.cal-view-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--mt);font-size:11px;font-weight:600;cursor:pointer}.cal-view-btn.a{border-color:var(--ac);background:var(--as);color:var(--ac)}
-.cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
-.cal-hdr-cell{background:var(--sf);padding:8px 4px;text-align:center;font-size:10px;font-weight:700;color:var(--mt);text-transform:uppercase;border-bottom:1px solid var(--bd)}
-.cal-cell{min-height:90px;padding:4px;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);background:var(--cd);cursor:pointer;transition:background .15s}
-.cal-cell:nth-child(7n){border-right:none}.cal-cell:hover{background:var(--sf)}.cal-cell.today{background:rgba(59,130,246,.06)}.cal-cell.other{opacity:.35}
-.cal-cell .day-num{font-size:11px;font-weight:600;padding:2px 6px;display:inline-block;border-radius:50%;margin-bottom:2px}
-.cal-cell.today .day-num{background:var(--ac);color:#fff}
-.cal-evt{padding:1px 4px;border-radius:3px;font-size:9px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5}
-.cal-evt.gcal{background:rgba(66,133,244,.2);color:#4285f4;border-left:2px solid #4285f4}
-.cal-evt.task{background:var(--as);color:var(--ac);border-left:2px solid var(--ac)}
-.cal-evt.overdue{background:var(--rs);color:var(--rd);border-left:2px solid var(--rd)}
-.cal-evt:hover{filter:brightness(1.2)}
-.cal-more{font-size:9px;color:var(--mt);padding:0 4px;cursor:pointer}.cal-more:hover{color:var(--ac)}
-.cal-week{display:grid;grid-template-columns:50px repeat(7,1fr);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
-.cal-week-hdr{background:var(--sf);padding:6px 4px;text-align:center;font-size:10px;font-weight:600;color:var(--mt);border-bottom:1px solid var(--bd);border-right:1px solid var(--bd)}.cal-week-hdr.today{color:var(--ac)}
-.cal-week-hdr .wdn{display:block;font-size:18px;font-weight:800;font-family:'Outfit',sans-serif;color:var(--tx)}.cal-week-hdr.today .wdn{color:var(--ac)}
-.cal-time{padding:2px 4px;font-size:9px;color:var(--mt);text-align:right;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);height:40px;background:var(--cd)}
-.cal-week-cell{border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);height:40px;background:var(--cd);position:relative;cursor:pointer}.cal-week-cell:hover{background:var(--sf)}
-.cal-week-evt{position:absolute;left:1px;right:1px;padding:2px 4px;border-radius:3px;font-size:9px;font-weight:600;z-index:2;overflow:hidden;cursor:pointer}
-.cal-week-evt.gcal{background:rgba(66,133,244,.3);color:#4285f4;border-left:2px solid #4285f4}
-.cal-day-view{border:1px solid var(--bd);border-radius:12px;overflow:hidden}
-.cal-day-row{display:grid;grid-template-columns:50px 1fr;border-bottom:1px solid var(--bd)}.cal-day-row:last-child{border-bottom:none}
-.cal-day-time{padding:4px;font-size:9px;color:var(--mt);text-align:right;border-right:1px solid var(--bd);height:48px;background:var(--cd);display:flex;align-items:flex-start;justify-content:flex-end}
-.cal-day-slot{height:48px;background:var(--cd);position:relative;cursor:pointer;padding:0 4px}.cal-day-slot:hover{background:var(--sf)}
-.cal-day-evt{position:absolute;left:4px;right:4px;padding:4px 6px;border-radius:4px;font-size:10px;font-weight:600;z-index:2;overflow:hidden;cursor:pointer}
-.cal-day-evt.gcal{background:rgba(66,133,244,.25);color:#4285f4;border-left:3px solid #4285f4}
+.cal-nav-btn{width:32px;height:32px;border-radius:50%;border:none;background:transparent;color:var(--tx);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.15s}.cal-nav-btn:hover{background:rgba(255,255,255,.08)}
+.cal-today-btn{padding:6px 20px;border-radius:20px;border:1px solid var(--bd);background:transparent;color:var(--tx);cursor:pointer;font-size:12px;font-weight:600;transition:.15s}.cal-today-btn:hover{background:rgba(255,255,255,.05)}
+.cal-title{font-size:20px;font-weight:700;font-family:'Outfit',sans-serif;margin-left:4px}
+.cal-view-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--mt);font-size:11px;font-weight:600;cursor:pointer;transition:.15s}.cal-view-btn.a{border-color:var(--ac);background:var(--as);color:var(--ac)}
+.cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--bd);border-left:1px solid var(--bd)}
+.cal-hdr-cell{background:transparent;padding:10px 0;text-align:center;font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.05em;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd)}
+.cal-cell{min-height:110px;padding:4px 6px;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);background:var(--bg);cursor:pointer;transition:background .15s;overflow:hidden;position:relative}
+.cal-cell:hover{background:rgba(255,255,255,.02)}.cal-cell.today{background:rgba(59,130,246,.04)}.cal-cell.other{background:var(--sf)}
+.cal-cell .day-num{font-size:12px;font-weight:500;color:var(--mt);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:0 auto 4px auto}
+.cal-cell.today .day-num{background:var(--ac);color:#fff;font-weight:700}
+.cal-cell.other .day-num{color:rgba(107,112,148,.5)}
+.cal-evt{padding:2px 6px;border-radius:4px;font-size:11px;font-weight:500;margin-bottom:2px;cursor:pointer;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
+.cal-evt.gcal{background:rgba(66,133,244,.18);color:#7aafff;border-left:3px solid #4285f4}
+.cal-evt.task{background:var(--as);color:#7ab4ff;border-left:3px solid var(--ac)}
+.cal-evt.overdue{background:var(--rs);color:#ff8a8a;border-left:3px solid var(--rd)}
+.cal-evt:hover{filter:brightness(1.3)}
+.cal-more{font-size:10px;color:var(--mt);padding:2px 6px;cursor:pointer;font-weight:500}.cal-more:hover{color:var(--ac)}
+/* Week View */
+.cal-week{display:grid;grid-template-columns:56px repeat(7,1fr);border-top:1px solid var(--bd);border-left:1px solid var(--bd)}
+.cal-week-hdr{background:transparent;padding:8px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--mt);border-bottom:1px solid var(--bd);border-right:1px solid var(--bd);text-transform:uppercase;letter-spacing:.03em}.cal-week-hdr.today{color:var(--ac)}
+.cal-week-hdr .wdn{display:block;font-size:24px;font-weight:700;font-family:'Outfit',sans-serif;color:var(--tx);margin-top:2px}.cal-week-hdr.today .wdn{background:var(--ac);color:#fff;width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+.cal-time{padding:0 8px;font-size:10px;color:var(--mt);text-align:right;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);height:48px;background:transparent;display:flex;align-items:flex-start;justify-content:flex-end;padding-top:2px}
+.cal-week-cell{border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);height:48px;background:transparent;position:relative;cursor:pointer}.cal-week-cell:hover{background:rgba(255,255,255,.02)}
+.cal-week-evt{position:absolute;left:2px;right:2px;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:500;z-index:2;overflow:hidden;cursor:pointer;line-height:1.3}
+.cal-week-evt.gcal{background:rgba(66,133,244,.25);color:#7aafff;border-left:3px solid #4285f4}
+/* Day View */
+.cal-day-view{border-top:1px solid var(--bd);border-left:1px solid var(--bd)}
+.cal-day-row{display:grid;grid-template-columns:56px 1fr;border-bottom:1px solid var(--bd)}.cal-day-row:last-child{border-bottom:1px solid var(--bd)}
+.cal-day-time{padding:0 8px;font-size:10px;color:var(--mt);text-align:right;border-right:1px solid var(--bd);height:56px;background:transparent;display:flex;align-items:flex-start;justify-content:flex-end;padding-top:2px}
+.cal-day-slot{height:56px;background:transparent;position:relative;cursor:pointer;padding:0 4px;border-right:1px solid var(--bd)}.cal-day-slot:hover{background:rgba(255,255,255,.02)}
+.cal-day-evt{position:absolute;left:4px;right:4px;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:500;z-index:2;overflow:hidden;cursor:pointer;line-height:1.3}
+.cal-day-evt.gcal{background:rgba(66,133,244,.2);color:#7aafff;border-left:3px solid #4285f4}
 .due-soon{background:var(--os);color:var(--or);padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700}
 .due-overdue{background:var(--rs);color:var(--rd);padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;animation:pulse 2s infinite}
 .due-today{background:var(--ys);color:var(--yw);padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700}
@@ -190,7 +193,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   .g2{grid-template-columns:1fr}.row{gap:8px}.sc{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:10px 12px}.sc-v{font-size:18px}
   .bc{min-width:100%}#board{flex-direction:column}.ch-c{height:calc(100vh - 140px)}.ch-b{max-width:90%}
   .tr{padding:8px 10px;gap:8px}.modal{padding:16px;border-radius:12px}h2{font-size:18px}
-  .cal-cell{min-height:60px}.cal-evt{font-size:8px}.cal-toolbar{flex-direction:column;align-items:flex-start}
+  .cal-cell{min-height:70px}.cal-evt{font-size:9px;-webkit-line-clamp:1}.cal-toolbar{flex-direction:column;align-items:flex-start}
   .btn{padding:6px 10px;font-size:11px}
   .gtab{padding:5px 10px;font-size:10px}
 }
@@ -445,8 +448,8 @@ try{const[eR,tR]=await Promise.all([fetch(A+'/calendar/events?start='+s+'&end='+
 function renderCalView(){const opts=calView==='day'?{weekday:'long',month:'long',day:'numeric',year:'numeric'}:{month:'long',year:'numeric'};$('cal-title').textContent=calCur.toLocaleDateString('en',opts);if(calView==='month')renderMonth();else if(calView==='week')renderWeek();else renderDay()}
 function fmt(y,m,d){const dt=new Date(y,m,d);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
 function buildEvtMap(){const map={};calEvents.forEach(e=>{const d=e.start_raw?.split('T')[0]||'';if(d){if(!map[d])map[d]=[];map[d].push({type:'gcal',...e})}});calTasksAll.forEach(t=>{if(!t.due_date)return;const d=t.due_date.split('T')[0];if(!map[d])map[d]=[];map[d].push({type:t.status!=='done'&&getDueStatus(t.due_date)?.type==='overdue'?'overdue':'task',title:t.title,task:t})});return map}
-function cellEvts(dt,max){const map=buildEvtMap(),evts=map[dt]||[];let h='';evts.slice(0,max).forEach(e=>{if(e.type==='gcal')h+=`<div class="cal-evt gcal" onclick="event.stopPropagation();openEventFromCal('${e.id}')" title="${esc(e.title)}">${e.start||''} ${esc(e.title)}</div>`;else h+=`<div class="cal-evt ${e.type}" onclick="event.stopPropagation();openModal('task',${JSON.stringify(e.task).replace(/"/g,'&quot;')})">${esc(e.title)}</div>`});if(evts.length>max)h+=`<div class="cal-more">+${evts.length-max} more</div>`;return h}
-function renderMonth(){const y=calCur.getFullYear(),m=calCur.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate(),td=new Date();td.setHours(0,0,0,0);let h='';['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{h+=`<div class="cal-hdr-cell">${d}</div>`});for(let i=first-1;i>=0;i--){const dt=fmt(y,m-1,prev-i);h+=`<div class="cal-cell other" onclick="calCellClick('${dt}')"><span class="day-num">${prev-i}</span>${cellEvts(dt,2)}</div>`}for(let d=1;d<=days;d++){const dt=fmt(y,m,d);const isT=td.getFullYear()===y&&td.getMonth()===m&&td.getDate()===d;h+=`<div class="cal-cell${isT?' today':''}" onclick="calCellClick('${dt}')"><span class="day-num">${d}</span>${cellEvts(dt,3)}</div>`}const tot=first+days,rem=tot%7===0?0:7-tot%7;for(let i=1;i<=rem;i++){const dt=fmt(y,m+1,i);h+=`<div class="cal-cell other" onclick="calCellClick('${dt}')"><span class="day-num">${i}</span>${cellEvts(dt,2)}</div>`}$('cal-container').innerHTML=`<div class="cal-month-grid">${h}</div>`}
+function cellEvts(dt,max){const map=buildEvtMap(),evts=map[dt]||[];let h='';evts.slice(0,max).forEach(e=>{if(e.type==='gcal'){const t=e.start?e.start+' ':'';h+=`<div class="cal-evt gcal" onclick="event.stopPropagation();openEventFromCal('${e.id}')" title="${esc(e.title)}">${t}${esc(e.title)}</div>`}else h+=`<div class="cal-evt ${e.type}" onclick="event.stopPropagation();openModal('task',${JSON.stringify(e.task).replace(/"/g,'&quot;')})" title="${esc(e.title)}">📋 ${esc(e.title)}</div>`});if(evts.length>max)h+=`<div class="cal-more">+${evts.length-max} more</div>`;return h}
+function renderMonth(){const y=calCur.getFullYear(),m=calCur.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate(),td=new Date();td.setHours(0,0,0,0);let h='';['SUN','MON','TUE','WED','THU','FRI','SAT'].forEach(d=>{h+=`<div class="cal-hdr-cell">${d}</div>`});for(let i=first-1;i>=0;i--){const dt=fmt(y,m-1,prev-i);h+=`<div class="cal-cell other" onclick="calCellClick('${dt}')"><span class="day-num">${prev-i}</span>${cellEvts(dt,2)}</div>`}for(let d=1;d<=days;d++){const dt=fmt(y,m,d);const isT=td.getFullYear()===y&&td.getMonth()===m&&td.getDate()===d;h+=`<div class="cal-cell${isT?' today':''}" onclick="calCellClick('${dt}')"><span class="day-num">${d}</span>${cellEvts(dt,4)}</div>`}const tot=first+days,rem=tot%7===0?0:7-tot%7;for(let i=1;i<=rem;i++){const dt=fmt(y,m+1,i);h+=`<div class="cal-cell other" onclick="calCellClick('${dt}')"><span class="day-num">${i}</span>${cellEvts(dt,2)}</div>`}$('cal-container').innerHTML=`<div class="cal-month-grid">${h}</div>`}
 function calCellClick(dt){openEventModal(dt)}
 function renderWeek(){const s=new Date(calCur);s.setDate(s.getDate()-s.getDay());const td=new Date();td.setHours(0,0,0,0);const map=buildEvtMap();let h='<div class="cal-week"><div class="cal-week-hdr"></div>';for(let i=0;i<7;i++){const d=new Date(s);d.setDate(d.getDate()+i);const isT=d.toDateString()===td.toDateString();h+=`<div class="cal-week-hdr${isT?' today':''}">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]}<span class="wdn">${d.getDate()}</span></div>`}for(let hr=7;hr<=21;hr++){h+=`<div class="cal-time">${hr>12?(hr-12)+' PM':(hr||12)+' AM'}</div>`;for(let i=0;i<7;i++){const d=new Date(s);d.setDate(d.getDate()+i);const dt=fmt(d.getFullYear(),d.getMonth(),d.getDate());const evts=(map[dt]||[]).filter(e=>e.type==='gcal');let ce='';evts.forEach(e=>{const sh=pth(e.start_raw);if(sh!==null&&Math.floor(sh)===hr){const eh=pth(e.end_raw)||sh+1;const dur=Math.max((eh-sh)*40,20),top=(sh-Math.floor(sh))*40;ce+=`<div class="cal-week-evt gcal" onclick="event.stopPropagation();openEventFromCal('${e.id}')" style="top:${top}px;height:${dur}px">${esc(e.title)}</div>`}});h+=`<div class="cal-week-cell" onclick="calWeekClick('${dt}',${hr})">${ce}</div>`}}h+='</div>';$('cal-container').innerHTML=h}
 function pth(r){if(!r)return null;try{const d=new Date(r);return d.getHours()+d.getMinutes()/60}catch{return null}}
