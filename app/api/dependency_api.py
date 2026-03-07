@@ -10,8 +10,9 @@ from typing import Optional
 from app.core.database import get_db
 from app.models.task import Task
 from app.models.task_dependency import TaskDependency
+from app.api.auth import require_auth
 
-router = APIRouter(prefix="/api/v1/tasks", tags=["Task Dependencies"])
+router = APIRouter(prefix="/api/v1/tasks", tags=["Task Dependencies"], dependencies=[Depends(require_auth)])
 
 
 class DependencyCreate(BaseModel):

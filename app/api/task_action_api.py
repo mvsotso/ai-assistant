@@ -7,11 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.task_action import TaskAction
 from app.models.task import Task, TaskStatus
+from app.api.auth import require_auth
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
 
-router = APIRouter(prefix="/api/v1/tasks", tags=["task-actions"])
+router = APIRouter(prefix="/api/v1/tasks", tags=["task-actions"], dependencies=[Depends(require_auth)])
 
 
 # ── Schemas ──

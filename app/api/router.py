@@ -16,6 +16,7 @@ from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.message import Message
 from app.models.reminder import Reminder
 from app.models.user import User
+from app.api.auth import require_auth
 
 router = APIRouter(prefix="/api/v1")
 
@@ -91,6 +92,7 @@ async def list_tasks(
     assignee: Optional[str] = None,
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
+    _auth: dict = Depends(require_auth),
 ):
     query = select(Task).order_by(Task.created_at.desc()).limit(limit)
     if status:
@@ -105,7 +107,7 @@ async def list_tasks(
 
 
 @router.post("/tasks")
-async def create_task(body: TaskCreate, db: AsyncSession = Depends(get_db)):
+async def create_task(body: TaskCreate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     due = None
     if body.due_date:
         try:
@@ -142,7 +144,7 @@ async def create_task(body: TaskCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/tasks/{task_id}")
-async def update_task(task_id: int, body: TaskUpdate, db: AsyncSession = Depends(get_db)):
+async def update_task(task_id: int, body: TaskUpdate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     task = await task_service.get_task_by_id(db, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -179,7 +181,7 @@ async def update_task(task_id: int, body: TaskUpdate, db: AsyncSession = Depends
 
 
 @router.delete("/tasks/{task_id}")
-async def delete_task(task_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_task(task_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     deleted = await task_service.delete_task(db, task_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -188,7 +190,7 @@ async def delete_task(task_id: int, db: AsyncSession = Depends(get_db)):
 
 # ─── Categories ───
 @router.get("/categories")
-async def get_categories(db: AsyncSession = Depends(get_db)):
+async def get_categories(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get all unique categories and subcategories."""
     cat_result = await db.execute(
         select(Task.category).where(Task.category.isnot(None)).distinct()
@@ -212,7 +214,7 @@ async def get_categories(db: AsyncSession = Depends(get_db)):
 
 # ─── Board ───
 @router.get("/board")
-async def task_board(db: AsyncSession = Depends(get_db)):
+async def task_board(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     board = await task_service.get_board(db)
     result = {}
     for status, tasks in board.items():
@@ -226,6 +228,7 @@ async def dashboard_summary(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
+    _auth: dict = Depends(require_auth),
 ):
     # Parse date range filters
     dt_start = None
@@ -302,7 +305,7 @@ async def dashboard_summary(
 
 # ─── Team ───
 @router.get("/team")
-async def get_team(db: AsyncSession = Depends(get_db)):
+async def get_team(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get all registered team members."""
     result = await db.execute(select(User).order_by(User.created_at.asc()))
     users = list(result.scalars().all())
@@ -319,7 +322,7 @@ async def get_team(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/team/stats")
-async def team_stats(db: AsyncSession = Depends(get_db)):
+async def team_stats(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     stats = await task_service.get_team_stats(db)
     return {"stats": stats}
 
@@ -327,7 +330,8 @@ async def team_stats(db: AsyncSession = Depends(get_db)):
 # ─── Messages ───
 @router.get("/messages")
 async def get_messages(
-    chat_id: Optional[int] = None, limit: int = 50, db: AsyncSession = Depends(get_db)
+    chat_id: Optional[int] = None, limit: int = 50, db: AsyncSession = Depends(get_db),
+    _auth: dict = Depends(require_auth),
 ):
     """Get recent messages, optionally filtered by chat."""
     query = select(Message).where(Message.is_command == False).order_by(desc(Message.created_at)).limit(limit)
@@ -349,7 +353,7 @@ async def get_messages(
 
 
 @router.get("/messages/groups")
-async def get_message_groups(db: AsyncSession = Depends(get_db)):
+async def get_message_groups(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get list of chat groups with message counts."""
     result = await db.execute(
         select(Message.chat_id, Message.chat_title, sqlfunc.count(Message.id))
@@ -362,7 +366,7 @@ async def get_message_groups(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/messages/summarize")
-async def summarize_messages(chat_id: int, db: AsyncSession = Depends(get_db)):
+async def summarize_messages(chat_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Summarize messages from a specific chat group."""
     result = await db.execute(
         select(Message).where(Message.chat_id == chat_id, Message.is_command == False)
@@ -383,7 +387,7 @@ class ReminderCreate(BaseModel):
 
 
 @router.get("/reminders")
-async def get_reminders(db: AsyncSession = Depends(get_db)):
+async def get_reminders(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get all pending reminders."""
     result = await db.execute(
         select(Reminder).where(Reminder.is_sent == False).order_by(Reminder.remind_at.asc())
@@ -402,7 +406,7 @@ async def get_reminders(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/reminders")
-async def create_reminder(body: ReminderCreate, db: AsyncSession = Depends(get_db)):
+async def create_reminder(body: ReminderCreate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Create a reminder from the web dashboard."""
     from app.core.config import get_settings
     settings = get_settings()
@@ -419,7 +423,7 @@ async def create_reminder(body: ReminderCreate, db: AsyncSession = Depends(get_d
 
 
 @router.delete("/reminders/{reminder_id}")
-async def delete_reminder(reminder_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_reminder(reminder_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     result = await db.execute(select(Reminder).where(Reminder.id == reminder_id))
     reminder = result.scalar_one_or_none()
     if not reminder:
@@ -436,7 +440,7 @@ class ChatRequest(BaseModel):
 
 @router.post("/ai/chat")
 @limiter.limit("10/minute")
-async def ai_chat(request: Request, body: ChatRequest, db: AsyncSession = Depends(get_db)):
+async def ai_chat(request: Request, body: ChatRequest, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     response, actions = await ai_engine.chat_with_actions(body.message, context=body.context or "")
     action_results = []
     if actions:
@@ -460,6 +464,7 @@ async def ai_chat_with_file(
     request: Request,
     message: str = Form("Analyze this file"),
     file: UploadFile = File(...),
+    _auth: dict = Depends(require_auth),
 ):
     """Chat with AI and attach a file for analysis."""
     from app.services.file_processor import extract_text_from_file

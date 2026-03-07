@@ -58,6 +58,19 @@ def verify_session_token(token: str) -> dict | None:
         return None
 
 
+async def require_auth(request: Request):
+    """FastAPI dependency: verify session token from Authorization header.
+    Returns the decoded payload (email, name, etc.) if valid.
+    """
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    payload = verify_session_token(auth[7:])
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+    return payload
+
+
 @auth_router.post("/google/verify")
 async def verify_google_token(body: GoogleTokenRequest):
     """

@@ -10,10 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.task_group import TaskGroup, TaskSubGroup
 from app.models.task import Task
+from app.api.auth import require_auth
 from pydantic import BaseModel
 from typing import Optional
 
-router = APIRouter(prefix="/api/v1/task-groups", tags=["task-groups"])
+router = APIRouter(prefix="/api/v1/task-groups", tags=["task-groups"], dependencies=[Depends(require_auth)])
 
 
 # ── Pydantic Schemas ──

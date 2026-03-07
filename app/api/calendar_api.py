@@ -203,8 +203,11 @@ async def attach_file_to_event(
     """Upload a file to Google Drive and attach it to a calendar event."""
     creds = await get_web_credentials(request, db)
 
-    # Save uploaded file temporarily
-    suffix = os.path.splitext(file.filename)[1] if file.filename else ""
+    # Validate file extension
+    BLOCKED_EXTENSIONS = {".exe", ".bat", ".sh", ".cmd", ".ps1", ".msi", ".dll", ".env"}
+    suffix = os.path.splitext(file.filename)[1].lower() if file.filename else ""
+    if suffix in BLOCKED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"File type {suffix} is not allowed")
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         content = await file.read()
         tmp.write(content)
@@ -257,8 +260,11 @@ async def create_event_with_file(
     et = datetime.fromisoformat(end_time.replace('Z', '+00:00')) if end_time else None
 
     attachments = None
+    BLOCKED_EXTENSIONS = {".exe", ".bat", ".sh", ".cmd", ".ps1", ".msi", ".dll", ".env"}
     if file and file.filename:
-        suffix = os.path.splitext(file.filename)[1] if file.filename else ""
+        suffix = os.path.splitext(file.filename)[1].lower() if file.filename else ""
+        if suffix in BLOCKED_EXTENSIONS:
+            raise HTTPException(status_code=400, detail=f"File type {suffix} is not allowed")
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             content = await file.read()
             tmp.write(content)
