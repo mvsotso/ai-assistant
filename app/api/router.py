@@ -19,6 +19,12 @@ from app.models.user import User
 
 router = APIRouter(prefix="/api/v1")
 
+# Import rate limiter (shared with main.py via Redis)
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _get_settings
+limiter = Limiter(key_func=get_remote_address, storage_uri=_get_settings().redis_url)
+
 
 # ─── Health ───
 @router.get("/health")
@@ -128,6 +134,10 @@ async def create_task(body: TaskCreate, db: AsyncSession = Depends(get_db)):
             pass
     await db.flush()
     await db.refresh(task)
+    # Notification: task created
+    from app.services.notification_svc import create_notification
+    await create_notification(db, user_id=0, notif_type="task_created",
+        title=f"New task: {task.title}", entity_id=task.id, entity_type="task")
     return _task_to_dict(task)
 
 
@@ -160,6 +170,11 @@ async def update_task(task_id: int, body: TaskUpdate, db: AsyncSession = Depends
         except ValueError:
             pass
     await db.flush()
+    # Notification: status changed
+    if body.status is not None:
+        from app.services.notification_svc import create_notification
+        await create_notification(db, user_id=0, notif_type="task_status",
+            title=f"Task '{task.title}' → {body.status}", entity_id=task.id, entity_type="task")
     return _task_to_dict(task)
 
 
@@ -207,18 +222,70 @@ async def task_board(db: AsyncSession = Depends(get_db)):
 
 # ─── Dashboard ───
 @router.get("/dashboard")
-async def dashboard_summary(db: AsyncSession = Depends(get_db)):
-    stats = await task_service.get_team_stats(db)
+async def dashboard_summary(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    # Parse date range filters
+    dt_start = None
+    dt_end = None
+    if start_date:
+        try:
+            dt_start = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            dt_end = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+            if dt_end.hour == 0 and dt_end.minute == 0:
+                dt_end = dt_end + timedelta(days=1)  # Include full end day
+        except ValueError:
+            pass
+
+    # Build task query with date range
+    task_query = select(Task).order_by(Task.created_at.desc())
+    if dt_start:
+        task_query = task_query.where(Task.created_at >= dt_start)
+    if dt_end:
+        task_query = task_query.where(Task.created_at <= dt_end)
+    result = await db.execute(task_query.limit(200))
+    filtered_tasks = list(result.scalars().all())
+
+    # Compute stats from filtered tasks
+    todo = sum(1 for t in filtered_tasks if t.status == TaskStatus.TODO)
+    in_progress = sum(1 for t in filtered_tasks if t.status == TaskStatus.IN_PROGRESS)
+    review = sum(1 for t in filtered_tasks if t.status == TaskStatus.REVIEW)
+    done = sum(1 for t in filtered_tasks if t.status == TaskStatus.DONE)
+
     overdue = await task_service.get_overdue_tasks(db)
-    all_tasks = await task_service.get_all_tasks(db, limit=50)
+
+    # Team stats from filtered tasks
+    team_stats = {}
+    for t in filtered_tasks:
+        name = t.assignee_name or "Unassigned"
+        if name not in team_stats:
+            team_stats[name] = {"todo": 0, "in_progress": 0, "review": 0, "done": 0}
+        team_stats[name][t.status.value] = team_stats[name].get(t.status.value, 0) + 1
 
     msg_result = await db.execute(select(sqlfunc.count(Message.id)).where(Message.is_command == False))
     total_messages = msg_result.scalar() or 0
 
-    todo = sum(s.get("todo", 0) for s in stats.values())
-    in_progress = sum(s.get("in_progress", 0) for s in stats.values())
-    review = sum(s.get("review", 0) for s in stats.values())
-    done = sum(s.get("done", 0) for s in stats.values())
+    # Completion trend (daily done counts for chart)
+    trend_days = 7
+    trend = []
+    now = datetime.now(timezone.utc)
+    for i in range(trend_days - 1, -1, -1):
+        day = (now - timedelta(days=i)).date()
+        day_start = datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
+        day_end = day_start + timedelta(days=1)
+        cnt_r = await db.execute(
+            select(sqlfunc.count(Task.id)).where(
+                Task.completed_at >= day_start,
+                Task.completed_at < day_end,
+            )
+        )
+        trend.append({"date": day.isoformat(), "count": cnt_r.scalar() or 0})
 
     return {
         "stats": {
@@ -226,9 +293,10 @@ async def dashboard_summary(db: AsyncSession = Depends(get_db)):
             "todo": todo, "in_progress": in_progress, "review": review, "done": done,
             "overdue": len(overdue), "total_messages": total_messages,
         },
-        "team_stats": stats,
+        "team_stats": team_stats,
         "overdue_tasks": [_task_to_dict(t) for t in overdue],
-        "recent_tasks": [_task_to_dict(t) for t in all_tasks[:10]],
+        "recent_tasks": [_task_to_dict(t) for t in filtered_tasks[:10]],
+        "completion_trend": trend,
     }
 
 
@@ -367,7 +435,8 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/ai/chat")
-async def ai_chat(body: ChatRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def ai_chat(request: Request, body: ChatRequest, db: AsyncSession = Depends(get_db)):
     response, actions = await ai_engine.chat_with_actions(body.message, context=body.context or "")
     action_results = []
     if actions:
@@ -386,7 +455,9 @@ async def ai_chat(body: ChatRequest, db: AsyncSession = Depends(get_db)):
 from fastapi import UploadFile, File, Form
 
 @router.post("/ai/chat-with-file")
+@limiter.limit("10/minute")
 async def ai_chat_with_file(
+    request: Request,
     message: str = Form("Analyze this file"),
     file: UploadFile = File(...),
 ):

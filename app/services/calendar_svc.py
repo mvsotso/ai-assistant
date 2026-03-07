@@ -208,6 +208,32 @@ class GoogleCalendarService:
             "size": file.get("size"),
         }
 
+    # ─── Google Drive: Download File ───
+
+    async def download_from_drive(self, credentials: Credentials, file_id: str) -> tuple[bytes, str, str]:
+        """
+        Download a file from Google Drive.
+        Returns: (file_bytes, filename, mime_type)
+        """
+        drive = self._build_drive_service(credentials)
+        file_meta = drive.files().get(fileId=file_id, fields="name, mimeType, size").execute()
+        filename = file_meta.get("name", "file")
+        mime_type = file_meta.get("mimeType", "application/octet-stream")
+
+        # For Google Docs/Sheets/Slides, export as PDF
+        google_export_map = {
+            "application/vnd.google-apps.document": ("application/pdf", ".pdf"),
+            "application/vnd.google-apps.spreadsheet": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+            "application/vnd.google-apps.presentation": ("application/pdf", ".pdf"),
+        }
+        if mime_type in google_export_map:
+            export_mime, ext = google_export_map[mime_type]
+            content = drive.files().export(fileId=file_id, mimeType=export_mime).execute()
+            return content, filename + ext, export_mime
+
+        content = drive.files().get_media(fileId=file_id).execute()
+        return content, filename, mime_type
+
     # ─── Read Operations ───
 
     async def get_today_events(self, credentials: Credentials, tz: str = DEFAULT_TZ) -> list[dict]:

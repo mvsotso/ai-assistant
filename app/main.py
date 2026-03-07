@@ -4,8 +4,12 @@ Main entry point for the application.
 """
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import get_settings
 from app.core.database import init_db, close_db, engine
@@ -24,6 +28,13 @@ from app.models.task_action import TaskAction  # noqa: ensure table creation
 from app.models.task_dependency import TaskDependency  # noqa: ensure table creation
 
 settings = get_settings()
+
+# ── Rate Limiter (Redis-backed) ──
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=settings.redis_url,
+    default_limits=["60/minute"],
+)
 
 # Configure logging
 logging.basicConfig(
@@ -187,6 +198,24 @@ async def lifespan(app: FastAPI):
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_dep_depends_on ON task_dependencies(depends_on_id)'))
             logger.info("🔧 Task dependencies migration checked")
 
+            # ── Notifications migration ──
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT,
+                    type VARCHAR(50) NOT NULL,
+                    title VARCHAR(500) NOT NULL,
+                    message TEXT,
+                    link VARCHAR(500),
+                    entity_id INTEGER,
+                    entity_type VARCHAR(50),
+                    is_read BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_notif_user_read ON notifications(user_id, is_read)'))
+            logger.info("🔧 Notifications migration checked")
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 
@@ -218,6 +247,10 @@ app = FastAPI(
     redoc_url="/redoc" if settings.app_debug else None,
 )
 
+# ── Rate Limiting ──
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # CORS — allow all origins for dashboard access
 app.add_middleware(
     CORSMiddleware,
@@ -228,6 +261,7 @@ app.add_middleware(
 )
 
 # Register routes
+from app.api.notification_api import notification_router  # noqa
 app.include_router(router)
 app.include_router(calendar_router)
 app.include_router(recurring_router)
@@ -236,6 +270,7 @@ app.include_router(team_mgmt_router)
 app.include_router(task_action_router)
 app.include_router(dependency_router)
 app.include_router(auth_router)
+app.include_router(notification_router)
 
 
 @app.get("/")
@@ -248,3 +283,16 @@ async def root():
         with open(html_path, "r") as f:
             return HTMLResponse(content=f.read())
     return {"name": settings.app_name, "status": "running"}
+
+
+@app.get("/sw.js")
+async def service_worker():
+    """Serve service worker from root scope."""
+    import os
+    from fastapi.responses import Response
+    sw_path = os.path.join(os.path.dirname(__file__), "static", "sw.js")
+    if os.path.exists(sw_path):
+        with open(sw_path, "r") as f:
+            return Response(content=f.read(), media_type="application/javascript",
+                            headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"})
+    return Response(status_code=404)

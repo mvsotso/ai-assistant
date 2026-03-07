@@ -277,9 +277,56 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   .gtab{padding:5px 10px;font-size:10px}
 }
 @media(max-width:400px){.sc{min-width:100%;flex:1 1 100%}.row{flex-direction:column}}
+/* ── Notification Center ── */
+.notif-badge{position:absolute;top:4px;right:4px;min-width:16px;height:16px;border-radius:8px;background:var(--rd);color:#fff;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1}
+.notif-panel{position:fixed;left:calc(var(--sb-w) + 4px);top:50%;transform:translateY(-50%);width:340px;max-height:70vh;background:var(--cd);border:1px solid var(--bd);border-radius:14px;z-index:55;box-shadow:0 16px 48px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden}
+.notif-hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bd)}
+.notif-hdr h4{font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;margin:0}
+.notif-list{flex:1;overflow-y:auto;max-height:calc(70vh - 50px)}
+.notif-item{display:flex;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:.15s}
+.notif-item:hover{background:rgba(59,130,246,.04)}
+.notif-item.unread{background:rgba(59,130,246,.06);border-left:3px solid var(--ac)}
+.notif-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.notif-content{flex:1;min-width:0}
+.notif-title{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notif-msg{font-size:10px;color:var(--mt);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notif-time{font-size:9px;color:var(--mt);margin-top:2px}
+@media(max-width:768px){.notif-panel{left:8px;right:8px;width:auto;top:56px;transform:none}}
+/* ── Date Range Picker ── */
+.dr-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;padding:10px 14px;background:var(--cd);border:1px solid var(--bd);border-radius:10px}
+.dr-presets{display:flex;gap:4px;flex-wrap:wrap}
+.dr-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--mt);font-size:10px;font-weight:600;cursor:pointer;transition:.15s;font-family:'DM Sans',sans-serif}
+.dr-btn.a{border-color:var(--ac);background:var(--as);color:var(--ac)}
+.dr-btn:hover{background:var(--as);color:var(--ac)}
+.dr-custom{display:flex;gap:6px;align-items:center}
+.dr-custom input{max-width:130px;padding:5px 8px;font-size:10px}
+.dr-custom span{color:var(--mt);font-size:11px}
+/* ── Gantt Chart ── */
+.gantt-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.gantt-container{overflow-x:auto;background:var(--cd);border:1px solid var(--bd);border-radius:12px;position:relative;min-height:200px}
+.gantt-header{display:flex;position:sticky;top:0;z-index:5;background:var(--cd);border-bottom:1px solid var(--bd)}
+.gantt-header-cell{min-width:40px;padding:6px 2px;text-align:center;font-size:9px;color:var(--mt);font-weight:600;border-right:1px solid rgba(255,255,255,.03);flex-shrink:0}
+.gantt-header-cell.today{background:rgba(59,130,246,.08);color:var(--ac)}
+.gantt-body{position:relative}
+.gantt-row{display:flex;align-items:center;border-bottom:1px solid rgba(255,255,255,.03);min-height:36px}
+.gantt-row:hover{background:rgba(255,255,255,.02)}
+.gantt-label{width:180px;min-width:180px;padding:6px 10px;font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:1px solid var(--bd);flex-shrink:0;cursor:pointer}
+.gantt-label:hover{color:var(--ac)}
+.gantt-cells{flex:1;display:flex;position:relative;min-height:36px}
+.gantt-cell{min-width:40px;height:36px;border-right:1px solid rgba(255,255,255,.03);flex-shrink:0}
+.gantt-cell.today{background:rgba(59,130,246,.04)}
+.gantt-bar{position:absolute;height:20px;top:8px;border-radius:4px;font-size:9px;font-weight:600;color:#fff;padding:0 6px;display:flex;align-items:center;overflow:hidden;cursor:pointer;transition:opacity .15s;z-index:2;min-width:20px}
+.gantt-bar:hover{opacity:.85;filter:brightness(1.15)}
+.gantt-bar.todo{background:var(--ac)}.gantt-bar.in_progress{background:var(--or)}.gantt-bar.review{background:var(--pp)}.gantt-bar.done{background:var(--gn)}
+.gantt-today-line{position:absolute;top:0;bottom:0;width:2px;background:var(--rd);z-index:3;pointer-events:none}
+.gantt-dep-svg{position:absolute;top:0;left:180px;pointer-events:none;z-index:1}
+/* ── Offline Banner ── */
+.offline-bar{position:fixed;top:0;left:0;right:0;padding:8px 16px;background:var(--os);color:var(--or);font-size:12px;font-weight:600;text-align:center;z-index:300;display:none;align-items:center;justify-content:center;gap:8px}
+.offline-bar.v{display:flex}
 </style>
 </head>
 <body>
+<div class="offline-bar" id="offline-bar">⚠️ <span data-i18n="offlineMode">You are offline — changes will sync when reconnected</span><span id="offline-queue-count"></span></div>
 <div class="login" id="login"><div class="login-card"><div class="login-logo">AI</div><div class="login-title" data-i18n="loginTitle">AI Personal Assistant</div><div class="login-sub" data-i18n="loginSub">Sign in with your Google account to access your dashboard.</div><div id="g-btn"></div><div class="login-err" id="login-err"></div></div></div>
 <div class="app" id="app">
 <div class="mobile-hdr" id="mobile-hdr"><button class="hamburger" onclick="toggleSidebar()">☰</button><div class="sb-logo" onclick="nav('dash')" style="cursor:pointer">AI</div><div class="title" id="mobile-title">Dashboard</div><button class="hamburger" onclick="openSearch()" title="Search (Ctrl+K)">🔍</button><img class="av" id="av-m" src="" alt="" style="width:28px;height:28px" /></div>
@@ -295,9 +342,16 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   <button class="nb" data-p="calendar" onclick="nav('calendar')"><span>📅</span><span class="l" data-i18n="calendarNav">Calendar</span></button>
   <button class="nb" data-p="recurring" onclick="nav('recurring')"><span>🔁</span><span class="l" data-i18n="recurringNav">Recurring</span></button>
   <button class="nb" data-p="analytics" onclick="nav('analytics')"><span>📊</span><span class="l" data-i18n="analyticsNav">Analytics</span></button>
+  <button class="nb" data-p="gantt" onclick="nav('gantt')"><span>📈</span><span class="l" data-i18n="ganttNav">Gantt</span></button>
   <div style="margin-top:auto"></div>
+  <button class="nb" onclick="toggleNotifPanel()" id="notif-btn" style="position:relative"><span>🔔</span><span class="l" data-i18n="notifications">Notifs</span><span class="notif-badge" id="notif-badge" style="display:none">0</span></button>
   <button class="nb" onclick="toggleLang()" id="lang-btn" title="Toggle Language"><span>🌐</span><span class="l" id="lang-label">EN</span></button>
   <img class="av" id="av" src="" alt="" /><button class="lo" onclick="logout()" data-i18n="exit">Exit</button>
+</div>
+<!-- Notification Panel -->
+<div class="notif-panel" id="notif-panel" style="display:none">
+  <div class="notif-hdr"><h4>🔔 <span data-i18n="notifications">Notifications</span></h4><button class="btn" style="padding:3px 10px;font-size:10px" onclick="markAllNotifRead()" data-i18n="markAllRead">Mark all read</button></div>
+  <div class="notif-list" id="notif-list"><div class="empty" data-i18n="noNotifications">No notifications</div></div>
 </div>
 <div class="mn">
   <div id="pg-dash" class="pg a"><h2 data-i18n="dashboard">Dashboard</h2><div class="gr" id="greet"></div><div class="row" id="stats"></div>
@@ -358,10 +412,45 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
     <div id="rec-list"></div>
   </div>
 
+  <!-- Gantt Chart Page -->
+  <div id="pg-gantt" class="pg">
+    <h2>📈 <span data-i18n="ganttChart">Gantt Chart</span></h2>
+    <div class="st" data-i18n="ganttSub">Visual timeline with task dependencies</div>
+    <div class="gantt-toolbar">
+      <div style="display:flex;gap:4px">
+        <button class="dr-btn a" id="gantt-s-day" onclick="setGanttScale('day')">Day</button>
+        <button class="dr-btn" id="gantt-s-week" onclick="setGanttScale('week')">Week</button>
+        <button class="dr-btn" id="gantt-s-month" onclick="setGanttScale('month')">Month</button>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <select class="sel" id="gantt-filter-group" onchange="renderGantt()"><option value="">All Groups</option></select>
+        <select class="sel" id="gantt-filter-assignee" onchange="renderGantt()"><option value="">All Assignees</option></select>
+      </div>
+    </div>
+    <div class="gantt-container" id="gantt-container"></div>
+  </div>
+
   <!-- Analytics Page -->
   <div id="pg-analytics" class="pg">
     <h2>📊 <span data-i18n="analyticsPage">Analytics</span></h2>
     <div class="st" data-i18n="analyticsSub">Task completion trends and team performance</div>
+
+    <!-- Date Range Picker -->
+    <div class="dr-bar">
+      <div class="dr-presets">
+        <button class="dr-btn" onclick="setDR('7d')" data-i18n="days7">7 Days</button>
+        <button class="dr-btn a" onclick="setDR('30d')" data-i18n="days30">30 Days</button>
+        <button class="dr-btn" onclick="setDR('90d')" data-i18n="days90">90 Days</button>
+        <button class="dr-btn" onclick="setDR('year')" data-i18n="thisYear">This Year</button>
+        <button class="dr-btn" onclick="setDR('all')" data-i18n="allTime">All Time</button>
+      </div>
+      <div class="dr-custom">
+        <input type="date" id="dr-start" class="inp" style="max-width:130px;padding:5px 8px;font-size:10px">
+        <span style="color:var(--mt)">—</span>
+        <input type="date" id="dr-end" class="inp" style="max-width:130px;padding:5px 8px;font-size:10px">
+        <button class="btn p" onclick="applyDR()" style="padding:5px 10px;font-size:10px" data-i18n="apply">Apply</button>
+      </div>
+    </div>
 
     <!-- Summary Cards -->
     <div class="row" id="analytics-summary"></div>
@@ -621,7 +710,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <script>
 const A=window.location.origin+'/api/v1',PC={urgent:'#ef4444',high:'#f97316',medium:'#eab308',low:'#22c55e'},PB={urgent:'rgba(239,68,68,.1)',high:'rgba(249,115,22,.1)',medium:'rgba(234,179,8,.1)',low:'rgba(34,197,94,.1)'},SI={todo:'📋',in_progress:'🔄',review:'👀',done:'✅'};
 let tok=null,usr=null,allT=[],curF='all',curCat='all';const $=id=>document.getElementById(id);
-const PT={dash:'Dashboard',board:'Task Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Reminders',chat:'AI Chat',calendar:'Calendar',recurring:'Recurring Tasks',analytics:'Analytics'};
+const PT={dash:'Dashboard',board:'Task Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Reminders',chat:'AI Chat',calendar:'Calendar',recurring:'Recurring Tasks',analytics:'Analytics',gantt:'Gantt Chart'};
 function toggleSidebar(){$('sidebar').classList.toggle('open');$('sb-overlay').classList.toggle('open')}
 function closeSidebar(){$('sidebar').classList.remove('open');$('sb-overlay').classList.remove('open')}
 function stored(){try{return JSON.parse(localStorage.getItem('ai_s'))}catch{return null}}
@@ -630,11 +719,11 @@ function clear(){localStorage.removeItem('ai_s');tok=null;usr=null}
 async function checkSession(){const s=stored();if(!s?.token)return false;if(s.expires_at<Date.now()/1000){clear();return false}try{const r=await fetch(A+'/auth/verify',{headers:{Authorization:'Bearer '+s.token}});if(r.ok){tok=s.token;usr={email:s.email,name:s.name,picture:s.picture};return true}}catch{}clear();return false}
 async function gSign(r){const e=$('login-err');e.style.display='none';try{const res=await fetch(A+'/auth/google/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:r.credential})});const d=await res.json();if(res.ok){tok=d.token;usr={email:d.email,name:d.name,picture:d.picture};store(d);showApp()}else{e.textContent=d.detail||'Denied';e.style.display='block'}}catch{e.textContent='Server error';e.style.display='block'}}
 function logout(){clear();$('app').classList.remove('v');$('login').style.display='flex'}
-function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${usr.name}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCats();initMiniCal()}
+function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${usr.name}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCats();initMiniCal();loadNotifCount()}
 window.onload=async()=>{if(await checkSession()){showApp();return}try{const r=await fetch(A+'/auth/client-id');const d=await r.json();if(d.client_id){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'})}}catch{$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics()}
+function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt()}
 function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data)}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let cats=[];async function loadCats(){try{const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();cats=d.categories||[];$('cats').innerHTML=cats.map(c=>`<option value="${c}">`).join('')}catch{}}
@@ -699,7 +788,7 @@ function calcDuration(){const sd=$('me-date').value,st=$('me-time').value,ed=$('
 let evtFile=null;
 function onEvtFileSelect(){const f=$('me-file').files[0];if(f){evtFile=f;$('me-fname').textContent=`${f.name} (${(f.size/1024).toFixed(1)}KB)`;$('me-fname').style.color='var(--ac)'}}
 function clearEvtFile(){evtFile=null;$('me-file').value='';$('me-fname').textContent=t('noFile');$('me-fname').style.color='var(--mt)'}
-function showAttachments(attachments){const el=$('me-attachments');if(attachments&&attachments.length){el.style.display='block';el.innerHTML='<div style="font-size:10px;color:var(--mt);font-weight:600;margin-bottom:4px">ATTACHMENTS</div>'+attachments.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0"><span style="font-size:12px">📄</span><a href="${a.fileUrl}" target="_blank" style="font-size:11px;color:var(--ac)">${esc(a.title)}</a></div>`).join('')}else{el.style.display='none';el.innerHTML=''}}
+function showAttachments(attachments){const el=$('me-attachments');if(attachments&&attachments.length){el.style.display='block';el.innerHTML='<div style="font-size:10px;color:var(--mt);font-weight:600;margin-bottom:4px">ATTACHMENTS</div>'+attachments.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0"><span style="font-size:12px">📄</span><a href="${a.fileUrl}" target="_blank" style="font-size:11px;color:var(--ac)">${esc(a.title)}</a><button class="btn" style="padding:2px 8px;font-size:9px" onclick="analyzeAttachment('${a.fileUrl}','${esc(a.title)}')">🔍 ${t('analyzeBtn')}</button></div>`).join('')}else{el.style.display='none';el.innerHTML=''}}
 function openEventModal(dt,hr){$('modal-event').classList.add('v');$('me-id').value='';$('me-title').value='';$('me-desc').value='';$('me-loc').value='';$('me-del').style.display='none';$('me-link').style.display='none';$('me-ai-section').style.display='none';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('newEvent');$('me-save').textContent=t('createEvent');clearEvtFile();showAttachments(null);evtDuration=60;const d=dt||fmt(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());const h=hr||9;$('me-date').value=d;$('me-edate').value=d;$('me-time').value=String(h).padStart(2,'0')+':00';$('me-etime').value=String(Math.min(h+1,23)).padStart(2,'0')+':00';setTimeout(()=>$('me-title').focus(),100)}
 function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)return;$('modal-event').classList.add('v');$('me-id').value=ev.id;$('me-title').value=ev.title||'';$('me-desc').value=ev.description||'';$('me-loc').value=ev.location||'';$('me-del').style.display='block';$('me-ai-section').style.display='block';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('editEvent');$('me-save').textContent=t('updateEvent');clearEvtFile();showAttachments(ev.attachments);if(ev.start_raw){try{const d=new Date(ev.start_raw);$('me-date').value=d.toISOString().split('T')[0];$('me-time').value=d.toTimeString().slice(0,5)}catch{}}if(ev.end_raw){try{const d=new Date(ev.end_raw);$('me-edate').value=d.toISOString().split('T')[0];$('me-etime').value=d.toTimeString().slice(0,5)}catch{}}if(ev.link){$('me-link').style.display='block';$('me-gcal-link').href=ev.link}else $('me-link').style.display='none';calcDuration();
   // Auto-generate AI keynotes if event has attachments
@@ -1611,13 +1700,21 @@ async function toggleRec(id){try{await fetch(A+'/recurring/'+id+'/toggle',{metho
 
 // ═══ ANALYTICS ═══
 let chartInstances={};
-async function loadAnalytics(){
+async function loadAnalytics(startDate,endDate){
   try{
+    let dashUrl=A+'/dashboard';
+    const params=[];
+    if(startDate)params.push('start_date='+startDate);
+    if(endDate)params.push('end_date='+endDate);
+    if(params.length)dashUrl+='?'+params.join('&');
     const[tR,dR]=await Promise.all([
       fetch(A+'/tasks?limit=500',{headers:hdr()}).then(r=>r.json()),
-      fetch(A+'/dashboard',{headers:hdr()}).then(r=>r.json())
+      fetch(dashUrl,{headers:hdr()}).then(r=>r.json())
     ]);
-    const tasks=tR.tasks||[];const stats=dR.stats||{};
+    let tasks=tR.tasks||[];const stats=dR.stats||{};
+    // Filter tasks client-side by date range too
+    if(startDate){const sd=new Date(startDate);tasks=tasks.filter(t=>new Date(t.created_at)>=sd)}
+    if(endDate){const ed=new Date(endDate);ed.setDate(ed.getDate()+1);tasks=tasks.filter(t=>new Date(t.created_at)<=ed)}
     // Summary cards
     const total=tasks.length,done=tasks.filter(t=>t.status==='done').length,pct=total?Math.round(done/total*100):0;
     const overdue=tasks.filter(t=>{if(!t.due_date||t.status==='done')return false;return new Date(t.due_date)<new Date()}).length;
@@ -1654,8 +1751,11 @@ async function loadAnalytics(){
         {label:'Done',data:Object.values(teamMap).map(v=>v.done),backgroundColor:'rgba(34,197,94,.4)',borderRadius:6}
       ]
     },{plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{display:false}},y:{ticks:{color:'#94a3b8'},grid:{color:'rgba(255,255,255,.04)'}}}});
-    // Completion last 7 days (line)
-    const days=[];const counts=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);d.setHours(0,0,0,0);const ds=d.toISOString().split('T')[0];days.push(d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'}));counts.push(tasks.filter(t=>t.completed_at&&t.completed_at.startsWith(ds)).length)}
+    // Completion trend (use server data if available)
+    const days=[];const counts=[];
+    const trend=dR.completion_trend||[];
+    if(trend.length){trend.forEach(t=>{days.push(new Date(t.date).toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'}));counts.push(t.count)})}
+    else{for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);d.setHours(0,0,0,0);const ds=d.toISOString().split('T')[0];days.push(d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'}));counts.push(tasks.filter(t=>t.completed_at&&t.completed_at.startsWith(ds)).length)}}
     renderChart('chart-completion','line',{
       labels:days,
       datasets:[{label:'Completed',data:counts,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#22c55e'}]
@@ -1837,7 +1937,17 @@ const I18N={
     // Misc
     exit:'Exit',unassigned:'Unassigned',uncategorized:'Uncategorized',tasksLabel:'tasks',doneLabel:'done',members:'members',
     // Placeholders
-    phTaskTitle:'Task title...',phDescription:'Description...',phName:'Name...',phDueDate:'',phCategory:'e.g. GDT',phSubcategory:'e.g. ETL',phRemindMe:'Remind me to...',phEventTitle:'Event title...',phNotes:'Notes...',phLocation:'Location...',phRoleName:'Role name',phGroupName:'Group name',phSubGroupName:'Sub-group name...',phFirstName:'First name',phLastName:'Last name',phUsername:'@username',phOptional:'Optional',phPhone:'+855...',phEmail:'email@...',phDept:'e.g. Data Bureau',phJobTitle:'e.g. Developer',phNotesField:'Notes...',phAskAnything:'Ask anything...',phNewSubGroup:'New sub-group...',phActionTitle:'Add an action...'
+    phTaskTitle:'Task title...',phDescription:'Description...',phName:'Name...',phDueDate:'',phCategory:'e.g. GDT',phSubcategory:'e.g. ETL',phRemindMe:'Remind me to...',phEventTitle:'Event title...',phNotes:'Notes...',phLocation:'Location...',phRoleName:'Role name',phGroupName:'Group name',phSubGroupName:'Sub-group name...',phFirstName:'First name',phLastName:'Last name',phUsername:'@username',phOptional:'Optional',phPhone:'+855...',phEmail:'email@...',phDept:'e.g. Data Bureau',phJobTitle:'e.g. Developer',phNotesField:'Notes...',phAskAnything:'Ask anything...',phNewSubGroup:'New sub-group...',phActionTitle:'Add an action...',
+    // Notification Center
+    notifications:'Notifications',markAllRead:'Mark all read',noNotifications:'No notifications',
+    // Date Range Picker
+    days7:'7 Days',days30:'30 Days',days90:'90 Days',thisYear:'This Year',allTime:'All Time',apply:'Apply',
+    // Gantt Chart
+    ganttChart:'Gantt Chart',ganttSub:'Visual timeline with task dependencies',ganttNav:'Gantt',
+    // Offline
+    offlineMode:'You are offline — changes will sync when reconnected',
+    // AI Analysis
+    analyzing:'Analyzing',analyzeBtn:'Analyze'
   },
   kh:{
     home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',analyticsNav:'វិភាគ',
@@ -1874,11 +1984,236 @@ const I18N={
     aiInsights:'AI ការវិភាគ និងអនុសាសន៍',loadingInsights:'កំពុងវិភាគទិន្នន័យរបស់អ្នក...',generateInsights:'បង្កើតការវិភាគ AI',
     noData:'គ្មានទិន្នន័យ',noTasks:'គ្មានភារកិច្ច',noReminders:'គ្មានការរំលឹក',noRecurring:'មិនទាន់មានភារកិច្ចដដែលៗ',noGroups:'មិនទាន់មានក្រុម។ បង្កើតក្រុមដំបូងខាងលើ។',noRoles:'មិនទាន់មានតួនាទី។ បន្ថែមខាងលើ។',noMembers:'មិនទាន់មានសមាជិក។ ចុច "+ បន្ថែមសមាជិក" ដើម្បីចាប់ផ្តើម។',noDeadlines:'គ្មានកាលកំណត់ឆាប់ៗ',selectGroup:'ជ្រើសក្រុមមួយ',failed:'បរាជ័យ',
     exit:'ចាកចេញ',unassigned:'គ្មានអ្នកទទួល',uncategorized:'គ្មានប្រភេទ',tasksLabel:'ភារកិច្ច',doneLabel:'រួច',members:'សមាជិក',
-    phTaskTitle:'ចំណងជើងភារកិច្ច...',phDescription:'ការពិពណ៌នា...',phName:'ឈ្មោះ...',phDueDate:'',phCategory:'ឧ. GDT',phSubcategory:'ឧ. ETL',phRemindMe:'រំលឹកខ្ញុំ...',phEventTitle:'ចំណងជើងព្រឹត្តិការណ៍...',phNotes:'កំណត់ចំណាំ...',phLocation:'ទីតាំង...',phRoleName:'ឈ្មោះតួនាទី',phGroupName:'ឈ្មោះក្រុម',phSubGroupName:'ឈ្មោះក្រុមរង...',phFirstName:'នាមខ្លួន',phLastName:'នាមត្រកូល',phUsername:'@ឈ្មោះ',phOptional:'ស្រេចចិត្ត',phPhone:'+855...',phEmail:'email@...',phDept:'ឧ org ការិយាល័យទិន្នន័យ',phJobTitle:'ឧ org អ្នកអភិវឌ្ឍ',phNotesField:'កំណត់ចំណាំ...',phAskAnything:'សួរអ្វីក៏បាន...',phNewSubGroup:'ក្រុមរងថ្មី...',phActionTitle:'បន្ថែមសកម្មភាព...'
+    phTaskTitle:'ចំណងជើងភារកិច្ច...',phDescription:'ការពិពណ៌នា...',phName:'ឈ្មោះ...',phDueDate:'',phCategory:'ឧ. GDT',phSubcategory:'ឧ. ETL',phRemindMe:'រំលឹកខ្ញុំ...',phEventTitle:'ចំណងជើងព្រឹត្តិការណ៍...',phNotes:'កំណត់ចំណាំ...',phLocation:'ទីតាំង...',phRoleName:'ឈ្មោះតួនាទី',phGroupName:'ឈ្មោះក្រុម',phSubGroupName:'ឈ្មោះក្រុមរង...',phFirstName:'នាមខ្លួន',phLastName:'នាមត្រកូល',phUsername:'@ឈ្មោះ',phOptional:'ស្រេចចិត្ត',phPhone:'+855...',phEmail:'email@...',phDept:'ឧ org ការិយាល័យទិន្នន័យ',phJobTitle:'ឧ org អ្នកអភិវឌ្ឍ',phNotesField:'កំណត់ចំណាំ...',phAskAnything:'សួរអ្វីក៏បាន...',phNewSubGroup:'ក្រុមរងថ្មី...',phActionTitle:'បន្ថែមសកម្មភាព...',
+    notifications:'ការជូនដំណឹង',markAllRead:'សម្គាល់ទាំងអស់ថាបានអាន',noNotifications:'គ្មានការជូនដំណឹង',
+    days7:'៧ ថ្ងៃ',days30:'៣០ ថ្ងៃ',days90:'៩០ ថ្ងៃ',thisYear:'ឆ្នាំនេះ',allTime:'ទាំងអស់',apply:'អនុវត្ត',
+    ganttChart:'គំនូសតាង Gantt',ganttSub:'ពេលវេលាភារកិច្ចដែលមានភាពពឹងផ្អែក',ganttNav:'Gantt',
+    offlineMode:'អ្នកនៅក្រៅបណ្ដាញ — ការផ្លាស់ប្ដូរនឹងធ្វើសមកាលកម្មពេលតភ្ជាប់ឡើងវិញ',
+    analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ'
   }
 };
 // Helper: get translated string
 function t(key){return(I18N[curLang]||I18N.en)[key]||(I18N.en)[key]||key}
+
+// ═══ NOTIFICATION CENTER ═══
+let notifPanelOpen=false;
+function toggleNotifPanel(){
+  const p=$('notif-panel');
+  notifPanelOpen=!notifPanelOpen;
+  p.style.display=notifPanelOpen?'flex':'none';
+  if(notifPanelOpen)loadNotifications();
+}
+async function loadNotifCount(){
+  try{
+    const r=await fetch(A+'/notifications/count',{headers:hdr()});
+    const d=await r.json();
+    const b=$('notif-badge');
+    if(d.count>0){b.textContent=d.count>99?'99+':d.count;b.style.display='flex'}
+    else{b.style.display='none'}
+  }catch{}
+}
+async function loadNotifications(){
+  try{
+    const r=await fetch(A+'/notifications?limit=30',{headers:hdr()});
+    const d=await r.json();
+    const list=$('notif-list');
+    if(!d.notifications||!d.notifications.length){list.innerHTML='<div class="empty">'+t('noNotifications')+'</div>';return}
+    const iconMap={task_created:'📋',task_status:'🔄',task_assigned:'👤',task_overdue:'⏰',comment_added:'💬',reminder_due:'🔔',ai_insight:'✨'};
+    const bgMap={task_created:'var(--as)',task_status:'var(--os)',task_overdue:'var(--rs)',comment_added:'var(--ps)',reminder_due:'var(--ys)',ai_insight:'var(--as)'};
+    list.innerHTML=d.notifications.map(n=>{
+      const icon=iconMap[n.type]||'📌';
+      const bg=bgMap[n.type]||'var(--as)';
+      const ago=timeAgo(n.created_at);
+      return `<div class="notif-item${n.is_read?'':' unread'}" onclick="markNotifRead(${n.id},${n.entity_id||0},'${n.entity_type||''}')">
+        <div class="notif-icon" style="background:${bg}">${icon}</div>
+        <div class="notif-content"><div class="notif-title">${esc(n.title)}</div>${n.message?'<div class="notif-msg">'+esc(n.message)+'</div>':''}<div class="notif-time">${ago}</div></div>
+      </div>`;
+    }).join('');
+  }catch(e){console.error('loadNotifications:',e)}
+}
+async function markNotifRead(id,entityId,entityType){
+  try{await fetch(A+'/notifications/'+id+'/read',{method:'POST',headers:hdr()})}catch{}
+  loadNotifCount();
+  if(entityType==='task'&&entityId){toggleNotifPanel();nav('tasks');setTimeout(()=>openTD(entityId),300)}
+  else{loadNotifications()}
+}
+async function markAllNotifRead(){
+  try{await fetch(A+'/notifications/read-all',{method:'POST',headers:hdr()})}catch{}
+  loadNotifCount();loadNotifications();
+}
+function timeAgo(iso){
+  if(!iso)return'';
+  const d=new Date(iso);const s=Math.floor((Date.now()-d.getTime())/1000);
+  if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';
+}
+// Poll notification count every 30s
+setInterval(()=>{if(usr)loadNotifCount()},30000);
+
+// ═══ DATE RANGE PICKER ═══
+let drPreset='30d';
+function setDR(preset){
+  drPreset=preset;
+  document.querySelectorAll('.dr-presets .dr-btn').forEach(b=>b.classList.remove('a'));
+  const btn=event?.target;if(btn)btn.classList.add('a');
+  const now=new Date();let start=null,end=now.toISOString().split('T')[0];
+  if(preset==='7d')start=new Date(now-7*864e5).toISOString().split('T')[0];
+  else if(preset==='30d')start=new Date(now-30*864e5).toISOString().split('T')[0];
+  else if(preset==='90d')start=new Date(now-90*864e5).toISOString().split('T')[0];
+  else if(preset==='year'){start=now.getFullYear()+'-01-01'}
+  else{start=null;end=null} // all
+  $('dr-start').value=start||'';$('dr-end').value=end||'';
+  loadAnalytics(start,end);
+}
+function applyDR(){
+  const s=$('dr-start').value;const e=$('dr-end').value;
+  document.querySelectorAll('.dr-presets .dr-btn').forEach(b=>b.classList.remove('a'));
+  loadAnalytics(s||null,e||null);
+}
+
+// ═══ AI ATTACHMENT ANALYSIS ═══
+async function analyzeAttachment(url,filename){
+  const resultEl=$('me-ai-result');
+  if(!resultEl)return;
+  $('me-ai-section').style.display='block';
+  resultEl.style.display='block';
+  resultEl.innerHTML='<div style="color:var(--ac)">🔍 '+t('analyzing')+' '+esc(filename)+'...</div>';
+  try{
+    const r=await fetch(A+'/calendar/events/analyze-attachment',{
+      method:'POST',headers:{'Content-Type':'application/json',...hdr()},
+      body:JSON.stringify({attachment_url:url,filename:filename})
+    });
+    const d=await r.json();
+    if(d.analysis){
+      resultEl.innerHTML=esc(d.analysis)+'<div style="margin-top:8px"><button class="btn p" style="padding:3px 10px;font-size:10px" onclick="pasteEvtAIToDesc()">'+t('aiPasteToDesc')+'</button></div>';
+    }else{
+      resultEl.innerHTML='<div style="color:var(--rd)">Analysis failed</div>';
+    }
+  }catch(e){
+    resultEl.innerHTML='<div style="color:var(--rd)">Error: '+e.message+'</div>';
+  }
+}
+
+// ═══ GANTT CHART ═══
+let ganttScale='day';
+let ganttTasks=[];
+let ganttDeps={};
+function setGanttScale(scale){
+  ganttScale=scale;
+  document.querySelectorAll('[id^="gantt-s-"]').forEach(b=>b.classList.remove('a'));
+  const btn=$('gantt-s-'+scale);if(btn)btn.classList.add('a');
+  renderGantt();
+}
+async function loadGantt(){
+  try{
+    const[tr,dr]=await Promise.all([
+      fetch(A+'/tasks?limit=200',{headers:hdr()}).then(r=>r.json()),
+      fetch(A+'/tasks/dependency-map',{headers:hdr()}).then(r=>r.json())
+    ]);
+    ganttTasks=(tr.tasks||[]).filter(t=>t.due_date||t.created_at);
+    ganttDeps=dr.dep_map||{};
+    // Populate filter dropdowns
+    const groups=new Set();const assignees=new Set();
+    ganttTasks.forEach(t=>{if(t.assignee)assignees.add(t.assignee)});
+    const gs=$('gantt-filter-assignee');
+    gs.innerHTML='<option value="">All Assignees</option>'+[...assignees].map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+    renderGantt();
+  }catch(e){console.error('loadGantt:',e)}
+}
+function renderGantt(){
+  const container=$('gantt-container');
+  const filterAssignee=$('gantt-filter-assignee')?.value||'';
+  let tasks=ganttTasks;
+  if(filterAssignee)tasks=tasks.filter(t=>t.assignee===filterAssignee);
+  if(!tasks.length){container.innerHTML='<div class="empty">'+t('noTasks')+'</div>';return}
+
+  // Calculate date range
+  const now=new Date();
+  let minDate=new Date(now);let maxDate=new Date(now);
+  tasks.forEach(t=>{
+    const c=new Date(t.created_at);const d=t.due_date?new Date(t.due_date):c;
+    if(c<minDate)minDate=new Date(c);if(d>maxDate)maxDate=new Date(d);
+    if(c>maxDate)maxDate=new Date(c);
+  });
+  // Add buffer
+  minDate.setDate(minDate.getDate()-2);
+  maxDate.setDate(maxDate.getDate()+5);
+
+  const cellW=ganttScale==='month'?12:ganttScale==='week'?20:40;
+  const days=[];
+  const d=new Date(minDate);
+  while(d<=maxDate){days.push(new Date(d));d.setDate(d.getDate()+1)}
+
+  const todayStr=now.toISOString().split('T')[0];
+
+  // Header
+  let headerHTML='<div class="gantt-header"><div style="width:180px;min-width:180px;padding:6px 10px;font-size:10px;font-weight:700;color:var(--mt);border-right:1px solid var(--bd)">Task</div>';
+  days.forEach(d=>{
+    const ds=d.toISOString().split('T')[0];
+    const isToday=ds===todayStr;
+    const label=ganttScale==='month'?d.getDate():ganttScale==='week'?(d.getDate()+(d.getDay()===1?'':'')):(d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]);
+    headerHTML+=`<div class="gantt-header-cell${isToday?' today':''}" style="min-width:${cellW}px">${d.getDate()===1||days.indexOf(d)===0?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' ':ganttScale==='day'?d.getDate():d.getDate()}</div>`;
+  });
+  headerHTML+='</div>';
+
+  // Body
+  let bodyHTML='<div class="gantt-body">';
+  const todayIdx=days.findIndex(d=>d.toISOString().split('T')[0]===todayStr);
+
+  tasks.forEach((task,rowIdx)=>{
+    const startD=new Date(task.created_at);
+    const endD=task.due_date?new Date(task.due_date):new Date(startD.getTime()+864e5);
+    const startIdx=Math.max(0,days.findIndex(d=>d.toISOString().split('T')[0]>=startD.toISOString().split('T')[0]));
+    const endIdx=Math.min(days.length-1,days.findIndex(d=>d.toISOString().split('T')[0]>=endD.toISOString().split('T')[0]));
+    const barLeft=startIdx*cellW;
+    const barWidth=Math.max(cellW,(endIdx-startIdx+1)*cellW);
+
+    bodyHTML+=`<div class="gantt-row"><div class="gantt-label" onclick="openTD(${task.id})" title="${esc(task.title)}">${esc(task.title)}</div><div class="gantt-cells" style="position:relative">`;
+    days.forEach((d,i)=>{
+      const isToday=d.toISOString().split('T')[0]===todayStr;
+      bodyHTML+=`<div class="gantt-cell${isToday?' today':''}" style="min-width:${cellW}px"></div>`;
+    });
+    bodyHTML+=`<div class="gantt-bar ${task.status}" style="left:${barLeft}px;width:${barWidth}px" onclick="openTD(${task.id})" title="${esc(task.title)} (${task.status})">${ganttScale!=='month'?esc(task.title.substring(0,20)):''}</div>`;
+    bodyHTML+='</div></div>';
+  });
+
+  // Today line
+  if(todayIdx>=0){
+    bodyHTML+=`<div class="gantt-today-line" style="left:${180+todayIdx*cellW+cellW/2}px"></div>`;
+  }
+  bodyHTML+='</div>';
+
+  container.innerHTML=headerHTML+bodyHTML;
+}
+
+// ═══ OFFLINE SUPPORT ═══
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(reg=>{
+    console.log('SW registered');
+  }).catch(err=>console.log('SW registration failed:',err));
+}
+window.addEventListener('online',()=>{$('offline-bar').classList.remove('v');syncOfflineQueue()});
+window.addEventListener('offline',()=>{$('offline-bar').classList.add('v')});
+// Check initial state
+if(!navigator.onLine)$('offline-bar').classList.add('v');
+
+let offlineQueue=[];
+function queueOfflineAction(method,url,body){
+  offlineQueue.push({method,url,body,ts:Date.now()});
+  const cnt=$('offline-queue-count');
+  if(cnt)cnt.textContent=' ('+offlineQueue.length+' pending)';
+}
+async function syncOfflineQueue(){
+  if(!offlineQueue.length)return;
+  const queue=[...offlineQueue];offlineQueue=[];
+  for(const item of queue){
+    try{
+      await fetch(item.url,{method:item.method,headers:{'Content-Type':'application/json',...hdr()},body:item.body});
+    }catch{offlineQueue.push(item)}
+  }
+  const cnt=$('offline-queue-count');
+  if(cnt)cnt.textContent=offlineQueue.length?' ('+offlineQueue.length+' pending)':'';
+}
 
 function toggleLang(){
   curLang=curLang==='en'?'kh':'en';
@@ -1911,7 +2246,7 @@ function applyLang(){
   // Update AI chat input placeholder
   const ci=$('chi');if(ci)ci.placeholder=tr.phAskAnything||'Ask anything...';
   // Update PT map for mobile header
-  PT.dash=tr.dashboard;PT.board=tr.taskBoard;PT.tasks=tr.tasksPage;PT.team=tr.teamMembers;PT.msgs=tr.messagesPage;PT.remind=tr.remindersPage;PT.chat=tr.aiAssistant;PT.calendar=tr.calendarPage;PT.recurring=tr.recurringTasks;PT.analytics=tr.analyticsPage;
+  PT.dash=tr.dashboard;PT.board=tr.taskBoard;PT.tasks=tr.tasksPage;PT.team=tr.teamMembers;PT.msgs=tr.messagesPage;PT.remind=tr.remindersPage;PT.chat=tr.aiAssistant;PT.calendar=tr.calendarPage;PT.recurring=tr.recurringTasks;PT.analytics=tr.analyticsPage;PT.gantt=tr.ganttChart;
   // Update active page mobile title
   const activeP=document.querySelector('.nb.a');
   if(activeP&&$('mobile-title')){const pk=activeP.dataset.p;if(pk&&PT[pk])$('mobile-title').textContent=PT[pk]}

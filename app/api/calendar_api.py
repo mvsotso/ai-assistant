@@ -276,3 +276,58 @@ async def create_event_with_file(
         description=description, location=location, attachments=attachments,
     )
     return {"event": event}
+
+
+# ─── AI Attachment Analysis (Feature: AI Drive Content Analysis) ───
+
+class AnalyzeRequest(BaseModel):
+    attachment_url: str
+    filename: str = "attachment"
+
+
+@calendar_router.post("/events/analyze-attachment")
+async def analyze_attachment(
+    body: AnalyzeRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Download a Drive attachment and analyze its content with AI."""
+    import re
+    from app.services.ai_engine import ai_engine
+    from app.services.file_processor import extract_text_from_file
+
+    creds = await get_web_credentials(request, db)
+
+    # Extract Drive file ID from URL
+    file_id = None
+    # Pattern: /d/{id}/ or id={id} or /file/d/{id}
+    m = re.search(r'/d/([a-zA-Z0-9_-]+)', body.attachment_url)
+    if m:
+        file_id = m.group(1)
+    else:
+        m = re.search(r'id=([a-zA-Z0-9_-]+)', body.attachment_url)
+        if m:
+            file_id = m.group(1)
+
+    if not file_id:
+        raise HTTPException(status_code=400, detail="Could not extract Drive file ID from URL")
+
+    try:
+        file_bytes, filename, mime_type = await calendar_service.download_from_drive(creds, file_id)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to download from Drive: {str(e)}")
+
+    # Process through file processor
+    file_data = await extract_text_from_file(file_bytes, filename or body.filename)
+
+    # Analyze with AI
+    prompt = f"""Analyze this document attached to a calendar event. Provide:
+1. **Summary** — What is this document about? (2-3 sentences)
+2. **Key Points** — Main takeaways (bullet points)
+3. **Action Items** — Any tasks or follow-ups mentioned
+4. **Relevance** — How this relates to the meeting/event
+
+Document: {body.filename}"""
+
+    analysis = await ai_engine.chat_with_file(prompt, file_data)
+    return {"analysis": analysis, "filename": filename or body.filename}
