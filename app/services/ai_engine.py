@@ -35,9 +35,19 @@ When the user asks you to DO something (create task, set reminder, create event)
 
 Available actions:
 - create_task: {title, assignee (optional), priority (low/medium/high/urgent), label (optional), due (optional ISO date)}
+- create_event: {title, start, end, location (optional), description (optional), timezone}
 - assign_task: {task_id, assignee}
 - complete_task: {task_id}
 - set_reminder: {minutes, message}
+
+CRITICAL RULES FOR create_event:
+- ALWAYS extract the EXACT date and time mentioned in the message. NEVER use today or current time.
+- Dates must be ISO format with Cambodia timezone. Example: 2026-03-09T14:30:00+07:00
+- If message says Monday 9 March 2026 at 2:30 PM, start MUST be 2026-03-09T14:30:00+07:00
+- Set end to 1 hour after start if not specified.
+- Extract event title from context (meeting name, demo name, etc.)
+- Include ALL details in description: meeting links, passcodes, attendees.
+- Always set timezone to Asia/Phnom_Penh
 
 Only include action blocks when the user explicitly asks to create/do something. For questions and information, just respond normally.
 
