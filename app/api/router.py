@@ -366,9 +366,19 @@ class ChatRequest(BaseModel):
 
 
 @router.post("/ai/chat")
-async def ai_chat(body: ChatRequest):
-    response = await ai_engine.chat(body.message, context=body.context or "")
-    return {"response": response}
+async def ai_chat(body: ChatRequest, db: AsyncSession = Depends(get_db)):
+    response, actions = await ai_engine.chat_with_actions(body.message, context=body.context or "")
+    action_results = []
+    if actions:
+        from app.services.action_executor import execute_actions
+        action_results = await execute_actions(actions, db)
+        await db.commit()
+        for r in action_results:
+            if r.get("success"):
+                response += "\n\n" + r.get("message", "Action completed.")
+            else:
+                response += "\n\n\u274c " + r.get("error", "Action failed.")
+    return {"response": response, "actions": action_results}
 
 
 # ─── AI Chat with File Upload ───
