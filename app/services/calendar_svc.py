@@ -145,6 +145,8 @@ class GoogleCalendarService:
             scopes=SCOPES,
         )
         flow.redirect_uri = self.redirect_uri
+        # Accept additional scopes Google returns (userinfo, openid, etc.)
+        os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
         flow.fetch_token(code=code)
         return flow.credentials
 
