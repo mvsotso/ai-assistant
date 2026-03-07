@@ -15,11 +15,13 @@ from app.api.recurring_api import recurring_router
 from app.api.task_group_api import router as task_group_router
 from app.api.team_api import router as team_mgmt_router
 from app.api.task_action_api import router as task_action_router
+from app.api.dependency_api import router as dependency_router
 from app.api.auth import auth_router
 from app.models.recurring_task import RecurringTask  # noqa: ensure table creation
 from app.models.task_group import TaskGroup, TaskSubGroup  # noqa: ensure table creation
 from app.models.team_role import TeamRole  # noqa: ensure table creation
 from app.models.task_action import TaskAction  # noqa: ensure table creation
+from app.models.task_dependency import TaskDependency  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -169,6 +171,22 @@ async def lifespan(app: FastAPI):
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_actions_task_id ON task_actions(task_id)'))
             logger.info("🔧 Task actions migration checked")
 
+            # ── Task Dependencies migration ──
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_dependencies (
+                    id SERIAL PRIMARY KEY,
+                    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+                    depends_on_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+                    dep_type VARCHAR(20) DEFAULT 'blocks',
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    CONSTRAINT uq_task_dependency UNIQUE (task_id, depends_on_id),
+                    CONSTRAINT chk_no_self_dep CHECK (task_id != depends_on_id)
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_dep_task_id ON task_dependencies(task_id)'))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_dep_depends_on ON task_dependencies(depends_on_id)'))
+            logger.info("🔧 Task dependencies migration checked")
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 
@@ -216,6 +234,7 @@ app.include_router(recurring_router)
 app.include_router(task_group_router)
 app.include_router(team_mgmt_router)
 app.include_router(task_action_router)
+app.include_router(dependency_router)
 app.include_router(auth_router)
 
 

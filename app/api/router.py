@@ -71,6 +71,7 @@ def _task_to_dict(t: Task) -> dict:
         "assignee": t.assignee_name, "creator": t.creator_name,
         "category": getattr(t, "category", None), "subcategory": getattr(t, "subcategory", None),
         "label": t.label,
+        "group_id": getattr(t, "group_id", None), "subgroup_id": getattr(t, "subgroup_id", None),
         "due_date": t.due_date.isoformat() if t.due_date else None,
         "completed_at": t.completed_at.isoformat() if t.completed_at else None,
         "created_at": t.created_at.isoformat() if t.created_at else None,

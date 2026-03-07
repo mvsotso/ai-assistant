@@ -187,6 +187,17 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .task-prog-bar{width:60px;height:5px;border-radius:3px;background:var(--sf);overflow:hidden}
 .task-prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--ac),var(--gn));transition:.4s}
 .task-prog-text{font-size:9px;color:var(--mt);font-weight:600;min-width:28px}
+/* ── Dependency Badges ── */
+.dep-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600;flex-shrink:0}
+.dep-blocked{background:var(--rs);color:var(--rd)}
+.dep-blocking{background:var(--os);color:var(--or)}
+.dep-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,.02);border:1px solid var(--bd);border-radius:8px;margin-bottom:4px;font-size:11px}
+.dep-item .dep-icon{font-size:13px;flex-shrink:0}
+.dep-item .dep-info{flex:1;min-width:0}
+.dep-item .dep-title{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dep-item .dep-status{font-size:9px;color:var(--mt)}
+.dep-item .dep-remove{background:none;border:none;color:var(--mt);cursor:pointer;padding:2px 4px;font-size:11px;border-radius:4px;font-family:'DM Sans',sans-serif;flex-shrink:0}
+.dep-item .dep-remove:hover{color:var(--rd);background:var(--rs)}
 /* ── Task Detail Modal ── */
 .td-modal{max-width:640px}
 .td-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
@@ -453,8 +464,20 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
     <button class="btn p" style="padding:5px 12px;font-size:11px" onclick="addActionFromTD()" data-i18n="addBtn">Add</button>
   </div>
 </div>
+
+<!-- Dependencies Section -->
+<div class="td-section">
+  <div class="td-section-hdr">
+    <h4>🔗 <span data-i18n="dependencies">Dependencies</span></h4>
+    <span id="td-dep-count" style="font-size:11px;color:var(--mt)"></span>
+  </div>
+  <div id="td-deps"></div>
+  <div class="act-add" style="margin-top:8px">
+    <select class="inp" id="td-dep-select" style="flex:1;font-size:11px"><option value="">Select a task...</option></select>
+    <button class="btn p" style="padding:5px 12px;font-size:11px" onclick="addDepFromTD()">🔗 Link</button>
+  </div>
+</div>
 </div></div>
-<!-- Event Modal -->
 <div class="modal-overlay" id="modal-event"><div class="modal"><h3 id="modal-event-title" data-i18n="newEvent">New Event</h3>
 <div class="fg"><label data-i18n="title">Title</label><input class="inp" id="me-title" placeholder="Event title..." data-i18n-ph="phEventTitle"></div>
 <div class="fg"><label data-i18n="description">Description</label><textarea class="inp" id="me-desc" rows="3" placeholder="Notes..." data-i18n-ph="phNotes" style="resize:vertical"></textarea></div>
@@ -692,7 +715,7 @@ function renderSgChips(){
   el.innerHTML=h;
 }
 
-async function loadTasks(){try{let url=A+'/tasks?limit=100';if(curCat!=='all')url+='&category='+curCat;const r=await fetch(url,{headers:hdr()});allT=(await r.json()).tasks||[];await loadActionStats();renderTF();renderCF();renderGTabs();renderTL()}catch{$('tl').innerHTML='<div class="empty">Failed</div>'}}
+async function loadTasks(){try{let url=A+'/tasks?limit=100';if(curCat!=='all')url+='&category='+curCat;const r=await fetch(url,{headers:hdr()});allT=(await r.json()).tasks||[];await loadActionStats();await loadDepMap();renderTF();renderCF();renderGTabs();renderTL()}catch{$('tl').innerHTML='<div class="empty">Failed</div>'}}
 function renderTF(){const fs=[{i:'all',l:t('all')},{i:'todo',l:t('todo')},{i:'in_progress',l:t('active')},{i:'review',l:t('review')},{i:'done',l:t('done')}];$('tfl').innerHTML=fs.map(f=>`<button class="fb ${curF===f.i?'a':''}" onclick="curF='${f.i}';renderTL()">${f.l}</button>`).join('')}
 function renderCF(){const cs=['all',...new Set(allT.map(t=>t.category).filter(Boolean))];$('catfl').innerHTML=cs.map(c=>`<button class="fb ${curCat===c?'a':''}" onclick="curCat='${c}';loadTasks()">${c==='all'?t('allCategories'):c}</button>`).join('')}
 
@@ -714,7 +737,7 @@ function renderTL(){
     const gb=getGrpBadge(t);
     const as=actionStats[String(t.id)];
     const progHtml=as&&as.total>0?`<div class="task-prog"><div class="task-prog-bar"><div class="task-prog-fill" style="width:${as.progress}%"></div></div><span class="task-prog-text">${as.done}/${as.total}</span></div>`:'';
-    return`<div class="tr" onclick="openTD(${t.id})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${dn?'text-decoration:line-through;opacity:.5':''}">${t.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${t.assignee||I18N[curLang].unassigned}${gb}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div></div>${progHtml}${dueBadge(t)}<span class="badge" style="background:${pb};color:${pc}">${t.priority}</span><select class="sel" onclick="event.stopPropagation()" onchange="chStatus(${t.id},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>${I18N[curLang].todo}</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>${I18N[curLang].active}</option><option value="review" ${t.status==='review'?'selected':''}>${I18N[curLang].review}</option><option value="done" ${t.status==='done'?'selected':''}>${I18N[curLang].done}</option></select><button class="tmv" onclick="event.stopPropagation();openAssign(${t.id})" title="Move to group">📂</button></div>`
+    return`<div class="tr" onclick="openTD(${t.id})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${dn?'text-decoration:line-through;opacity:.5':''}">${t.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${t.assignee||I18N[curLang].unassigned}${gb}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div></div>${progHtml}${getDepBadges(t.id)}${dueBadge(t)}<span class="badge" style="background:${pb};color:${pc}">${t.priority}</span><select class="sel" onclick="event.stopPropagation()" onchange="chStatus(${t.id},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>${I18N[curLang].todo}</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>${I18N[curLang].active}</option><option value="review" ${t.status==='review'?'selected':''}>${I18N[curLang].review}</option><option value="done" ${t.status==='done'?'selected':''}>${I18N[curLang].done}</option></select><button class="tmv" onclick="event.stopPropagation();openAssign(${t.id})" title="Move to group">📂</button></div>`
   }).join(''):'<div class="empty">'+I18N[curLang].noTasks+'</div>';
 }
 
@@ -801,6 +824,7 @@ async function openTD(taskId){
 
   $('modal-td').classList.add('v');
   await loadTDActions(taskId);
+  await loadTDDeps(taskId);
 }
 
 function closeTD(){$('modal-td').classList.remove('v');tdTask=null;tdActions=[]}
@@ -945,6 +969,92 @@ async function saveEditAction(){
     editingActionId=null;
     await loadTDActions(tdTask.id);
   }catch{alert('Failed')}
+}
+
+// ═══ TASK DEPENDENCIES ═══
+let tdDeps={blocked_by:[],blocking:[]};
+let depMap={};
+
+async function loadDepMap(){
+  try{const r=await fetch(A+'/tasks/dependency-map',{headers:hdr()});const d=await r.json();depMap=d.dep_map||{}}catch{depMap={}}
+}
+
+async function loadTDDeps(taskId){
+  try{
+    const r=await fetch(A+'/tasks/'+taskId+'/dependencies',{headers:hdr()});
+    const d=await r.json();
+    tdDeps={blocked_by:d.blocked_by||[],blocking:d.blocking||[]};
+    renderTDDeps(d);
+    populateDepSelect(taskId);
+  }catch{
+    tdDeps={blocked_by:[],blocking:[]};
+    renderTDDeps({blocked_by:[],blocking:[],is_blocked:false});
+  }
+}
+
+function renderTDDeps(d){
+  const bb=d.blocked_by||[],bl=d.blocking||[];
+  const total=bb.length+bl.length;
+  $('td-dep-count').textContent=total>0?total+' '+t('dependencies').toLowerCase():'';
+  let h='';
+  if(bb.length){
+    h+=`<div style="font-size:10px;color:var(--mt);font-weight:600;margin-bottom:4px;text-transform:uppercase">🔒 ${t('blockedBy')}</div>`;
+    h+=bb.map(dep=>`<div class="dep-item">
+      <span class="dep-icon">${dep.status==='done'?'✅':'🔒'}</span>
+      <div class="dep-info"><div class="dep-title">#${dep.id} ${esc(dep.title)}</div><div class="dep-status">${dep.status} · ${dep.priority}${dep.assignee?' · '+dep.assignee:''}</div></div>
+      <button class="dep-remove" onclick="event.stopPropagation();removeDep(${dep.dep_id})" title="Remove">✕</button>
+    </div>`).join('');
+  }
+  if(bl.length){
+    h+=`<div style="font-size:10px;color:var(--mt);font-weight:600;margin:${bb.length?'10':'0'}px 0 4px;text-transform:uppercase">🔓 ${t('blocking')}</div>`;
+    h+=bl.map(dep=>`<div class="dep-item">
+      <span class="dep-icon">🔓</span>
+      <div class="dep-info"><div class="dep-title">#${dep.id} ${esc(dep.title)}</div><div class="dep-status">${dep.status} · ${dep.priority}${dep.assignee?' · '+dep.assignee:''}</div></div>
+      <button class="dep-remove" onclick="event.stopPropagation();removeDep(${dep.dep_id})" title="Remove">✕</button>
+    </div>`).join('');
+  }
+  if(!total)h=`<div class="empty" style="padding:8px;font-size:11px">${t('noDeps')}</div>`;
+  $('td-deps').innerHTML=h;
+}
+
+function populateDepSelect(taskId){
+  const sel=$('td-dep-select');
+  const existingIds=new Set([taskId,...(tdDeps.blocked_by||[]).map(d=>d.id),...(tdDeps.blocking||[]).map(d=>d.id)]);
+  const available=(allT||[]).filter(x=>!existingIds.has(x.id));
+  sel.innerHTML='<option value="">'+t('addDep')+'</option>'+available.map(x=>`<option value="${x.id}">#${x.id} ${esc(x.title).substring(0,50)}</option>`).join('');
+}
+
+async function addDepFromTD(){
+  if(!tdTask)return;
+  const sel=$('td-dep-select');
+  const depId=parseInt(sel.value);
+  if(!depId)return;
+  try{
+    await fetch(A+'/tasks/'+tdTask.id+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:depId})});
+    await loadTDDeps(tdTask.id);
+    await loadDepMap();
+    renderTL();
+  }catch(e){alert('Failed: '+e.message)}
+}
+
+async function removeDep(depId){
+  if(!tdTask)return;
+  try{
+    await fetch(A+'/tasks/'+tdTask.id+'/dependencies/'+depId,{method:'DELETE',headers:hdr()});
+    await loadTDDeps(tdTask.id);
+    await loadDepMap();
+    renderTL();
+  }catch{alert('Failed')}
+}
+
+function getDepBadges(taskId){
+  const d=depMap[String(taskId)];
+  if(!d)return'';
+  let h='';
+  if(d.is_blocked)h+=`<span class="dep-badge dep-blocked">🔒 ${t('blocked')}</span>`;
+  else if(d.blocked_by>0)h+=`<span class="dep-badge" style="background:var(--gs);color:var(--gn)">🔓 ${d.blocked_by}</span>`;
+  if(d.blocking>0)h+=`<span class="dep-badge dep-blocking">⛓ ${d.blocking}</span>`;
+  return h;
 }
 
 function exportCSV(){if(!allT.length){alert('No tasks');return}const h=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];const rows=allT.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);dl([h.join(','),...rows.map(r=>r.join(','))].join('\n'),'tasks_'+new Date().toISOString().split('T')[0]+'.csv','text/csv')}
@@ -1377,6 +1487,8 @@ const I18N={
     inviteByTelegram:'📨 Invite by Telegram',assignRole:'Assign Role',
     // Task detail
     actions:'Actions',noActionsYet:'No actions yet. Add one below to start tracking progress.',addAction:'Add an action...',edit:'Edit',
+    // Dependencies
+    dependencies:'Dependencies',blockedBy:'Blocked by',blocking:'Blocking',noDeps:'No dependencies',addDep:'Select a task...',linkDep:'Link',blocked:'Blocked',
     // Search
     search:'Search tasks, events, messages...',typeToSearch:'Type to search tasks, events, and messages',typeSearch:'Type to search...',noResults:'No results for',
     // Analytics chart titles
