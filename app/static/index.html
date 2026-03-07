@@ -344,6 +344,9 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeModal('task')">Cancel</button><button class="btn d" id="mt-del" onclick="deleteTask()" style="display:none">Delete</button><button class="btn p" onclick="saveTask()">Save</button></div></div></div>
 <!-- Reminder Modal -->
 <div class="modal-overlay" id="modal-remind"><div class="modal"><h3>New Reminder</h3>
+<div class="fg"><label>Message</label><input class="inp" id="mr-msg" placeholder="Remind me to..."></div>
+<div class="fg"><label>In how many minutes?</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"><button class="btn" onclick="$('mr-min').value='5'">5m</button><button class="btn" onclick="$('mr-min').value='15'">15m</button><button class="btn" onclick="$('mr-min').value='30'">30m</button><button class="btn" onclick="$('mr-min').value='60'">1h</button><button class="btn" onclick="$('mr-min').value='120'">2h</button><button class="btn" onclick="$('mr-min').value='1440'">1d</button></div><input class="inp" id="mr-min" type="number" value="30" style="margin-top:6px"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeModal('remind')">Cancel</button><button class="btn p" onclick="saveReminder()">Set Reminder</button></div></div></div>
 
 <!-- Task Detail Modal (with Actions) -->
 <div class="modal-overlay" id="modal-td" onclick="if(event.target===this)closeTD()"><div class="modal td-modal">
@@ -376,9 +379,6 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   </div>
 </div>
 </div></div>
-<div class="fg"><label>Message</label><input class="inp" id="mr-msg" placeholder="Remind me to..."></div>
-<div class="fg"><label>In how many minutes?</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"><button class="btn" onclick="$('mr-min').value='5'">5m</button><button class="btn" onclick="$('mr-min').value='15'">15m</button><button class="btn" onclick="$('mr-min').value='30'">30m</button><button class="btn" onclick="$('mr-min').value='60'">1h</button><button class="btn" onclick="$('mr-min').value='120'">2h</button><button class="btn" onclick="$('mr-min').value='1440'">1d</button></div><input class="inp" id="mr-min" type="number" value="30" style="margin-top:6px"></div>
-<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeModal('remind')">Cancel</button><button class="btn p" onclick="saveReminder()">Set Reminder</button></div></div></div>
 <!-- Event Modal -->
 <div class="modal-overlay" id="modal-event"><div class="modal"><h3 id="modal-event-title">New Event</h3>
 <div class="fg"><label>Title</label><input class="inp" id="me-title" placeholder="Event title..."></div>
