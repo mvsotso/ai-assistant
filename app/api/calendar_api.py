@@ -29,7 +29,7 @@ async def get_web_credentials(request: Request, db: AsyncSession):
     payload = verify_session_token(auth[7:])
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
-    telegram_id = settings.admin_telegram_id
+    telegram_id = int(settings.admin_telegram_id)
     creds = await token_store.load_token(db, telegram_id)
     if not creds:
         raise HTTPException(status_code=401, detail="Google Calendar not connected. Use /connect in Telegram first.")
