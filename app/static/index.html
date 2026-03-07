@@ -701,7 +701,12 @@ function onEvtFileSelect(){const f=$('me-file').files[0];if(f){evtFile=f;$('me-f
 function clearEvtFile(){evtFile=null;$('me-file').value='';$('me-fname').textContent=t('noFile');$('me-fname').style.color='var(--mt)'}
 function showAttachments(attachments){const el=$('me-attachments');if(attachments&&attachments.length){el.style.display='block';el.innerHTML='<div style="font-size:10px;color:var(--mt);font-weight:600;margin-bottom:4px">ATTACHMENTS</div>'+attachments.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0"><span style="font-size:12px">📄</span><a href="${a.fileUrl}" target="_blank" style="font-size:11px;color:var(--ac)">${esc(a.title)}</a></div>`).join('')}else{el.style.display='none';el.innerHTML=''}}
 function openEventModal(dt,hr){$('modal-event').classList.add('v');$('me-id').value='';$('me-title').value='';$('me-desc').value='';$('me-loc').value='';$('me-del').style.display='none';$('me-link').style.display='none';$('me-ai-section').style.display='none';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('newEvent');$('me-save').textContent=t('createEvent');clearEvtFile();showAttachments(null);evtDuration=60;const d=dt||fmt(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());const h=hr||9;$('me-date').value=d;$('me-edate').value=d;$('me-time').value=String(h).padStart(2,'0')+':00';$('me-etime').value=String(Math.min(h+1,23)).padStart(2,'0')+':00';setTimeout(()=>$('me-title').focus(),100)}
-function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)return;$('modal-event').classList.add('v');$('me-id').value=ev.id;$('me-title').value=ev.title||'';$('me-desc').value=ev.description||'';$('me-loc').value=ev.location||'';$('me-del').style.display='block';$('me-ai-section').style.display='block';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('editEvent');$('me-save').textContent=t('updateEvent');clearEvtFile();showAttachments(ev.attachments);if(ev.start_raw){try{const d=new Date(ev.start_raw);$('me-date').value=d.toISOString().split('T')[0];$('me-time').value=d.toTimeString().slice(0,5)}catch{}}if(ev.end_raw){try{const d=new Date(ev.end_raw);$('me-edate').value=d.toISOString().split('T')[0];$('me-etime').value=d.toTimeString().slice(0,5)}catch{}}if(ev.link){$('me-link').style.display='block';$('me-gcal-link').href=ev.link}else $('me-link').style.display='none';calcDuration()}
+function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)return;$('modal-event').classList.add('v');$('me-id').value=ev.id;$('me-title').value=ev.title||'';$('me-desc').value=ev.description||'';$('me-loc').value=ev.location||'';$('me-del').style.display='block';$('me-ai-section').style.display='block';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('editEvent');$('me-save').textContent=t('updateEvent');clearEvtFile();showAttachments(ev.attachments);if(ev.start_raw){try{const d=new Date(ev.start_raw);$('me-date').value=d.toISOString().split('T')[0];$('me-time').value=d.toTimeString().slice(0,5)}catch{}}if(ev.end_raw){try{const d=new Date(ev.end_raw);$('me-edate').value=d.toISOString().split('T')[0];$('me-etime').value=d.toTimeString().slice(0,5)}catch{}}if(ev.link){$('me-link').style.display='block';$('me-gcal-link').href=ev.link}else $('me-link').style.display='none';calcDuration();
+  // Auto-generate AI keynotes if event has attachments
+  if(ev.attachments&&ev.attachments.length){
+    autoEventAIWithAttachments(ev);
+  }
+}
 function closeEventModal(){$('modal-event').classList.remove('v');clearEvtFile()}
 async function saveEvent(){const id=$('me-id').value,title=$('me-title').value.trim(),date=$('me-date').value,time=$('me-time').value;if(!title){alert(curLang==='kh'?'សូមបំពេញចំណងជើង':'Title is required');$('me-title').focus();highlightMissingEventFields();return}if(!date){alert(curLang==='kh'?'សូមបំពេញកាលបរិច្ឆេទ':'Date is required');$('me-date').focus();highlightMissingEventFields();return}if(!time){alert(curLang==='kh'?'សូមបំពេញម៉ោង':'Time is required');$('me-time').focus();highlightMissingEventFields();return}$('me-save').textContent='Saving...';$('me-save').disabled=true;
 try{if(evtFile&&!id){
@@ -1270,6 +1275,49 @@ function pasteEvtAIToDesc(){
   $('me-ai-result').style.display='none';
 }
 
+async function autoEventAIWithAttachments(ev){
+  const el=$('me-ai-result');
+  el.style.display='block';
+  el.innerHTML='<div style="text-align:center;color:var(--mt);padding:6px">✨ '+t('aiAutoKeynotes')+'</div>';
+
+  const title=ev.title||'';
+  const desc=ev.description||'';
+  const loc=ev.location||'';
+  const attachList=(ev.attachments||[]).map(a=>a.title).join(', ');
+  const lang=curLang==='kh'?'Khmer':'English';
+
+  const prompt=`You are a personal AI assistant. This calendar event has attached documents. Based on the event details and attachment names, generate a brief summary and key notes in ${lang}.
+
+Event: "${title}"
+Date: ${ev.start||''} to ${ev.end||''}
+Location: ${loc||'Not specified'}
+Description: ${desc||'None'}
+Attached documents: ${attachList}
+
+Provide:
+1. A 2-sentence summary of what this event is likely about based on the title, description, and attachments
+2. 5-6 key talking points / preparation notes (bullet points with •)
+3. Note which attachment(s) to review before the meeting
+
+Keep it concise and actionable. No extra explanation.`;
+
+  try{
+    const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:prompt})});
+    const d=await r.json();
+    lastEvtAIMsg=d.response||'';
+    el.innerHTML=`<div style="font-size:9px;color:var(--ac);font-weight:600;margin-bottom:4px">✨ AUTO-GENERATED FROM ATTACHMENTS</div>
+      <div style="white-space:pre-wrap;line-height:1.7;color:var(--tx)">${esc(lastEvtAIMsg)}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;padding-top:6px;border-top:1px solid var(--bd)">
+        <button class="btn p" style="padding:3px 10px;font-size:9px" onclick="copyEvtAI()">📋 ${t('aiCopyMsg')}</button>
+        <button class="btn" style="padding:3px 10px;font-size:9px" onclick="pasteEvtAIToDesc()">📥 ${t('aiPasteToDesc')}</button>
+        <div style="flex:1"></div>
+        <button class="btn" style="padding:3px 6px;font-size:9px;color:var(--mt)" onclick="$('me-ai-result').style.display='none'">✕</button>
+      </div>`;
+  }catch(e){
+    el.innerHTML='<div style="color:var(--rd);padding:6px;font-size:10px">'+e.message+'</div>';
+  }
+}
+
 function exportCSV(){if(!allT.length){alert('No tasks');return}const h=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];const rows=allT.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);dl([h.join(','),...rows.map(r=>r.join(','))].join('\n'),'tasks_'+new Date().toISOString().split('T')[0]+'.csv','text/csv')}
 function exportJSON(){if(!allT.length){alert('No tasks');return}dl(JSON.stringify(allT.map(t=>({id:t.id,title:t.title,description:t.description,status:t.status,priority:t.priority,assignee:t.assignee,category:t.category,due_date:t.due_date})),null,2),'tasks_'+new Date().toISOString().split('T')[0]+'.json','application/json')}
 function dl(c,f,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)}
@@ -1775,7 +1823,7 @@ const I18N={
     // AI Task Actions
     aiActions:'AI Actions',aiFollowUp:'Follow Up',aiCheckProgress:'Check Progress',aiSummary:'Summary',aiDelegate:'Delegate',aiCopyMsg:'Copy',aiSendChat:'Send to Chat',
     // AI Event Actions
-    aiKeyNotes:'Key Notes',aiAgenda:'Agenda',aiPrep:'Prep Brief',aiMeetingFollowUp:'Follow Up',aiPasteToDesc:'Add to Notes',
+    aiKeyNotes:'Key Notes',aiAgenda:'Agenda',aiPrep:'Prep Brief',aiMeetingFollowUp:'Follow Up',aiPasteToDesc:'Add to Notes',aiAutoKeynotes:'Analyzing attachments & preparing key notes...',
     // Dependencies
     dependencies:'Dependencies',blockedBy:'Blocked by',blocking:'Blocking',noDeps:'No dependencies',addDep:'Select a task...',linkDep:'Link',blocked:'Blocked',
     // Search
@@ -1820,7 +1868,7 @@ const I18N={
     inviteByTelegram:'📨 អញ្ជើញតាម Telegram',assignRole:'កំណត់តួនាទី',
     actions:'សកម្មភាព',noActionsYet:'មិនទាន់មានសកម្មភាព។ បន្ថែមខាងក្រោមដើម្បីតាមដានវឌ្ឍនភាព។',addAction:'បន្ថែមសកម្មភាព...',edit:'កែ',
     aiActions:'AI សកម្មភាព',aiFollowUp:'តាមដាន',aiCheckProgress:'ពិនិត្យវឌ្ឍនភាព',aiSummary:'សង្ខេប',aiDelegate:'ប៉ុន្តែ',aiCopyMsg:'ចំលង',aiSendChat:'ផ្ញើទៅ Chat',
-    aiKeyNotes:'ចំណុចសំខាន់',aiAgenda:'វារៈរបៀបវារៈ',aiPrep:'សង្ខេបដំណើរ',aiMeetingFollowUp:'តាមដាន',aiPasteToDesc:'បន្ថែមទៅកំណត់ចំណាំ',
+    aiKeyNotes:'ចំណុចសំខាន់',aiAgenda:'វារៈរបៀបវារៈ',aiPrep:'សង្ខេបដំណើរ',aiMeetingFollowUp:'តាមដាន',aiPasteToDesc:'បន្ថែមទៅកំណត់ចំណាំ',aiAutoKeynotes:'កំពុងវិភាគឯកសារភ្ជាប់ និងរៀបចំណុចសំខាន់...',
     search:'ស្វែងរកភារកិច្ច ព្រឹត្តិការណ៍ សារ...',typeToSearch:'វាយដើម្បីស្វែងរកភារកិច្ច ព្រឹត្តិការណ៍ និងសារ',typeSearch:'វាយដើម្បីស្វែងរក...',noResults:'គ្មានលទ្ធផលសម្រាប់',
     statusDist:'ការចែកចាយស្ថានភាពភារកិច្ច',priorityBreak:'ការវិភាគអាទិភាព',tasksByCategory:'ភារកិច្ចតាមប្រភេទ',teamWorkload:'បន្ទុកការងារក្រុម',completionTrend:'អត្រាបញ្ចប់ (៧ ថ្ងៃចុងក្រោយ)',
     aiInsights:'AI ការវិភាគ និងអនុសាសន៍',loadingInsights:'កំពុងវិភាគទិន្នន័យរបស់អ្នក...',generateInsights:'បង្កើតការវិភាគ AI',
