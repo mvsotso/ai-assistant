@@ -11,7 +11,8 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Supported file types
-TEXT_EXTENSIONS = {".txt", ".sql", ".py", ".js", ".ts", ".json", ".xml", ".yaml", ".yml", ".md", ".html", ".css", ".sh", ".bat", ".log", ".env", ".cfg", ".ini", ".toml"}
+TEXT_EXTENSIONS = {".txt", ".sql", ".py", ".js", ".ts", ".json", ".xml", ".yaml", ".yml", ".md", ".html", ".css", ".log", ".cfg", ".ini", ".toml"}
+# Dangerous extensions blocked: .sh, .bat, .env (could expose secrets or execute code)
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
 MAX_TEXT_LENGTH = 50000  # Max chars to send to AI
 

@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static-preview",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "app/static"],
+      "port": 8080
+    },
+    {
+      "name": "fastapi-app",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+      "port": 8000
+    },
+    {
+      "name": "celery-worker",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "celery", "-A", "app.worker", "worker", "--loglevel=info", "--beat"],
+      "port": 0
+    },
+    {
+      "name": "docker-full-stack",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "--build"],
+      "port": 8000
+    }
+  ]
+}

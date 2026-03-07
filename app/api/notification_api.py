@@ -1,7 +1,7 @@
 """
 Notification API — in-app notification center endpoints.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
@@ -11,8 +11,12 @@ from app.models.notification import Notification
 from app.services.notification_svc import (
     get_notifications, get_unread_count, mark_read, mark_all_read, create_notification,
 )
+from app.api.auth import require_auth
 
-notification_router = APIRouter(prefix="/api/v1/notifications", tags=["Notifications"])
+notification_router = APIRouter(
+    prefix="/api/v1/notifications", tags=["Notifications"],
+    dependencies=[Depends(require_auth)],
+)
 
 
 @notification_router.get("")

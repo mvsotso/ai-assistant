@@ -50,6 +50,13 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     # Startup
     logger.info("🚀 Starting AI Personal Assistant...")
+
+    # Security: warn if default secret key is in use
+    if settings.app_secret_key == "change-this-to-a-random-secret-key":
+        if settings.is_production:
+            raise RuntimeError("FATAL: app_secret_key is set to the default value. Set APP_SECRET_KEY in .env before running in production.")
+        logger.warning("⚠️ SECURITY: Using default app_secret_key — set APP_SECRET_KEY in .env for production!")
+
     await init_db()
     logger.info("✅ Database initialized")
 
@@ -65,9 +72,9 @@ async def lifespan(app: FastAPI):
             ]
             for table, col, sql in migrations:
                 result = await conn.execute(text(
-                    f"SELECT column_name FROM information_schema.columns "
-                    f"WHERE table_name='{table}' AND column_name='{col}'"
-                ))
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name=:tbl AND column_name=:col"
+                ).bindparams(tbl=table, col=col))
                 if not result.fetchall():
                     await conn.execute(text(sql))
                     logger.info(f"🔧 Added {col} column to {table} table")
@@ -142,9 +149,9 @@ async def lifespan(app: FastAPI):
             ]
             for table, col, sql in user_migrations:
                 result = await conn.execute(text(
-                    f"SELECT column_name FROM information_schema.columns "
-                    f"WHERE table_name='{table}' AND column_name='{col}'"
-                ))
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name=:tbl AND column_name=:col"
+                ).bindparams(tbl=table, col=col))
                 if not result.fetchall():
                     await conn.execute(text(sql))
                     logger.info(f"🔧 Added {col} column to {table} table")
@@ -251,13 +258,19 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS — allow all origins for dashboard access
+# CORS — restrict to trusted origins
+_cors_origins = [
+    "https://sotso-assistant.duckdns.org",
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Register routes

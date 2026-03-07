@@ -10,11 +10,12 @@ from app.core.database import get_db
 from app.models.user import User
 from app.models.team_role import TeamRole
 from app.models.task import Task
+from app.api.auth import require_auth
 from pydantic import BaseModel
 from typing import Optional
 import json
 
-router = APIRouter(prefix="/api/v1/team-mgmt", tags=["team-management"])
+router = APIRouter(prefix="/api/v1/team-mgmt", tags=["team-management"], dependencies=[Depends(require_auth)])
 
 
 # ── Pydantic Schemas ──

@@ -11,10 +11,10 @@ from datetime import datetime, timedelta, timezone
 from app.core.database import get_db
 from app.core.config import get_settings
 from app.models.recurring_task import RecurringTask, RecurrenceType
-from app.api.auth import verify_session_token
+from app.api.auth import verify_session_token, require_auth
 
 settings = get_settings()
-recurring_router = APIRouter(prefix="/api/v1/recurring")
+recurring_router = APIRouter(prefix="/api/v1/recurring", dependencies=[Depends(require_auth)])
 
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
