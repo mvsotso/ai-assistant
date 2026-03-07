@@ -13,9 +13,11 @@ from app.api.router import router
 from app.api.calendar_api import calendar_router
 from app.api.recurring_api import recurring_router
 from app.api.task_group_api import router as task_group_router
+from app.api.team_api import router as team_mgmt_router
 from app.api.auth import auth_router
 from app.models.recurring_task import RecurringTask  # noqa: ensure table creation
 from app.models.task_group import TaskGroup, TaskSubGroup  # noqa: ensure table creation
+from app.models.team_role import TeamRole  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -56,7 +58,6 @@ async def lifespan(app: FastAPI):
                     logger.info(f"🔧 Added {col} column to {table} table")
 
             # ── Task Groups migration ──
-            # Create task_groups table
             await conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS task_groups (
                     id SERIAL PRIMARY KEY,
@@ -71,8 +72,6 @@ async def lifespan(app: FastAPI):
                     updated_at TIMESTAMP DEFAULT NOW()
                 )
             """))
-
-            # Create task_subgroups table
             await conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS task_subgroups (
                     id SERIAL PRIMARY KEY,
@@ -85,8 +84,6 @@ async def lifespan(app: FastAPI):
                     updated_at TIMESTAMP DEFAULT NOW()
                 )
             """))
-
-            # Add group_id and subgroup_id to tasks
             await conn.execute(text("""
                 DO $$
                 BEGIN
@@ -98,12 +95,57 @@ async def lifespan(app: FastAPI):
                     END IF;
                 END $$
             """))
-
-            # Create indexes
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_tasks_group_id ON tasks(group_id)'))
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_tasks_subgroup_id ON tasks(subgroup_id)'))
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_subgroups_group_id ON task_subgroups(group_id)'))
             logger.info("🔧 Task groups migration checked")
+
+            # ── Team Roles migration ──
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS team_roles (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL UNIQUE,
+                    description TEXT,
+                    color VARCHAR(7) DEFAULT '#3b82f6',
+                    permissions TEXT,
+                    is_default BOOLEAN DEFAULT FALSE,
+                    sort_order INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+
+            # Add new columns to users table
+            user_migrations = [
+                ("users", "role_id", "ALTER TABLE users ADD COLUMN role_id INTEGER REFERENCES team_roles(id) ON DELETE SET NULL"),
+                ("users", "phone", "ALTER TABLE users ADD COLUMN phone VARCHAR(50)"),
+                ("users", "email", "ALTER TABLE users ADD COLUMN email VARCHAR(255)"),
+                ("users", "avatar_url", "ALTER TABLE users ADD COLUMN avatar_url TEXT"),
+                ("users", "notes", "ALTER TABLE users ADD COLUMN notes TEXT"),
+                ("users", "department", "ALTER TABLE users ADD COLUMN department VARCHAR(100)"),
+                ("users", "title", "ALTER TABLE users ADD COLUMN title VARCHAR(200)"),
+            ]
+            for table, col, sql in user_migrations:
+                result = await conn.execute(text(
+                    f"SELECT column_name FROM information_schema.columns "
+                    f"WHERE table_name='{table}' AND column_name='{col}'"
+                ))
+                if not result.fetchall():
+                    await conn.execute(text(sql))
+                    logger.info(f"🔧 Added {col} column to {table} table")
+
+            # Seed default roles if none exist
+            role_count = await conn.execute(text("SELECT COUNT(*) FROM team_roles"))
+            if (role_count.scalar() or 0) == 0:
+                await conn.execute(text("""
+                    INSERT INTO team_roles (name, description, color, permissions, is_default, sort_order) VALUES
+                    ('Admin', 'Full access to all features', '#ef4444', '["view","edit","admin","delete"]', FALSE, 1),
+                    ('Editor', 'Can view and edit tasks and content', '#3b82f6', '["view","edit"]', TRUE, 2),
+                    ('Viewer', 'Read-only access', '#22c55e', '["view"]', FALSE, 3)
+                """))
+                logger.info("🔧 Seeded default team roles: Admin, Editor, Viewer")
+
+            logger.info("🔧 Team roles migration checked")
 
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
@@ -150,6 +192,7 @@ app.include_router(router)
 app.include_router(calendar_router)
 app.include_router(recurring_router)
 app.include_router(task_group_router)
+app.include_router(team_mgmt_router)
 app.include_router(auth_router)
 
 

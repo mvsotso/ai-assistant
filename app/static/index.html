@@ -158,6 +158,32 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 /* ── Group badge in task row ── */
 .grp-badge{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;background:rgba(255,255,255,.04);border-radius:4px;font-size:9px;cursor:pointer;transition:.15s}
 .grp-badge:hover{background:var(--as)}
+/* ── Team Member Cards ── */
+.tm-card{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:16px;display:flex;gap:14px;align-items:flex-start;margin-bottom:8px;transition:.2s}
+.tm-card:hover{border-color:rgba(59,130,246,.2)}
+.tm-avatar{width:48px;height:48px;border-radius:12px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--ac);flex-shrink:0;overflow:hidden}
+.tm-avatar img{width:100%;height:100%;object-fit:cover}
+.tm-info{flex:1;min-width:0}
+.tm-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tm-role-badge{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;display:inline-block}
+.tm-meta{font-size:10px;color:var(--mt);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tm-meta a{color:var(--ac);text-decoration:none}.tm-meta a:hover{text-decoration:underline}
+.tm-contact{font-size:10px;color:var(--mt);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+.tm-stats{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tm-stat{font-size:9px;padding:2px 8px;border-radius:4px;font-weight:600}
+.tm-actions{display:flex;gap:4px;flex-shrink:0}
+.tm-actions button{background:none;border:1px solid var(--bd);color:var(--mt);cursor:pointer;padding:5px 8px;font-size:11px;border-radius:6px;transition:.15s;font-family:'DM Sans',sans-serif}
+.tm-actions button:hover{background:var(--as);color:var(--ac);border-color:rgba(59,130,246,.2)}
+.tm-actions .del:hover{color:var(--rd);background:var(--rs);border-color:rgba(239,68,68,.2)}
+/* ── Role Manager ── */
+.role-card{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.02);border:1px solid var(--bd);border-radius:8px;margin-bottom:6px}
+.role-card .role-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.role-card .role-name{flex:1;font-size:12px;font-weight:600}
+.role-card .role-cnt{font-size:10px;color:var(--mt)}
+.role-card .role-acts{display:flex;gap:2px}
+.role-card .role-acts button{background:none;border:none;color:var(--mt);cursor:pointer;padding:2px 4px;font-size:11px;border-radius:4px;font-family:'DM Sans',sans-serif}
+.role-card .role-acts button:hover{color:var(--ac);background:rgba(255,255,255,.04)}
+.role-card .role-acts .del:hover{color:var(--rd)}
 @media(max-width:768px){
   .mobile-hdr{display:flex}.sb{transform:translateX(-100%)}.sb.open{transform:translateX(0)}.sb-overlay.open{display:block}
   .mn{margin-left:0;padding:12px;padding-top:64px;max-height:none;min-height:100vh}
@@ -219,7 +245,17 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
     <div id="tl"></div>
   </div>
 
-  <div id="pg-team" class="pg"><h2>Team Members</h2><div class="st">Registered team members</div><div id="team-list"></div></div>
+  <div id="pg-team" class="pg">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">Team Members</h2>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn gm" onclick="openRoleMgr()">🏷️ Roles</button>
+        <button class="btn" onclick="openInviteModal()">📨 Invite</button>
+        <button class="btn p" onclick="openMemberModal()">+ Add Member</button>
+      </div>
+    </div>
+    <div id="team-list"></div>
+  </div>
   <div id="pg-msgs" class="pg"><h2>Messages</h2><div class="st">Telegram group messages</div><div class="fl" id="gfl"></div><div id="ml"></div></div>
   <div id="pg-remind" class="pg"><h2>Reminders</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0">Scheduled notifications</div><button class="btn p" onclick="openModal('remind')">+ New Reminder</button></div><div id="rl"></div></div>
   <div id="pg-chat" class="pg"><h2>✨ AI Assistant</h2><div class="st">Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything or upload files for analysis.</div></div><div class="ch-r"><input type="file" id="chf" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.csv,.docx,.doc,.sql,.py,.js,.json,.txt,.md,.xml,.yaml,.html" onchange="onFileSelect()"><button onclick="$('chf').click()" style="width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--mt);font-size:14px;cursor:pointer;flex-shrink:0">📎</button><input class="ch-i" id="chi" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div><div id="chfn" style="display:none;padding:6px 0;font-size:11px;color:var(--ac)"></div></div></div>
@@ -326,6 +362,47 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeAddSg()">Cancel</button><button class="btn p" onclick="createSgFromModal()">Create</button></div>
 </div></div>
 
+<!-- Member Add/Edit Modal -->
+<div class="modal-overlay" id="modal-member" onclick="if(event.target===this)closeMemberModal()"><div class="modal" style="max-width:520px"><h3 id="modal-member-title">Add Member</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="fg"><label>First Name *</label><input class="inp" id="mm-fname" placeholder="First name"></div>
+<div class="fg"><label>Last Name</label><input class="inp" id="mm-lname" placeholder="Last name"></div>
+<div class="fg"><label>Telegram Username</label><input class="inp" id="mm-tg" placeholder="@username"></div>
+<div class="fg"><label>Telegram ID</label><input class="inp" id="mm-tgid" type="number" placeholder="Optional"></div>
+<div class="fg"><label>Phone</label><input class="inp" id="mm-phone" placeholder="+855..."></div>
+<div class="fg"><label>Email</label><input class="inp" id="mm-email" placeholder="email@..."></div>
+<div class="fg"><label>Department</label><input class="inp" id="mm-dept" placeholder="e.g. Data Bureau"></div>
+<div class="fg"><label>Job Title</label><input class="inp" id="mm-title" placeholder="e.g. Developer"></div>
+<div class="fg"><label>Role</label><select class="inp" id="mm-role"><option value="">— No Role —</option></select></div>
+<div class="fg"><label>Admin</label><select class="inp" id="mm-admin"><option value="false">No</option><option value="true">Yes</option></select></div>
+</div>
+<div class="fg"><label>Notes</label><textarea class="inp" id="mm-notes" rows="2" placeholder="Notes..." style="resize:vertical"></textarea></div>
+<input type="hidden" id="mm-id" value="">
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
+<button class="btn" onclick="closeMemberModal()">Cancel</button>
+<button class="btn d" id="mm-del" onclick="deleteMember()" style="display:none">Delete</button>
+<button class="btn p" id="mm-save" onclick="saveMember()">Add Member</button>
+</div></div></div>
+
+<!-- Invite Modal -->
+<div class="modal-overlay" id="modal-invite" onclick="if(event.target===this)closeInviteModal()"><div class="modal" style="max-width:380px"><h3>📨 Invite by Telegram</h3>
+<div class="fg"><label>Telegram Username</label><input class="inp" id="inv-tg" placeholder="@username"></div>
+<div class="fg"><label>Assign Role</label><select class="inp" id="inv-role"><option value="">— Default —</option></select></div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+<button class="btn" onclick="closeInviteModal()">Cancel</button>
+<button class="btn p" onclick="sendInvite()">Invite</button>
+</div></div></div>
+
+<!-- Role Manager Modal -->
+<div class="modal-overlay" id="modal-roles" onclick="if(event.target===this)closeRoleMgr()"><div class="modal gm-panel"><h3>🏷️ Manage Roles</h3>
+<div class="gm-add" style="margin-bottom:14px">
+  <input type="text" id="rm-name" class="gm-inp" placeholder="Role name" style="flex:1;min-width:100px" maxlength="100">
+  <input type="color" id="rm-color" value="#3b82f6" class="gm-color">
+  <button class="btn p" style="padding:7px 14px" onclick="createRole()">Add</button>
+</div>
+<div id="rm-list"></div>
+</div></div>
+
 <script>
 const A=window.location.origin+'/api/v1',PC={urgent:'#ef4444',high:'#f97316',medium:'#eab308',low:'#22c55e'},PB={urgent:'rgba(239,68,68,.1)',high:'rgba(249,115,22,.1)',medium:'rgba(234,179,8,.1)',low:'rgba(34,197,94,.1)'},SI={todo:'📋',in_progress:'🔄',review:'👀',done:'✅'};
 let tok=null,usr=null,allT=[],curF='all',curCat='all';const $=id=>document.getElementById(id);
@@ -342,7 +419,7 @@ function showApp(){$('login').style.display='none';$('app').classList.add('v');i
 window.onload=async()=>{if(await checkSession()){showApp();return}try{const r=await fetch(A+'/auth/client-id');const d=await r.json();if(d.client_id){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'})}}catch{$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team')loadTeam();if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring()}
+function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring()}
 function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?'Edit Task #'+data.id:'New Task';$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data)}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let cats=[];async function loadCats(){try{const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();cats=d.categories||[];$('cats').innerHTML=cats.map(c=>`<option value="${c}">`).join('')}catch{}}
@@ -524,7 +601,196 @@ async function createSgFromModal(){const n=$('addsg-name').value.trim();if(!n)re
 function exportCSV(){if(!allT.length){alert('No tasks');return}const h=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];const rows=allT.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);dl([h.join(','),...rows.map(r=>r.join(','))].join('\n'),'tasks_'+new Date().toISOString().split('T')[0]+'.csv','text/csv')}
 function exportJSON(){if(!allT.length){alert('No tasks');return}dl(JSON.stringify(allT.map(t=>({id:t.id,title:t.title,description:t.description,status:t.status,priority:t.priority,assignee:t.assignee,category:t.category,due_date:t.due_date})),null,2),'tasks_'+new Date().toISOString().split('T')[0]+'.json','application/json')}
 function dl(c,f,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)}
-async function loadTeam(){try{const r=await fetch(A+'/team',{headers:hdr()});const d=await r.json();const r2=await fetch(A+'/team/stats',{headers:hdr()});const d2=await r2.json();$('team-list').innerHTML=(d.members||[]).map(m=>{const s=d2.stats?.[m.first_name]||{},t=s.total||0,dn=s.done||0,p=t?Math.round(dn/t*100):0;return`<div class="cd" style="display:flex;align-items:center;gap:14px"><div style="width:40px;height:40px;border-radius:10px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.first_name||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${m.first_name||''} ${m.last_name||''}${m.is_admin?' 👑':''}</div><div style="font-size:10px;color:var(--mt)">@${m.username||'?'} · ${t} tasks · ${p}% done</div></div><div style="width:80px;flex-shrink:0"><div class="pi-b"><div class="pi-f" style="width:${p}%"></div></div></div></div>`}).join('')||'<div class="empty">No team members</div>'}catch{$('team-list').innerHTML='<div class="empty">Failed</div>'}}
+// ═══ TEAM MANAGEMENT ═══
+let teamMembers=[],teamRoles=[];
+const TA=A+'/team-mgmt';
+
+async function loadTeamRoles(){
+  try{const r=await fetch(TA+'/roles',{headers:hdr()});const d=await r.json();teamRoles=d.roles||[]}catch(e){console.error('loadTeamRoles:',e)}
+}
+
+async function loadTeamFull(){
+  try{const r=await fetch(TA+'/members',{headers:hdr()});const d=await r.json();teamMembers=d.members||[];renderTeamList()}catch{$('team-list').innerHTML='<div class="empty">Failed to load team</div>'}
+}
+
+// Also keep old loadTeam for dashboard stats compatibility
+async function loadTeam(){loadTeamFull()}
+
+function renderTeamList(){
+  if(!teamMembers.length){$('team-list').innerHTML='<div class="empty">No team members yet. Click "+ Add Member" to get started.</div>';return}
+  $('team-list').innerHTML=teamMembers.map(m=>{
+    const initials=((m.first_name||'?')[0]+(m.last_name||'')[0]).toUpperCase();
+    const role=m.role;
+    const roleBadge=role?`<span class="tm-role-badge" style="background:${role.color}22;color:${role.color}">${role.name}</span>`:'';
+    const adminBadge=m.is_admin?'<span class="tm-role-badge" style="background:var(--rs);color:var(--rd)">👑 Admin</span>':'';
+    const inactiveBadge=!m.is_active?'<span class="tm-role-badge" style="background:rgba(255,255,255,.05);color:var(--mt)">Inactive</span>':'';
+    const st=m.task_stats||{};
+    const total=st.total||0,done=st.done||0,pct=total?Math.round(done/total*100):0;
+
+    let contact='';
+    if(m.telegram_username)contact+=`<span>@${m.telegram_username}</span>`;
+    if(m.phone)contact+=`<span>📞 ${m.phone}</span>`;
+    if(m.email)contact+=`<span>✉️ ${m.email}</span>`;
+
+    let meta='';
+    if(m.title)meta+=`<span>${m.title}</span>`;
+    if(m.department)meta+=`<span>${m.department}</span>`;
+
+    return`<div class="tm-card">
+      <div class="tm-avatar">${m.avatar_url?`<img src="${m.avatar_url}" alt="">`:initials}</div>
+      <div class="tm-info">
+        <div class="tm-name">${esc(m.full_name||m.first_name||'Unknown')} ${roleBadge}${adminBadge}${inactiveBadge}</div>
+        ${meta?`<div class="tm-meta">${meta}</div>`:''}
+        ${contact?`<div class="tm-contact">${contact}</div>`:''}
+        <div class="tm-stats">
+          <span class="tm-stat" style="background:rgba(107,112,148,.1);color:#6b7094">${total} tasks</span>
+          <span class="tm-stat" style="background:var(--gs);color:var(--gn)">${done} done</span>
+          <span class="tm-stat" style="background:var(--as);color:var(--ac)">${pct}%</span>
+        </div>
+      </div>
+      <div class="tm-actions">
+        <button onclick="openMemberModal(${m.id})" title="Edit">✏️</button>
+        <button class="del" onclick="confirmDeleteMember(${m.id},'${esc(m.full_name).replace(/'/g,"\\'")}')" title="Remove">🗑️</button>
+      </div>
+    </div>`
+  }).join('');
+}
+
+// ── Member Modal ──
+function openMemberModal(memberId){
+  $('modal-member').classList.add('v');
+  populateRoleSelects();
+  if(memberId){
+    const m=teamMembers.find(x=>x.id===memberId);
+    if(!m)return;
+    $('modal-member-title').textContent='Edit Member';
+    $('mm-id').value=m.id;
+    $('mm-fname').value=m.first_name||'';
+    $('mm-lname').value=m.last_name||'';
+    $('mm-tg').value=m.telegram_username||'';
+    $('mm-tgid').value=m.telegram_id>0?m.telegram_id:'';
+    $('mm-phone').value=m.phone||'';
+    $('mm-email').value=m.email||'';
+    $('mm-dept').value=m.department||'';
+    $('mm-title').value=m.title||'';
+    $('mm-role').value=m.role_id||'';
+    $('mm-admin').value=m.is_admin?'true':'false';
+    $('mm-notes').value=m.notes||'';
+    $('mm-del').style.display='block';
+    $('mm-save').textContent='Update';
+  }else{
+    $('modal-member-title').textContent='Add Member';
+    $('mm-id').value='';
+    $('mm-fname').value='';$('mm-lname').value='';$('mm-tg').value='';$('mm-tgid').value='';
+    $('mm-phone').value='';$('mm-email').value='';$('mm-dept').value='';$('mm-title').value='';
+    $('mm-role').value='';$('mm-admin').value='false';$('mm-notes').value='';
+    $('mm-del').style.display='none';
+    $('mm-save').textContent='Add Member';
+  }
+  setTimeout(()=>$('mm-fname').focus(),100);
+}
+function closeMemberModal(){$('modal-member').classList.remove('v')}
+
+function populateRoleSelects(){
+  const opts='<option value="">— No Role —</option>'+teamRoles.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+  $('mm-role').innerHTML=opts;
+  const invOpts='<option value="">— Default —</option>'+teamRoles.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+  $('inv-role').innerHTML=invOpts;
+}
+
+async function saveMember(){
+  const id=$('mm-id').value;
+  const fname=$('mm-fname').value.trim();
+  if(!fname){alert('First name is required');return}
+  const body={
+    first_name:fname,
+    last_name:$('mm-lname').value.trim()||null,
+    telegram_username:$('mm-tg').value.trim().replace(/^@/,'')||null,
+    phone:$('mm-phone').value.trim()||null,
+    email:$('mm-email').value.trim()||null,
+    department:$('mm-dept').value.trim()||null,
+    title:$('mm-title').value.trim()||null,
+    notes:$('mm-notes').value.trim()||null,
+    role_id:$('mm-role').value?parseInt($('mm-role').value):null,
+    is_admin:$('mm-admin').value==='true',
+  };
+  if(!id){
+    const tgid=$('mm-tgid').value.trim();
+    if(tgid)body.telegram_id=parseInt(tgid);
+  }
+  $('mm-save').disabled=true;$('mm-save').textContent='Saving...';
+  try{
+    if(id){
+      await fetch(TA+'/members/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
+    }else{
+      await fetch(TA+'/members',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
+    }
+    closeMemberModal();await loadTeamFull();
+  }catch(e){alert('Failed: '+e.message)}
+  $('mm-save').disabled=false;$('mm-save').textContent=id?'Update':'Add Member';
+}
+
+async function deleteMember(){
+  const id=$('mm-id').value;if(!id)return;
+  const m=teamMembers.find(x=>x.id==id);
+  if(!confirm(`Remove ${m?.full_name||'this member'}?`))return;
+  try{await fetch(TA+'/members/'+id,{method:'DELETE',headers:hdr()});closeMemberModal();await loadTeamFull()}catch{alert('Failed')}
+}
+
+function confirmDeleteMember(id,name){
+  if(!confirm(`Remove "${name}" from the team?`))return;
+  fetch(TA+'/members/'+id,{method:'DELETE',headers:hdr()}).then(()=>loadTeamFull()).catch(()=>alert('Failed'));
+}
+
+// ── Invite Modal ──
+function openInviteModal(){populateRoleSelects();$('inv-tg').value='';$('inv-role').value='';$('modal-invite').classList.add('v');setTimeout(()=>$('inv-tg').focus(),100)}
+function closeInviteModal(){$('modal-invite').classList.remove('v')}
+async function sendInvite(){
+  const tg=$('inv-tg').value.trim();if(!tg){alert('Username required');return}
+  const roleId=$('inv-role').value?parseInt($('inv-role').value):null;
+  try{
+    const r=await fetch(TA+'/invite',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({telegram_username:tg,role_id:roleId})});
+    if(!r.ok){const e=await r.json();alert(e.detail||'Failed');return}
+    closeInviteModal();await loadTeamFull();
+  }catch(e){alert('Failed: '+e.message)}
+}
+
+// ── Role Manager ──
+function openRoleMgr(){$('modal-roles').classList.add('v');renderRoleList()}
+function closeRoleMgr(){$('modal-roles').classList.remove('v')}
+
+function renderRoleList(){
+  if(!teamRoles.length){$('rm-list').innerHTML='<div class="empty">No roles yet. Add one above.</div>';return}
+  $('rm-list').innerHTML=teamRoles.map(r=>`<div class="role-card">
+    <div class="role-dot" style="background:${r.color}"></div>
+    <div class="role-name">${esc(r.name)}${r.is_default?' <span style="font-size:9px;color:var(--mt)">(default)</span>':''}</div>
+    <div class="role-cnt">${r.member_count||0} members</div>
+    <div class="role-acts">
+      <button onclick="editRole(${r.id},'${esc(r.name).replace(/'/g,"\\'")}')">✏️</button>
+      <button class="del" onclick="deleteRole(${r.id},'${esc(r.name).replace(/'/g,"\\'")}')">🗑️</button>
+    </div>
+  </div>`).join('');
+}
+
+async function createRole(){
+  const n=$('rm-name').value.trim();if(!n)return;
+  const c=$('rm-color').value;
+  try{
+    const r=await fetch(TA+'/roles',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({name:n,color:c})});
+    if(!r.ok){const e=await r.json();alert(e.detail||'Failed');return}
+    $('rm-name').value='';await loadTeamRoles();renderRoleList()
+  }catch{alert('Failed')}
+}
+
+async function editRole(id,cur){
+  const n=prompt('Rename role:',cur);if(!n||n===cur)return;
+  try{await fetch(TA+'/roles/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({name:n})});await loadTeamRoles();renderRoleList()}catch{}
+}
+
+async function deleteRole(id,name){
+  if(!confirm(`Delete role "${name}"? Members will lose this role.`))return;
+  try{await fetch(TA+'/roles/'+id,{method:'DELETE',headers:hdr()});await loadTeamRoles();renderRoleList();await loadTeamFull()}catch{alert('Failed')}
+}
 let curG=null;async function loadMsgs(){try{const r=await fetch(A+'/messages/groups',{headers:hdr()});const gs=(await r.json()).groups||[];$('gfl').innerHTML=gs.map(g=>`<button class="fb ${String(curG)===String(g.chat_id)?'a':''}" onclick="curG=${g.chat_id};renderGroupBtns();loadMsgList()">${g.title} (${g.count})</button>`).join('')||'<div class="empty">No groups</div>';if(curG)loadMsgList();else $('ml').innerHTML='<div class="empty">Select a group</div>'}catch{$('ml').innerHTML='<div class="empty">Failed</div>'}}
 function renderGroupBtns(){document.querySelectorAll('#gfl .fb').forEach(b=>{const t=b.textContent;b.className='fb'+(b.onclick&&String(curG)&&b.outerHTML.includes(String(curG))?' a':'')})}
 let msgCache=[];
