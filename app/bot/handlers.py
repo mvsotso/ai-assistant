@@ -38,7 +38,12 @@ class BotHandlers:
         user_id = user.get("id")
         user_name = user.get("first_name", "Unknown")
 
+        # Always store messages silently (from all users)
         await self._store_message(db, message)
+
+        # Only admin can use commands and AI chat
+        if not is_admin(user_id):
+            return
 
         if text.startswith("/"):
             await self._handle_command(db, chat_id, user_id, user_name, text, message)
