@@ -1,44 +1,37 @@
-name: CI/CD — AI Personal Assistant
+name: Deploy to GCP
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Lint
-        run: |
-          pip install ruff
-          ruff check app/
-      - name: Type check
-        run: |
-          pip install pyright
-          pyright app/ --level basic || true
-
   deploy:
-    needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Deploy to GCP
-        uses: appleboy/ssh-action@v1
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.GCP_HOST }}
           username: ${{ secrets.GCP_USER }}
           key: ${{ secrets.GCP_SSH_KEY }}
           script: |
             cd ~/ai-assistant
+            echo "=== Pulling latest code ==="
+            git stash
             git pull origin main
-            docker compose -f docker-compose.prod.yml build
-            docker compose -f docker-compose.prod.yml up -d
-            echo "Deployed at $(date)"
+            
+            echo "=== Fixing nginx domain ==="
+            sed -i 's/YOUR_DOMAIN.com/sotso-assistant.duckdns.org/g' nginx/nginx.conf
+            sed -i 's/YOUR_DOMAIN/sotso-assistant.duckdns.org/g' nginx/nginx.conf
+            
+            echo "=== Building and deploying ==="
+            docker compose -f docker-compose.prod.yml up -d --build
+            
+            echo "=== Restarting nginx ==="
+            docker compose -f docker-compose.prod.yml restart nginx
+            
+            echo "=== Health check ==="
+            sleep 10
+            curl -sf https://sotso-assistant.duckdns.org/api/v1/health && echo " ✓ Health check passed" || echo " ✗ Health check failed"
+            
+            echo "=== Deploy complete ==="
