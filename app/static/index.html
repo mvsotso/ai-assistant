@@ -40,10 +40,10 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .st{font-size:12px;color:var(--mt);margin-bottom:16px}
 .gr{font-size:13px;color:var(--mt);margin-bottom:16px}.gr b{color:var(--tx)}
 .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.sc{background:var(--cd);border-radius:12px;padding:14px 16px;border:1px solid var(--bd);flex:1 1 120px;min-width:120px}
-.sc-i{width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;margin-right:8px;vertical-align:middle}
-.sc-l{font-size:10px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
-.sc-v{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-top:8px}
+.sc{background:var(--cd);border-radius:12px;padding:16px 14px;border:1px solid var(--bd);flex:1 1 120px;min-width:120px;text-align:center}
+.sc-i{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:8px}
+.sc-l{font-size:10px;color:var(--mt);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:block}
+.sc-v{font-size:28px;font-weight:800;font-family:'Outfit',sans-serif;margin-top:4px}
 .cd{background:var(--cd);border-radius:12px;padding:16px;border:1px solid var(--bd);margin-bottom:16px}
 .cd h3{font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:12px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
@@ -269,7 +269,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 @media(max-width:768px){
   .mobile-hdr{display:flex}.sb{transform:translateX(-100%)}.sb.open{transform:translateX(0)}.sb-overlay.open{display:block}
   .mn{margin-left:0;padding:12px;padding-top:64px;max-height:none;min-height:100vh}
-  .g2{grid-template-columns:1fr}.row{gap:8px}.sc{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:10px 12px}.sc-v{font-size:18px}
+  .g2{grid-template-columns:1fr}.row{gap:8px}.sc{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:12px 10px}.sc-v{font-size:22px}
   .bc{min-width:100%}#board{flex-direction:column}.ch-c{height:calc(100vh - 140px)}.ch-b{max-width:90%}
   .tr{padding:8px 10px;gap:8px}.modal{padding:16px;border-radius:12px}h2{font-size:18px}
   .cal-cell{min-height:70px}.cal-evt{font-size:9px;-webkit-line-clamp:1}.cal-toolbar{flex-direction:column;align-items:flex-start}
@@ -619,8 +619,8 @@ const tp=$('tp');const ent=Object.entries(d.team_stats||{});tp.innerHTML=ent.len
 $('rt').innerHTML=(d.recent_tasks||[]).slice(0,8).map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);cursor:pointer;transition:.15s" onclick="nav('tasks');setTimeout(()=>openTD(${t.id}),300)" onmouseover="this.style.background='rgba(59,130,246,.04)'" onmouseout="this.style.background='transparent'"><span style="font-size:11px">${SI[t.status]||'•'}</span><div style="flex:1;font-size:11px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>${dueBadge(t)}<span style="font-size:9px;color:var(--mt);flex-shrink:0">${t.assignee||'?'}</span></div>`).join('')||'<div class="empty">'+t('noTasks')+'</div>';
 loadDeadlines(d.recent_tasks||[]);$('od').innerHTML=(d.overdue_tasks||[]).length?`<div class="cd" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.05)"><h3 style="color:var(--rd)">⚠️ ${t('overdueAlert')}</h3>${d.overdue_tasks.map(t=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid rgba(239,68,68,.1);cursor:pointer;transition:.15s" onclick="nav('tasks');setTimeout(()=>openTD(${t.id}),300)" onmouseover="this.style.background='rgba(239,68,68,.06)'" onmouseout="this.style.background='transparent'">#${t.id} ${t.title} → ${t.assignee||'?'} ${dueBadge(t)}</div>`).join('')}</div>`:''
 }catch{$('stats').innerHTML='<div class="empty" style="color:var(--rd)">Failed</div>'}}
-function sc(i,l,v,c,b){return`<div class="sc"><div><span class="sc-i" style="background:${b}">${i}</span><span class="sc-l">${l}</span></div><div class="sc-v" style="color:${c}">${v}</div></div>`}
-function scc(i,l,v,c,b,onclick){return`<div class="sc" style="cursor:pointer;transition:.15s" onclick="${onclick}" onmouseover="this.style.borderColor='${c}'" onmouseout="this.style.borderColor='var(--bd)'"><div><span class="sc-i" style="background:${b}">${i}</span><span class="sc-l">${l}</span></div><div class="sc-v" style="color:${c}">${v}</div></div>`}
+function sc(i,l,v,c,b){return`<div class="sc"><span class="sc-i" style="background:${b}">${i}</span><span class="sc-l">${l}</span><div class="sc-v" style="color:${c}">${v}</div></div>`}
+function scc(i,l,v,c,b,onclick){return`<div class="sc" style="cursor:pointer;transition:.15s" onclick="${onclick}" onmouseover="this.style.borderColor='${c}'" onmouseout="this.style.borderColor='var(--bd)'"><span class="sc-i" style="background:${b}">${i}</span><span class="sc-l">${l}</span><div class="sc-v" style="color:${c}">${v}</div></div>`}
 async function loadDeadlines(tasks){if(!tasks?.length){try{tasks=(await(await fetch(A+'/tasks?limit=100',{headers:hdr()})).json()).tasks||[]}catch{}}const up=tasks.filter(t=>t.due_date&&t.status!=='done').map(t=>{const d=new Date(t.due_date),n=new Date();n.setHours(0,0,0,0);d.setHours(0,0,0,0);return{...t,diff:Math.floor((d-n)/864e5)}}).filter(t=>t.diff<=7).sort((a,b)=>a.diff-b.diff).slice(0,6);$('deadlines').innerHTML=up.length?up.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);cursor:pointer;transition:.15s" onclick="nav('tasks');setTimeout(()=>openTD(${t.id}),300)" onmouseover="this.style.background='rgba(59,130,246,.04)'" onmouseout="this.style.background='transparent'"><span style="font-size:11px">${SI[t.status]||'•'}</span><div style="flex:1;font-size:11px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>${dueBadge(t)}</div>`).join(''):'<div class="empty">'+t('noDeadlines')+'</div>'}
 let miniDate=new Date(),miniEvents=[];
 function initMiniCal(){miniDate=new Date();loadMiniEvents()}
