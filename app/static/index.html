@@ -18,8 +18,6 @@ body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--tx);min-h
 .login-err{background:var(--rs);color:var(--rd);padding:10px;border-radius:10px;font-size:12px;margin-top:16px;display:none}
 #g-btn{display:flex;justify-content:center}
 .app{display:none;min-height:100vh}.app.v{display:flex}
-
-/* Sidebar */
 .sb{width:var(--sb-w);background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;padding-top:16px;gap:4px;position:fixed;height:100vh;z-index:50;transition:transform .3s ease}
 .sb-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--pp));display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:800;margin-bottom:20px;flex-shrink:0}
 .nb{width:46px;height:46px;border-radius:10px;border:none;background:transparent;color:var(--mt);font-size:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.2s}
@@ -27,17 +25,11 @@ body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--tx);min-h
 .nb .l{font-size:7px;font-weight:600}
 .av{width:30px;height:30px;border-radius:8px;margin-top:auto;margin-bottom:8px;border:2px solid var(--bd);flex-shrink:0}
 .lo{width:40px;height:24px;border-radius:6px;border:none;background:var(--rs);color:var(--rd);font-size:9px;cursor:pointer;margin-bottom:12px;font-weight:600;flex-shrink:0}
-
-/* Mobile header */
 .mobile-hdr{display:none;position:fixed;top:0;left:0;right:0;height:52px;background:var(--sf);border-bottom:1px solid var(--bd);z-index:40;align-items:center;padding:0 12px;gap:10px}
 .hamburger{width:36px;height:36px;border:none;background:transparent;color:var(--tx);font-size:20px;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center}
 .hamburger:hover{background:var(--as)}
-.mobile-hdr .sb-logo{margin:0}
-.mobile-hdr .title{font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;flex:1}
-.mobile-hdr .av{margin:0}
+.mobile-hdr .sb-logo{margin:0}.mobile-hdr .title{font-size:14px;font-weight:700;font-family:'Outfit',sans-serif;flex:1}.mobile-hdr .av{margin:0}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45}
-
-/* Main */
 .mn{flex:1;margin-left:var(--sb-w);padding:20px 24px;overflow-y:auto;max-height:100vh}
 .pg{display:none}.pg.a{display:block}
 h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:4px}
@@ -53,21 +45,16 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .badge{padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;display:inline-block}
 .btn{padding:7px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--tx);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.2s}
-.btn:hover{border-color:var(--ac)}.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}
-.btn.d{background:var(--rs);color:var(--rd);border-color:transparent}
-.btn.ex{background:var(--gs);color:var(--gn);border-color:transparent}
-.inp{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:12px;outline:none;font-family:'DM Sans',sans-serif;width:100%}
-.inp:focus{border-color:var(--ac)}
+.btn:hover{border-color:var(--ac)}.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}.btn.d{background:var(--rs);color:var(--rd);border-color:transparent}.btn.ex{background:var(--gs);color:var(--gn);border-color:transparent}
+.inp{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:12px;outline:none;font-family:'DM Sans',sans-serif;width:100%}.inp:focus{border-color:var(--ac)}
 .sel{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;color:var(--ac);font-size:11px;font-weight:600;cursor:pointer;outline:none}
-.tr{background:var(--cd);border-radius:10px;padding:10px 14px;border:1px solid var(--bd);display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.tr:hover{border-color:var(--ac)}
+.tr{background:var(--cd);border-radius:10px;padding:10px 14px;border:1px solid var(--bd);display:flex;align-items:center;gap:10px;margin-bottom:6px}.tr:hover{border-color:var(--ac)}
 .pb{width:4px;height:24px;border-radius:2px;flex-shrink:0}
 .fl{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
 .fb{padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--mt);font-size:11px;font-weight:600;cursor:pointer}.fb.a{border-color:var(--ac);background:var(--as);color:var(--ac)}
 .bc{flex:1 1 220px;min-width:220px}.bh{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;font-weight:700}
 .bl{background:var(--sf);border-radius:10px;padding:8px;border:1px solid var(--bd);min-height:80px;display:flex;flex-direction:column;gap:6px}
-.bk{background:var(--cd);border-radius:8px;padding:10px 12px;border:1px solid var(--bd);border-left:3px solid var(--ac);cursor:grab;font-size:11px}
-.bk:hover{border-color:var(--ac)}.bk-t{font-weight:600;margin-bottom:4px}.bk-m{display:flex;gap:4px;flex-wrap:wrap;font-size:9px;color:var(--mt)}
+.bk{background:var(--cd);border-radius:8px;padding:10px 12px;border:1px solid var(--bd);border-left:3px solid var(--ac);cursor:grab;font-size:11px}.bk:hover{border-color:var(--ac)}.bk-t{font-weight:600;margin-bottom:4px}.bk-m{display:flex;gap:4px;flex-wrap:wrap;font-size:9px;color:var(--mt)}
 .pi{background:var(--cd);border-radius:10px;padding:12px 14px;border:1px solid var(--bd);margin-bottom:8px}
 .pi-h{display:flex;justify-content:space-between;margin-bottom:6px}.pi-n{font-size:12px;font-weight:600}.pi-p{font-size:11px;font-weight:700;color:var(--ac)}
 .pi-b{height:5px;border-radius:3px;background:var(--sf);overflow:hidden}.pi-f{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--ac),var(--gn));transition:.5s}
@@ -79,86 +66,68 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .ch-r{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--bd)}
 .ch-i{flex:1;background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:12px;outline:none;font-family:'DM Sans',sans-serif}
 .ch-s{width:38px;height:38px;border-radius:8px;border:none;background:var(--ac);color:#fff;font-size:14px;cursor:pointer;flex-shrink:0}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
-.modal-overlay.v{display:flex}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}.modal-overlay.v{display:flex}
 .modal{background:var(--cd);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
 .modal h3{font-size:16px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:16px}
 .fg{margin-bottom:12px}.fg label{font-size:11px;color:var(--mt);font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase}
 .empty{font-size:11px;color:var(--mt);text-align:center;padding:20px;font-style:italic}
-
-/* Calendar Widget */
-.cal-widget{background:var(--cd);border-radius:12px;padding:16px;border:1px solid var(--bd);margin-bottom:16px}
-.cal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.cal-hdr h3{font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;margin:0}
-.cal-nav{display:flex;gap:6px}
-.cal-nav button{width:28px;height:28px;border-radius:6px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
-.cal-nav button:hover{border-color:var(--ac)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-.cal-day-hdr{text-align:center;font-size:9px;font-weight:700;color:var(--mt);padding:4px 0;text-transform:uppercase}
-.cal-day{text-align:center;padding:6px 2px;border-radius:6px;font-size:11px;cursor:pointer;position:relative;min-height:32px;display:flex;align-items:center;justify-content:center}
-.cal-day:hover{background:var(--as)}
-.cal-day.today{background:var(--as);color:var(--ac);font-weight:700}
-.cal-day.other{color:var(--mt);opacity:.4}
-.cal-day .dot{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%}
-.cal-day .dot.task{background:var(--ac)}
-.cal-day .dot.overdue{background:var(--rd)}
-.cal-day .dot.event{background:var(--gn)}
-.cal-day .multi-dots{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
-.cal-day .multi-dots .dot{position:static;transform:none}
-
-/* Due date badges */
+/* Calendar */
+.cal-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.cal-toolbar .left{display:flex;align-items:center;gap:8px}
+.cal-toolbar .right{display:flex;gap:4px;align-items:center}
+.cal-nav-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}.cal-nav-btn:hover{border-color:var(--ac);background:var(--as)}
+.cal-today-btn{padding:5px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);cursor:pointer;font-size:11px;font-weight:600}.cal-today-btn:hover{border-color:var(--ac)}
+.cal-title{font-size:18px;font-weight:800;font-family:'Outfit',sans-serif}
+.cal-view-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--mt);font-size:11px;font-weight:600;cursor:pointer}.cal-view-btn.a{border-color:var(--ac);background:var(--as);color:var(--ac)}
+.cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.cal-hdr-cell{background:var(--sf);padding:8px 4px;text-align:center;font-size:10px;font-weight:700;color:var(--mt);text-transform:uppercase;border-bottom:1px solid var(--bd)}
+.cal-cell{min-height:90px;padding:4px;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);background:var(--cd);cursor:pointer;transition:background .15s}
+.cal-cell:nth-child(7n){border-right:none}.cal-cell:hover{background:var(--sf)}.cal-cell.today{background:rgba(59,130,246,.06)}.cal-cell.other{opacity:.35}
+.cal-cell .day-num{font-size:11px;font-weight:600;padding:2px 6px;display:inline-block;border-radius:50%;margin-bottom:2px}
+.cal-cell.today .day-num{background:var(--ac);color:#fff}
+.cal-evt{padding:1px 4px;border-radius:3px;font-size:9px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.5}
+.cal-evt.gcal{background:rgba(66,133,244,.2);color:#4285f4;border-left:2px solid #4285f4}
+.cal-evt.task{background:var(--as);color:var(--ac);border-left:2px solid var(--ac)}
+.cal-evt.overdue{background:var(--rs);color:var(--rd);border-left:2px solid var(--rd)}
+.cal-evt:hover{filter:brightness(1.2)}
+.cal-more{font-size:9px;color:var(--mt);padding:0 4px;cursor:pointer}.cal-more:hover{color:var(--ac)}
+.cal-week{display:grid;grid-template-columns:50px repeat(7,1fr);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.cal-week-hdr{background:var(--sf);padding:6px 4px;text-align:center;font-size:10px;font-weight:600;color:var(--mt);border-bottom:1px solid var(--bd);border-right:1px solid var(--bd)}.cal-week-hdr.today{color:var(--ac)}
+.cal-week-hdr .wdn{display:block;font-size:18px;font-weight:800;font-family:'Outfit',sans-serif;color:var(--tx)}.cal-week-hdr.today .wdn{color:var(--ac)}
+.cal-time{padding:2px 4px;font-size:9px;color:var(--mt);text-align:right;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);height:40px;background:var(--cd)}
+.cal-week-cell{border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);height:40px;background:var(--cd);position:relative;cursor:pointer}.cal-week-cell:hover{background:var(--sf)}
+.cal-week-evt{position:absolute;left:1px;right:1px;padding:2px 4px;border-radius:3px;font-size:9px;font-weight:600;z-index:2;overflow:hidden;cursor:pointer}
+.cal-week-evt.gcal{background:rgba(66,133,244,.3);color:#4285f4;border-left:2px solid #4285f4}
+.cal-day-view{border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.cal-day-row{display:grid;grid-template-columns:50px 1fr;border-bottom:1px solid var(--bd)}.cal-day-row:last-child{border-bottom:none}
+.cal-day-time{padding:4px;font-size:9px;color:var(--mt);text-align:right;border-right:1px solid var(--bd);height:48px;background:var(--cd);display:flex;align-items:flex-start;justify-content:flex-end}
+.cal-day-slot{height:48px;background:var(--cd);position:relative;cursor:pointer;padding:0 4px}.cal-day-slot:hover{background:var(--sf)}
+.cal-day-evt{position:absolute;left:4px;right:4px;padding:4px 6px;border-radius:4px;font-size:10px;font-weight:600;z-index:2;overflow:hidden;cursor:pointer}
+.cal-day-evt.gcal{background:rgba(66,133,244,.25);color:#4285f4;border-left:3px solid #4285f4}
 .due-soon{background:var(--os);color:var(--or);padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700}
 .due-overdue{background:var(--rs);color:var(--rd);padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;animation:pulse 2s infinite}
 .due-today{background:var(--ys);color:var(--yw);padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-
-/* Export bar */
-.export-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-.export-bar .label{font-size:11px;color:var(--mt);font-weight:600}
-
-/* Responsive */
+.cal-mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.cal-mini-hdr{text-align:center;font-size:9px;font-weight:700;color:var(--mt);padding:4px 0}
+.cal-mini-day{text-align:center;padding:5px 2px;border-radius:6px;font-size:11px;cursor:pointer}.cal-mini-day:hover{background:var(--as)}.cal-mini-day.today{background:var(--as);color:var(--ac);font-weight:700}.cal-mini-day.other{opacity:.3}
 @media(max-width:768px){
-  .mobile-hdr{display:flex}
-  .sb{transform:translateX(-100%)}
-  .sb.open{transform:translateX(0)}
-  .sb-overlay.open{display:block}
+  .mobile-hdr{display:flex}.sb{transform:translateX(-100%)}.sb.open{transform:translateX(0)}.sb-overlay.open{display:block}
   .mn{margin-left:0;padding:12px;padding-top:64px;max-height:none;min-height:100vh}
-  .g2{grid-template-columns:1fr}
-  .row{gap:8px}
-  .sc{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:10px 12px}
-  .sc-v{font-size:18px}
-  .bc{min-width:100%}
-  #board{flex-direction:column}
-  .ch-c{height:calc(100vh - 140px)}
-  .ch-b{max-width:90%}
-  .tr{padding:8px 10px;gap:8px}
-  .modal{padding:16px;border-radius:12px}
-  h2{font-size:18px}
-  .bk{padding:8px 10px}
-  .export-bar{gap:4px}
+  .g2{grid-template-columns:1fr}.row{gap:8px}.sc{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:10px 12px}.sc-v{font-size:18px}
+  .bc{min-width:100%}#board{flex-direction:column}.ch-c{height:calc(100vh - 140px)}.ch-b{max-width:90%}
+  .tr{padding:8px 10px;gap:8px}.modal{padding:16px;border-radius:12px}h2{font-size:18px}
+  .cal-cell{min-height:60px}.cal-evt{font-size:8px}.cal-toolbar{flex-direction:column;align-items:flex-start}
   .btn{padding:6px 10px;font-size:11px}
-  .sel{padding:4px 8px;font-size:10px}
 }
-@media(max-width:400px){
-  .sc{min-width:100%;flex:1 1 100%}
-  .row{flex-direction:column}
-}
+@media(max-width:400px){.sc{min-width:100%;flex:1 1 100%}.row{flex-direction:column}}
 </style>
 </head>
 <body>
 <div class="login" id="login"><div class="login-card"><div class="login-logo">AI</div><div class="login-title">AI Personal Assistant</div><div class="login-sub">Sign in with your Google account to access your dashboard.</div><div id="g-btn"></div><div class="login-err" id="login-err"></div></div></div>
-
 <div class="app" id="app">
-<!-- Mobile Header -->
-<div class="mobile-hdr" id="mobile-hdr">
-  <button class="hamburger" onclick="toggleSidebar()">☰</button>
-  <div class="sb-logo">AI</div>
-  <div class="title" id="mobile-title">Dashboard</div>
-  <img class="av" id="av-m" src="" alt="" style="width:28px;height:28px" />
-</div>
+<div class="mobile-hdr" id="mobile-hdr"><button class="hamburger" onclick="toggleSidebar()">☰</button><div class="sb-logo">AI</div><div class="title" id="mobile-title">Dashboard</div><img class="av" id="av-m" src="" alt="" style="width:28px;height:28px" /></div>
 <div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
-
-<!-- Sidebar -->
 <div class="sb" id="sidebar">
   <div class="sb-logo">AI</div>
   <button class="nb a" data-p="dash" onclick="nav('dash')"><span>⊞</span><span class="l">Home</span></button>
@@ -169,371 +138,136 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   <button class="nb" data-p="remind" onclick="nav('remind')"><span>⏰</span><span class="l">Remind</span></button>
   <button class="nb" data-p="chat" onclick="nav('chat')"><span>✨</span><span class="l">AI Chat</span></button>
   <button class="nb" data-p="calendar" onclick="nav('calendar')"><span>📅</span><span class="l">Calendar</span></button>
-  <img class="av" id="av" src="" alt="" />
-  <button class="lo" onclick="logout()">Exit</button>
+  <img class="av" id="av" src="" alt="" /><button class="lo" onclick="logout()">Exit</button>
 </div>
-
 <div class="mn">
-  <!-- Dashboard -->
-  <div id="pg-dash" class="pg a">
-    <h2>Dashboard</h2>
-    <div class="gr" id="greet"></div>
-    <div class="row" id="stats"></div>
-    <div class="g2">
-      <div>
-        <div class="cd"><h3>Team Progress</h3><div id="tp"></div></div>
-        <!-- Mini Calendar -->
-        <div class="cal-widget">
-          <div class="cal-hdr"><h3>📅 Calendar</h3><div class="cal-nav"><button onclick="calNav(-1)">◀</button><span id="cal-month" style="font-size:12px;font-weight:600;padding:0 8px"></span><button onclick="calNav(1)">▶</button></div></div>
-          <div class="cal-grid" id="cal-grid"></div>
-        </div>
-      </div>
-      <div>
-        <div class="cd"><h3>Recent Tasks</h3><div id="rt"></div></div>
-        <!-- Upcoming Deadlines -->
-        <div class="cd"><h3>⏰ Upcoming Deadlines</h3><div id="deadlines"></div></div>
-      </div>
-    </div>
-    <div id="od"></div>
-  </div>
-
-  <!-- Board -->
-  <div id="pg-board" class="pg">
-    <h2>Task Board</h2>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <div class="st" style="margin:0">Drag cards or use dropdown to change status</div>
-      <div class="export-bar">
-        <span class="label">Export:</span>
-        <button class="btn ex" onclick="exportCSV()">📊 CSV</button>
-        <button class="btn ex" onclick="exportJSON()">📋 JSON</button>
-      </div>
-    </div>
-    <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px" id="board"></div>
-  </div>
-
-  <!-- Tasks -->
-  <div id="pg-tasks" class="pg">
-    <h2>Tasks</h2>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <div class="fl" id="tfl" style="margin:0"></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn ex" onclick="exportCSV()">📊 CSV</button>
-        <button class="btn ex" onclick="exportJSON()">📋 JSON</button>
-        <button class="btn p" onclick="openModal('task')">+ New Task</button>
-      </div>
-    </div>
-    <div class="fl" id="catfl"></div>
-    <div id="tl"></div>
-  </div>
-
-  <!-- Team -->
+  <div id="pg-dash" class="pg a"><h2>Dashboard</h2><div class="gr" id="greet"></div><div class="row" id="stats"></div>
+    <div class="g2"><div><div class="cd"><h3>Team Progress</h3><div id="tp"></div></div>
+      <div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">📅 Calendar</h3><div style="display:flex;gap:4px"><button class="cal-nav-btn" style="width:24px;height:24px;font-size:11px" onclick="miniCalNav(-1)">◀</button><span id="mini-cal-month" style="font-size:11px;font-weight:600;padding:0 6px"></span><button class="cal-nav-btn" style="width:24px;height:24px;font-size:11px" onclick="miniCalNav(1)">▶</button></div></div><div class="cal-mini-grid" id="mini-cal"></div></div>
+    </div><div><div class="cd"><h3>Recent Tasks</h3><div id="rt"></div></div><div class="cd"><h3>⏰ Upcoming Deadlines</h3><div id="deadlines"></div></div></div></div><div id="od"></div></div>
+  <div id="pg-board" class="pg"><h2>Task Board</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0">Drag cards to change status</div><div style="display:flex;gap:6px"><button class="btn ex" onclick="exportCSV()">📊 CSV</button><button class="btn ex" onclick="exportJSON()">📋 JSON</button></div></div><div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px" id="board"></div></div>
+  <div id="pg-tasks" class="pg"><h2>Tasks</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="fl" id="tfl" style="margin:0"></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn ex" onclick="exportCSV()">📊 CSV</button><button class="btn ex" onclick="exportJSON()">📋 JSON</button><button class="btn p" onclick="openModal('task')">+ New Task</button></div></div><div class="fl" id="catfl"></div><div id="tl"></div></div>
   <div id="pg-team" class="pg"><h2>Team Members</h2><div class="st">Registered team members</div><div id="team-list"></div></div>
-
-  <!-- Messages -->
   <div id="pg-msgs" class="pg"><h2>Messages</h2><div class="st">Telegram group messages</div><div class="fl" id="gfl"></div><div id="ml"></div></div>
-
-  <!-- Reminders -->
   <div id="pg-remind" class="pg"><h2>Reminders</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0">Scheduled notifications</div><button class="btn p" onclick="openModal('remind')">+ New Reminder</button></div><div id="rl"></div></div>
-
-  <!-- AI Chat -->
-  <div id="pg-chat" class="pg"><h2>✨ AI Assistant</h2><div class="st">Chat with Claude Opus 4.6 · English & ខ្មែរ · Supports file uploads (PDF, images, Excel, Word, SQL)</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything about your tasks, calendar, or team. You can also upload files (PDF, images, Excel, Word, SQL) for me to analyze.</div></div><div class="ch-r"><input type="file" id="chf" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.csv,.docx,.doc,.sql,.py,.js,.json,.txt,.md,.xml,.yaml,.html" onchange="onFileSelect()"><button onclick="$('chf').click()" style="width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--mt);font-size:14px;cursor:pointer;flex-shrink:0" title="Upload file">📎</button><input class="ch-i" id="chi" placeholder="Ask anything or upload a file..." onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div><div id="chfn" style="display:none;padding:6px 0;font-size:11px;color:var(--ac)"></div></div></div>
-
-  <!-- Calendar Page -->
+  <div id="pg-chat" class="pg"><h2>✨ AI Assistant</h2><div class="st">Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything or upload files for analysis.</div></div><div class="ch-r"><input type="file" id="chf" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.csv,.docx,.doc,.sql,.py,.js,.json,.txt,.md,.xml,.yaml,.html" onchange="onFileSelect()"><button onclick="$('chf').click()" style="width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--mt);font-size:14px;cursor:pointer;flex-shrink:0">📎</button><input class="ch-i" id="chi" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div><div id="chfn" style="display:none;padding:6px 0;font-size:11px;color:var(--ac)"></div></div></div>
   <div id="pg-calendar" class="pg">
-    <h2>📅 Calendar</h2>
-    <div class="st">Task deadlines and Google Calendar events</div>
-    <div class="cal-widget" style="max-width:600px">
-      <div class="cal-hdr"><h3 id="cal2-title"></h3><div class="cal-nav"><button onclick="cal2Nav(-1)">◀</button><span id="cal2-month" style="font-size:12px;font-weight:600;padding:0 8px"></span><button onclick="cal2Nav(1)">▶</button></div></div>
-      <div class="cal-grid" id="cal2-grid"></div>
-    </div>
-    <div class="cd" id="cal-detail"><h3>📋 Events for Selected Date</h3><div id="cal-events"><div class="empty">Click a date above to see tasks and events</div></div></div>
+    <div class="cal-toolbar"><div class="left"><button class="cal-today-btn" onclick="calGoToday()">Today</button><button class="cal-nav-btn" onclick="calGo(-1)">◀</button><button class="cal-nav-btn" onclick="calGo(1)">▶</button><span class="cal-title" id="cal-title"></span></div>
+    <div class="right"><button class="btn p" onclick="openEventModal()" style="margin-right:8px">+ Event</button><button class="cal-view-btn a" id="cv-month" onclick="setCalView('month')">Month</button><button class="cal-view-btn" id="cv-week" onclick="setCalView('week')">Week</button><button class="cal-view-btn" id="cv-day" onclick="setCalView('day')">Day</button></div></div>
+    <div id="cal-container"></div>
   </div>
-</div>
-</div>
-
+</div></div>
 <!-- Task Modal -->
 <div class="modal-overlay" id="modal-task"><div class="modal"><h3 id="modal-task-title">New Task</h3>
 <div class="fg"><label>Title</label><input class="inp" id="mt-title" placeholder="Task title..."></div>
-<div class="fg"><label>Description</label><textarea class="inp" id="mt-desc" rows="3" placeholder="Optional description..." style="resize:vertical"></textarea></div>
+<div class="fg"><label>Description</label><textarea class="inp" id="mt-desc" rows="3" placeholder="Description..." style="resize:vertical"></textarea></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 <div class="fg"><label>Priority</label><select class="inp" id="mt-prio"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
 <div class="fg"><label>Status</label><select class="inp" id="mt-status"><option value="todo">To Do</option><option value="in_progress">In Progress</option><option value="review">Review</option><option value="done">Done</option></select></div>
 <div class="fg"><label>Assignee</label><input class="inp" id="mt-assign" placeholder="Name..."></div>
 <div class="fg"><label>Due Date</label><input class="inp" id="mt-due" type="date"></div>
-<div class="fg"><label>Category</label><input class="inp" id="mt-cat" placeholder="e.g. GDT, Kado24" list="cats"></div>
-<div class="fg"><label>Subcategory</label><input class="inp" id="mt-sub" placeholder="e.g. ETL, Frontend" list="subs"></div>
-</div>
-<datalist id="cats"></datalist><datalist id="subs"></datalist>
-<input type="hidden" id="mt-id" value="">
-<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
-<button class="btn" onclick="closeModal('task')">Cancel</button>
-<button class="btn d" id="mt-del" onclick="deleteTask()" style="display:none">Delete</button>
-<button class="btn p" onclick="saveTask()">Save</button>
-</div></div></div>
-
+<div class="fg"><label>Category</label><input class="inp" id="mt-cat" placeholder="e.g. GDT" list="cats"></div>
+<div class="fg"><label>Subcategory</label><input class="inp" id="mt-sub" placeholder="e.g. ETL" list="subs"></div>
+</div><datalist id="cats"></datalist><datalist id="subs"></datalist><input type="hidden" id="mt-id" value="">
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeModal('task')">Cancel</button><button class="btn d" id="mt-del" onclick="deleteTask()" style="display:none">Delete</button><button class="btn p" onclick="saveTask()">Save</button></div></div></div>
 <!-- Reminder Modal -->
 <div class="modal-overlay" id="modal-remind"><div class="modal"><h3>New Reminder</h3>
 <div class="fg"><label>Message</label><input class="inp" id="mr-msg" placeholder="Remind me to..."></div>
-<div class="fg"><label>In how many minutes?</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-<button class="btn" onclick="$('mr-min').value='5'">5m</button>
-<button class="btn" onclick="$('mr-min').value='15'">15m</button>
-<button class="btn" onclick="$('mr-min').value='30'">30m</button>
-<button class="btn" onclick="$('mr-min').value='60'">1h</button>
-<button class="btn" onclick="$('mr-min').value='120'">2h</button>
-<button class="btn" onclick="$('mr-min').value='1440'">1d</button>
-</div><input class="inp" id="mr-min" type="number" value="30" style="margin-top:6px"></div>
-<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-<button class="btn" onclick="closeModal('remind')">Cancel</button>
-<button class="btn p" onclick="saveReminder()">Set Reminder</button>
-</div></div></div>
+<div class="fg"><label>In how many minutes?</label><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"><button class="btn" onclick="$('mr-min').value='5'">5m</button><button class="btn" onclick="$('mr-min').value='15'">15m</button><button class="btn" onclick="$('mr-min').value='30'">30m</button><button class="btn" onclick="$('mr-min').value='60'">1h</button><button class="btn" onclick="$('mr-min').value='120'">2h</button><button class="btn" onclick="$('mr-min').value='1440'">1d</button></div><input class="inp" id="mr-min" type="number" value="30" style="margin-top:6px"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeModal('remind')">Cancel</button><button class="btn p" onclick="saveReminder()">Set Reminder</button></div></div></div>
+<!-- Event Modal -->
+<div class="modal-overlay" id="modal-event"><div class="modal"><h3 id="modal-event-title">New Event</h3>
+<div class="fg"><label>Title</label><input class="inp" id="me-title" placeholder="Event title..."></div>
+<div class="fg"><label>Description</label><textarea class="inp" id="me-desc" rows="3" placeholder="Notes..." style="resize:vertical"></textarea></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="fg"><label>Start Date</label><input class="inp" id="me-date" type="date"></div>
+<div class="fg"><label>Start Time</label><input class="inp" id="me-time" type="time" value="09:00"></div>
+<div class="fg"><label>End Date</label><input class="inp" id="me-edate" type="date"></div>
+<div class="fg"><label>End Time</label><input class="inp" id="me-etime" type="time" value="10:00"></div>
+</div>
+<div class="fg"><label>Location</label><input class="inp" id="me-loc" placeholder="Location..."></div>
+<input type="hidden" id="me-id" value="">
+<div id="me-link" style="display:none;margin-bottom:12px"><a id="me-gcal-link" href="#" target="_blank" style="font-size:11px;color:var(--ac)">Open in Google Calendar ↗</a></div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeEventModal()">Cancel</button><button class="btn d" id="me-del" onclick="deleteEvent()" style="display:none">Delete</button><button class="btn p" id="me-save" onclick="saveEvent()">Create Event</button></div></div></div>
 
 <script>
-const A=window.location.origin+'/api/v1';
-const PC={urgent:'#ef4444',high:'#f97316',medium:'#eab308',low:'#22c55e'};
-const PB={urgent:'rgba(239,68,68,.1)',high:'rgba(249,115,22,.1)',medium:'rgba(234,179,8,.1)',low:'rgba(34,197,94,.1)'};
-const SI={todo:'📋',in_progress:'🔄',review:'👀',done:'✅'};
-let tok=null,usr=null,allT=[],curF='all',curCat='all';
-const $=id=>document.getElementById(id);
-const pageTitles={dash:'Dashboard',board:'Task Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Reminders',chat:'AI Chat',calendar:'Calendar'};
-
-// --- Mobile Sidebar ---
-function toggleSidebar(){
-  const sb=$('sidebar'),ov=$('sb-overlay');
-  sb.classList.toggle('open');ov.classList.toggle('open');
-}
-function closeSidebar(){
-  $('sidebar').classList.remove('open');$('sb-overlay').classList.remove('open');
-}
-
-// Auth
-function stored(){try{const s=localStorage.getItem('ai_s');return s?JSON.parse(s):null}catch{return null}}
+const A=window.location.origin+'/api/v1',PC={urgent:'#ef4444',high:'#f97316',medium:'#eab308',low:'#22c55e'},PB={urgent:'rgba(239,68,68,.1)',high:'rgba(249,115,22,.1)',medium:'rgba(234,179,8,.1)',low:'rgba(34,197,94,.1)'},SI={todo:'📋',in_progress:'🔄',review:'👀',done:'✅'};
+let tok=null,usr=null,allT=[],curF='all',curCat='all';const $=id=>document.getElementById(id);
+const PT={dash:'Dashboard',board:'Task Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Reminders',chat:'AI Chat',calendar:'Calendar'};
+function toggleSidebar(){$('sidebar').classList.toggle('open');$('sb-overlay').classList.toggle('open')}
+function closeSidebar(){$('sidebar').classList.remove('open');$('sb-overlay').classList.remove('open')}
+function stored(){try{return JSON.parse(localStorage.getItem('ai_s'))}catch{return null}}
 function store(s){localStorage.setItem('ai_s',JSON.stringify(s))}
 function clear(){localStorage.removeItem('ai_s');tok=null;usr=null}
 async function checkSession(){const s=stored();if(!s?.token)return false;if(s.expires_at<Date.now()/1000){clear();return false}try{const r=await fetch(A+'/auth/verify',{headers:{Authorization:'Bearer '+s.token}});if(r.ok){tok=s.token;usr={email:s.email,name:s.name,picture:s.picture};return true}}catch{}clear();return false}
 async function gSign(r){const e=$('login-err');e.style.display='none';try{const res=await fetch(A+'/auth/google/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:r.credential})});const d=await res.json();if(res.ok){tok=d.token;usr={email:d.email,name:d.name,picture:d.picture};store(d);showApp()}else{e.textContent=d.detail||'Denied';e.style.display='block'}}catch{e.textContent='Server error';e.style.display='block'}}
 function logout(){clear();$('app').classList.remove('v');$('login').style.display='flex'}
-function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`Welcome, <b>${usr.name}</b>`}loadDash();loadCats();initCal();initCal2()}
+function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`Welcome, <b>${usr.name}</b>`}loadDash();loadCats();initMiniCal()}
 window.onload=async()=>{if(await checkSession()){showApp();return}try{const r=await fetch(A+'/auth/client-id');const d=await r.json();if(d.client_id){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'})}}catch{$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
-
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-
-// Nav
-function nav(p){
-  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));
-  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));
-  $('pg-'+p).classList.add('a');
-  const btn=document.querySelector(`[data-p="${p}"]`);if(btn)btn.classList.add('a');
-  if($('mobile-title'))$('mobile-title').textContent=pageTitles[p]||'';
-  closeSidebar();
-  if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks')loadTasks();if(p==='team')loadTeam();if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')renderCal2();
-}
-
-// Modal
+function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks')loadTasks();if(p==='team')loadTeam();if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage()}
 function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?'Edit Task #'+data.id:'New Task';$('mt-del').style.display=data?.id?'block':'none'}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
-
-// Categories
-let cats=[];
-async function loadCats(){try{const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();cats=d.categories||[];const dl=$('cats');dl.innerHTML=cats.map(c=>`<option value="${c}">`).join('')}catch{}}
-
-// --- Due Date Helpers ---
-function getDueStatus(dueDateStr){
-  if(!dueDateStr)return null;
-  const now=new Date();now.setHours(0,0,0,0);
-  const due=new Date(dueDateStr);due.setHours(0,0,0,0);
-  const diff=Math.floor((due-now)/(1000*60*60*24));
-  if(diff<0)return{cls:'due-overdue',text:'Overdue '+Math.abs(diff)+'d',type:'overdue'};
-  if(diff===0)return{cls:'due-today',text:'Due Today',type:'today'};
-  if(diff<=3)return{cls:'due-soon',text:'Due in '+diff+'d',type:'soon'};
-  return null;
-}
-function dueBadge(t){
-  if(t.status==='done')return'';
-  const s=getDueStatus(t.due_date);
-  return s?`<span class="${s.cls}">${s.text}</span>`:'';
-}
-
-// Dashboard
-async function loadDash(){try{const r=await fetch(A+'/dashboard',{headers:hdr()});const d=await r.json();const s=d.stats;
-$('stats').innerHTML=[sc('📋','To Do',s.todo,'#6b7094','rgba(107,112,148,.1)'),sc('🔄','Active',s.in_progress,'#3b82f6','rgba(59,130,246,.1)'),sc('👀','Review',s.review,'#a855f7','rgba(168,85,247,.1)'),sc('✅','Done',s.done,'#22c55e','rgba(34,197,94,.1)'),sc('🔴','Overdue',s.overdue,'#ef4444','rgba(239,68,68,.1)'),sc('💬','Msgs',s.total_messages,'#ec4899','rgba(236,72,153,.1)')].join('');
+let cats=[];async function loadCats(){try{const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();cats=d.categories||[];$('cats').innerHTML=cats.map(c=>`<option value="${c}">`).join('')}catch{}}
+function getDueStatus(d){if(!d)return null;const n=new Date();n.setHours(0,0,0,0);const u=new Date(d);u.setHours(0,0,0,0);const df=Math.floor((u-n)/864e5);if(df<0)return{cls:'due-overdue',text:'Overdue '+Math.abs(df)+'d',type:'overdue'};if(df===0)return{cls:'due-today',text:'Due Today',type:'today'};if(df<=3)return{cls:'due-soon',text:'Due in '+df+'d',type:'soon'};return null}
+function dueBadge(t){if(t.status==='done')return'';const s=getDueStatus(t.due_date);return s?`<span class="${s.cls}">${s.text}</span>`:''}
+async function loadDash(){try{const r=await fetch(A+'/dashboard',{headers:hdr()});const d=await r.json();const s=d.stats;$('stats').innerHTML=[sc('📋','To Do',s.todo,'#6b7094','rgba(107,112,148,.1)'),sc('🔄','Active',s.in_progress,'#3b82f6','rgba(59,130,246,.1)'),sc('👀','Review',s.review,'#a855f7','rgba(168,85,247,.1)'),sc('✅','Done',s.done,'#22c55e','rgba(34,197,94,.1)'),sc('🔴','Overdue',s.overdue,'#ef4444','rgba(239,68,68,.1)'),sc('💬','Msgs',s.total_messages,'#ec4899','rgba(236,72,153,.1)')].join('');
 const tp=$('tp');const ent=Object.entries(d.team_stats||{});tp.innerHTML=ent.length?ent.map(([n,s])=>{const t=s.total||1,dn=s.done||0,p=Math.round(dn/t*100);return`<div class="pi"><div class="pi-h"><span class="pi-n">${n}</span><span class="pi-p">${p}%</span></div><div class="pi-b"><div class="pi-f" style="width:${p}%"></div></div></div>`}).join(''):'<div class="empty">No data</div>';
 $('rt').innerHTML=(d.recent_tasks||[]).slice(0,8).map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px">${SI[t.status]||'•'}</span><div style="flex:1;font-size:11px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>${dueBadge(t)}<span style="font-size:9px;color:var(--mt);flex-shrink:0">${t.assignee||'?'}</span></div>`).join('')||'<div class="empty">No tasks</div>';
-
-// Upcoming deadlines
-loadDeadlines(d.recent_tasks||[]);
-
-$('od').innerHTML=(d.overdue_tasks||[]).length?`<div class="cd" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.05)"><h3 style="color:var(--rd)">⚠️ Overdue</h3>${d.overdue_tasks.map(t=>`<div style="font-size:11px;padding:3px 0">#${t.id} ${t.title} → ${t.assignee||'?'} ${dueBadge(t)}</div>`).join('')}</div>`:''
-
-// Update calendar dots
-updateCalTasks(d.recent_tasks||[]);
-}catch(e){$('stats').innerHTML='<div class="empty" style="color:var(--rd)">Failed to load</div>'}}
+loadDeadlines(d.recent_tasks||[]);$('od').innerHTML=(d.overdue_tasks||[]).length?`<div class="cd" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.05)"><h3 style="color:var(--rd)">⚠️ Overdue</h3>${d.overdue_tasks.map(t=>`<div style="font-size:11px;padding:3px 0">#${t.id} ${t.title} → ${t.assignee||'?'} ${dueBadge(t)}</div>`).join('')}</div>`:''
+}catch{$('stats').innerHTML='<div class="empty" style="color:var(--rd)">Failed</div>'}}
 function sc(i,l,v,c,b){return`<div class="sc"><div><span class="sc-i" style="background:${b}">${i}</span><span class="sc-l">${l}</span></div><div class="sc-v" style="color:${c}">${v}</div></div>`}
-
-// Deadlines widget
-async function loadDeadlines(tasks){
-  if(!tasks||!tasks.length){try{const r=await fetch(A+'/tasks?limit=100',{headers:hdr()});const d=await r.json();tasks=d.tasks||[]}catch{}}
-  const upcoming=tasks.filter(t=>t.due_date&&t.status!=='done').map(t=>{
-    const due=new Date(t.due_date);const now=new Date();now.setHours(0,0,0,0);due.setHours(0,0,0,0);
-    const diff=Math.floor((due-now)/(1000*60*60*24));
-    return{...t,diff};
-  }).filter(t=>t.diff<=7).sort((a,b)=>a.diff-b.diff).slice(0,6);
-  $('deadlines').innerHTML=upcoming.length?upcoming.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px">${SI[t.status]||'•'}</span><div style="flex:1;font-size:11px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>${dueBadge(t)}</div>`).join(''):'<div class="empty">No upcoming deadlines</div>'
-}
-
-// --- Calendar Widget (Mini on Dashboard) ---
-let calDate=new Date(),calTasks=[];
-function initCal(){calDate=new Date();renderCal()}
-function calNav(dir){calDate.setMonth(calDate.getMonth()+dir);renderCal()}
-function updateCalTasks(tasks){calTasks=tasks||[];renderCal()}
-function renderCal(){
-  const y=calDate.getFullYear(),m=calDate.getMonth();
-  $('cal-month').textContent=new Date(y,m).toLocaleDateString('en',{month:'long',year:'numeric'});
-  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
-  const prevDays=new Date(y,m,0).getDate();
-  const today=new Date();today.setHours(0,0,0,0);
-  // Task dates map
-  const taskDates={};
-  calTasks.forEach(t=>{if(t.due_date){const d=t.due_date.split('T')[0];if(!taskDates[d])taskDates[d]=[];taskDates[d].push(t)}});
-  let html='';
-  ['S','M','T','W','T','F','S'].forEach(d=>{html+=`<div class="cal-day-hdr">${d}</div>`});
-  // Previous month
-  for(let i=first-1;i>=0;i--){html+=`<div class="cal-day other">${prevDays-i}</div>`}
-  // Current month
-  for(let d=1;d<=days;d++){
-    const dt=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
-    const tasks=taskDates[dt]||[];
-    const hasOverdue=tasks.some(t=>t.status!=='done'&&getDueStatus(t.due_date)?.type==='overdue');
-    let dots='';
-    if(tasks.length===1){dots=`<div class="dot ${hasOverdue?'overdue':'task'}"></div>`}
-    else if(tasks.length>1){dots=`<div class="multi-dots">${tasks.slice(0,3).map(t=>`<div class="dot ${t.status!=='done'&&getDueStatus(t.due_date)?.type==='overdue'?'overdue':'task'}"></div>`).join('')}</div>`}
-    html+=`<div class="cal-day${isToday?' today':''}" title="${tasks.length?tasks.length+' task(s)':''}">${d}${dots}</div>`;
-  }
-  // Fill rest
-  const total=first+days;const rem=total%7===0?0:7-total%7;
-  for(let i=1;i<=rem;i++){html+=`<div class="cal-day other">${i}</div>`}
-  $('cal-grid').innerHTML=html;
-}
-
-// --- Calendar Page (Full) ---
-let cal2Date=new Date(),cal2Tasks=[];
-function initCal2(){cal2Date=new Date();loadCal2Tasks()}
-function cal2Nav(dir){cal2Date.setMonth(cal2Date.getMonth()+dir);renderCal2()}
-async function loadCal2Tasks(){
-  try{const r=await fetch(A+'/tasks?limit=200',{headers:hdr()});const d=await r.json();cal2Tasks=d.tasks||[]}catch{}
-  renderCal2();
-}
-function renderCal2(){
-  const y=cal2Date.getFullYear(),m=cal2Date.getMonth();
-  const monthStr=new Date(y,m).toLocaleDateString('en',{month:'long',year:'numeric'});
-  $('cal2-month').textContent=monthStr;
-  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
-  const prevDays=new Date(y,m,0).getDate();
-  const today=new Date();today.setHours(0,0,0,0);
-  const taskDates={};
-  cal2Tasks.forEach(t=>{if(t.due_date){const d=t.due_date.split('T')[0];if(!taskDates[d])taskDates[d]=[];taskDates[d].push(t)}});
-  let html='';
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{html+=`<div class="cal-day-hdr">${d}</div>`});
-  for(let i=first-1;i>=0;i--){html+=`<div class="cal-day other">${prevDays-i}</div>`}
-  for(let d=1;d<=days;d++){
-    const dt=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
-    const tasks=taskDates[dt]||[];
-    const hasOverdue=tasks.some(t=>t.status!=='done'&&getDueStatus(t.due_date)?.type==='overdue');
-    let dots='';
-    if(tasks.length===1){dots=`<div class="dot ${hasOverdue?'overdue':'task'}"></div>`}
-    else if(tasks.length>1){dots=`<div class="multi-dots">${tasks.slice(0,3).map(t=>`<div class="dot ${t.status!=='done'&&getDueStatus(t.due_date)?.type==='overdue'?'overdue':'task'}"></div>`).join('')}</div>`}
-    html+=`<div class="cal-day${isToday?' today':''}" onclick="showCalDay('${dt}')" style="cursor:pointer" title="${tasks.length?tasks.length+' task(s)':''}">${d}${dots}</div>`;
-  }
-  const total=first+days;const rem=total%7===0?0:7-total%7;
-  for(let i=1;i<=rem;i++){html+=`<div class="cal-day other">${i}</div>`}
-  $('cal2-grid').innerHTML=html;
-}
-function showCalDay(dt){
-  const tasks=cal2Tasks.filter(t=>t.due_date&&t.due_date.split('T')[0]===dt);
-  const dateStr=new Date(dt+'T00:00:00').toLocaleDateString('en',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  $('cal-events').innerHTML=tasks.length?`<div style="font-size:12px;color:var(--mt);margin-bottom:8px">${dateStr}</div>`+tasks.map(t=>{
-    const pc=PC[t.priority]||PC.medium;const pb=PB[t.priority]||PB.medium;
-    return`<div class="tr" onclick="openModal('task',${JSON.stringify(t).replace(/"/g,'&quot;')})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${t.title}</div><div style="font-size:10px;color:var(--mt)">${t.assignee||'Unassigned'}${t.category?' · '+t.category:''}</div></div><span class="badge" style="background:${pb};color:${pc}">${t.priority}</span>${dueBadge(t)}</div>`
-  }).join(''):`<div style="font-size:12px;color:var(--mt);margin-bottom:8px">${dateStr}</div><div class="empty">No tasks due on this date</div>`;
-}
-
-// Board
-async function loadBoard(){try{const r=await fetch(A+'/board',{headers:hdr()});const d=await r.json();const b=d.board;
-const cols=[{k:'todo',t:'To Do',i:'📋'},{k:'in_progress',t:'In Progress',i:'🔄'},{k:'review',t:'Review',i:'👀'},{k:'done',t:'Done',i:'✅'}];
-$('board').innerHTML=cols.map(c=>{const ts=b[c.k]||[];return`<div class="bc"><div class="bh"><span>${c.i}</span>${c.t}<span class="badge" style="background:var(--sf);color:var(--mt)">${ts.length}</span></div><div class="bl" data-status="${c.k}" ondragover="event.preventDefault()" ondrop="dropTask(event,'${c.k}')">${ts.length?ts.slice(0,20).map(t=>`<div class="bk" draggable="true" ondragstart="event.dataTransfer.setData('id','${t.id}')" onclick="openModal('task',${JSON.stringify(t).replace(/"/g,'&quot;')})" style="border-left-color:${PC[t.priority]||PC.medium}"><div class="bk-t">${t.title}</div><div class="bk-m"><span>${t.assignee||'?'}</span>${t.category?`<span class="badge" style="background:var(--as);color:var(--ac)">${t.category}</span>`:''}${t.subcategory?`<span class="badge" style="background:var(--ps);color:var(--pp)">${t.subcategory}</span>`:''}<span class="badge" style="background:${PB[t.priority]};color:${PC[t.priority]}">${t.priority}</span>${dueBadge(t)}</div></div>`).join(''):'<div class="empty">No tasks</div>'}</div></div>`}).join('')
-}catch{$('board').innerHTML='<div class="empty">Failed</div>'}}
-async function dropTask(e,status){const id=e.dataTransfer.getData('id');if(id){await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({status})});loadBoard()}}
-
-// Tasks
-async function loadTasks(){try{let url=A+'/tasks?limit=100';if(curCat!=='all')url+='&category='+curCat;const r=await fetch(url,{headers:hdr()});const d=await r.json();allT=d.tasks||[];renderTF();renderCF();renderTL()}catch{$('tl').innerHTML='<div class="empty">Failed</div>'}}
+async function loadDeadlines(tasks){if(!tasks?.length){try{tasks=(await(await fetch(A+'/tasks?limit=100',{headers:hdr()})).json()).tasks||[]}catch{}}const up=tasks.filter(t=>t.due_date&&t.status!=='done').map(t=>{const d=new Date(t.due_date),n=new Date();n.setHours(0,0,0,0);d.setHours(0,0,0,0);return{...t,diff:Math.floor((d-n)/864e5)}}).filter(t=>t.diff<=7).sort((a,b)=>a.diff-b.diff).slice(0,6);$('deadlines').innerHTML=up.length?up.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px">${SI[t.status]||'•'}</span><div style="flex:1;font-size:11px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>${dueBadge(t)}</div>`).join(''):'<div class="empty">No upcoming deadlines</div>'}
+let miniDate=new Date();function initMiniCal(){miniDate=new Date();renderMiniCal()}function miniCalNav(d){miniDate.setMonth(miniDate.getMonth()+d);renderMiniCal()}
+function renderMiniCal(){const y=miniDate.getFullYear(),m=miniDate.getMonth();$('mini-cal-month').textContent=new Date(y,m).toLocaleDateString('en',{month:'short',year:'numeric'});const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate(),td=new Date();td.setHours(0,0,0,0);let h='';['S','M','T','W','T','F','S'].forEach(d=>{h+=`<div class="cal-mini-hdr">${d}</div>`});for(let i=first-1;i>=0;i--)h+=`<div class="cal-mini-day other">${prev-i}</div>`;for(let d=1;d<=days;d++){const isT=td.getFullYear()===y&&td.getMonth()===m&&td.getDate()===d;h+=`<div class="cal-mini-day${isT?' today':''}" onclick="nav('calendar')">${d}</div>`}const rem=(first+days)%7;if(rem)for(let i=1;i<=7-rem;i++)h+=`<div class="cal-mini-day other">${i}</div>`;$('mini-cal').innerHTML=h}
+// ═══ CALENDAR PAGE ═══
+let calView='month',calCur=new Date(),calEvents=[],calTasksAll=[];
+function initCalPage(){loadCalEvents()}
+function setCalView(v){calView=v;['month','week','day'].forEach(x=>{$('cv-'+x).classList.toggle('a',x===v)});renderCalView()}
+function calGoToday(){calCur=new Date();loadCalEvents()}
+function calGo(dir){if(calView==='month')calCur.setMonth(calCur.getMonth()+dir);else if(calView==='week')calCur.setDate(calCur.getDate()+dir*7);else calCur.setDate(calCur.getDate()+dir);loadCalEvents()}
+async function loadCalEvents(){const y=calCur.getFullYear(),m=calCur.getMonth();const s=new Date(y,m-1,1).toISOString().split('T')[0],e=new Date(y,m+2,0).toISOString().split('T')[0];
+try{const[eR,tR]=await Promise.all([fetch(A+'/calendar/events?start='+s+'&end='+e,{headers:hdr()}).then(r=>r.json()).catch(()=>({events:[]})),fetch(A+'/tasks?limit=200',{headers:hdr()}).then(r=>r.json()).catch(()=>({tasks:[]}))]);calEvents=eR.events||[];calTasksAll=tR.tasks||[]}catch{}renderCalView()}
+function renderCalView(){const opts=calView==='day'?{weekday:'long',month:'long',day:'numeric',year:'numeric'}:{month:'long',year:'numeric'};$('cal-title').textContent=calCur.toLocaleDateString('en',opts);if(calView==='month')renderMonth();else if(calView==='week')renderWeek();else renderDay()}
+function fmt(y,m,d){const dt=new Date(y,m,d);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+function buildEvtMap(){const map={};calEvents.forEach(e=>{const d=e.start_raw?.split('T')[0]||'';if(d){if(!map[d])map[d]=[];map[d].push({type:'gcal',...e})}});calTasksAll.forEach(t=>{if(!t.due_date)return;const d=t.due_date.split('T')[0];if(!map[d])map[d]=[];map[d].push({type:t.status!=='done'&&getDueStatus(t.due_date)?.type==='overdue'?'overdue':'task',title:t.title,task:t})});return map}
+function cellEvts(dt,max){const map=buildEvtMap(),evts=map[dt]||[];let h='';evts.slice(0,max).forEach(e=>{if(e.type==='gcal')h+=`<div class="cal-evt gcal" onclick="event.stopPropagation();openEventFromCal('${e.id}')" title="${esc(e.title)}">${e.start||''} ${esc(e.title)}</div>`;else h+=`<div class="cal-evt ${e.type}" onclick="event.stopPropagation();openModal('task',${JSON.stringify(e.task).replace(/"/g,'&quot;')})">${esc(e.title)}</div>`});if(evts.length>max)h+=`<div class="cal-more">+${evts.length-max} more</div>`;return h}
+function renderMonth(){const y=calCur.getFullYear(),m=calCur.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate(),td=new Date();td.setHours(0,0,0,0);let h='';['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{h+=`<div class="cal-hdr-cell">${d}</div>`});for(let i=first-1;i>=0;i--){const dt=fmt(y,m-1,prev-i);h+=`<div class="cal-cell other" onclick="calCellClick('${dt}')"><span class="day-num">${prev-i}</span>${cellEvts(dt,2)}</div>`}for(let d=1;d<=days;d++){const dt=fmt(y,m,d);const isT=td.getFullYear()===y&&td.getMonth()===m&&td.getDate()===d;h+=`<div class="cal-cell${isT?' today':''}" onclick="calCellClick('${dt}')"><span class="day-num">${d}</span>${cellEvts(dt,3)}</div>`}const tot=first+days,rem=tot%7===0?0:7-tot%7;for(let i=1;i<=rem;i++){const dt=fmt(y,m+1,i);h+=`<div class="cal-cell other" onclick="calCellClick('${dt}')"><span class="day-num">${i}</span>${cellEvts(dt,2)}</div>`}$('cal-container').innerHTML=`<div class="cal-month-grid">${h}</div>`}
+function calCellClick(dt){openEventModal(dt)}
+function renderWeek(){const s=new Date(calCur);s.setDate(s.getDate()-s.getDay());const td=new Date();td.setHours(0,0,0,0);const map=buildEvtMap();let h='<div class="cal-week"><div class="cal-week-hdr"></div>';for(let i=0;i<7;i++){const d=new Date(s);d.setDate(d.getDate()+i);const isT=d.toDateString()===td.toDateString();h+=`<div class="cal-week-hdr${isT?' today':''}">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]}<span class="wdn">${d.getDate()}</span></div>`}for(let hr=7;hr<=21;hr++){h+=`<div class="cal-time">${hr>12?(hr-12)+' PM':(hr||12)+' AM'}</div>`;for(let i=0;i<7;i++){const d=new Date(s);d.setDate(d.getDate()+i);const dt=fmt(d.getFullYear(),d.getMonth(),d.getDate());const evts=(map[dt]||[]).filter(e=>e.type==='gcal');let ce='';evts.forEach(e=>{const sh=pth(e.start_raw);if(sh!==null&&Math.floor(sh)===hr){const eh=pth(e.end_raw)||sh+1;const dur=Math.max((eh-sh)*40,20),top=(sh-Math.floor(sh))*40;ce+=`<div class="cal-week-evt gcal" onclick="event.stopPropagation();openEventFromCal('${e.id}')" style="top:${top}px;height:${dur}px">${esc(e.title)}</div>`}});h+=`<div class="cal-week-cell" onclick="calWeekClick('${dt}',${hr})">${ce}</div>`}}h+='</div>';$('cal-container').innerHTML=h}
+function pth(r){if(!r)return null;try{const d=new Date(r);return d.getHours()+d.getMinutes()/60}catch{return null}}
+function calWeekClick(dt,hr){openEventModal(dt,hr)}
+function renderDay(){const dt=fmt(calCur.getFullYear(),calCur.getMonth(),calCur.getDate()),map=buildEvtMap(),evts=map[dt]||[];let h='<div class="cal-day-view">';for(let hr=6;hr<=22;hr++){let se='';evts.filter(e=>e.type==='gcal').forEach(e=>{const sh=pth(e.start_raw);if(sh!==null&&Math.floor(sh)===hr){const eh=pth(e.end_raw)||sh+1;se+=`<div class="cal-day-evt gcal" onclick="event.stopPropagation();openEventFromCal('${e.id}')" style="top:${(sh-Math.floor(sh))*48}px;height:${Math.max((eh-sh)*48,24)}px">${e.start||''} ${esc(e.title)}</div>`}});let te='';if(hr===6)evts.filter(e=>e.type!=='gcal').forEach(e=>{te+=`<div style="padding:2px 4px;font-size:10px;color:var(--ac)">📋 ${esc(e.title)}</div>`});h+=`<div class="cal-day-row"><div class="cal-day-time">${hr>12?(hr-12)+' PM':(hr||12)+' AM'}</div><div class="cal-day-slot" onclick="calDayClick(${hr})">${se}${te}</div></div>`}h+='</div>';$('cal-container').innerHTML=h}
+function calDayClick(hr){openEventModal(fmt(calCur.getFullYear(),calCur.getMonth(),calCur.getDate()),hr)}
+// ═══ EVENT MODAL ═══
+function openEventModal(dt,hr){$('modal-event').classList.add('v');$('me-id').value='';$('me-title').value='';$('me-desc').value='';$('me-loc').value='';$('me-del').style.display='none';$('me-link').style.display='none';$('modal-event-title').textContent='New Event';$('me-save').textContent='Create Event';const d=dt||fmt(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());const h=hr||9;$('me-date').value=d;$('me-edate').value=d;$('me-time').value=String(h).padStart(2,'0')+':00';$('me-etime').value=String(Math.min(h+1,23)).padStart(2,'0')+':00';setTimeout(()=>$('me-title').focus(),100)}
+function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)return;$('modal-event').classList.add('v');$('me-id').value=ev.id;$('me-title').value=ev.title||'';$('me-desc').value=ev.description||'';$('me-loc').value=ev.location||'';$('me-del').style.display='block';$('modal-event-title').textContent='Edit Event';$('me-save').textContent='Update Event';if(ev.start_raw){try{const d=new Date(ev.start_raw);$('me-date').value=d.toISOString().split('T')[0];$('me-time').value=d.toTimeString().slice(0,5)}catch{}}if(ev.end_raw){try{const d=new Date(ev.end_raw);$('me-edate').value=d.toISOString().split('T')[0];$('me-etime').value=d.toTimeString().slice(0,5)}catch{}}if(ev.link){$('me-link').style.display='block';$('me-gcal-link').href=ev.link}else $('me-link').style.display='none'}
+function closeEventModal(){$('modal-event').classList.remove('v')}
+async function saveEvent(){const id=$('me-id').value,title=$('me-title').value.trim();if(!title){alert('Title required');return}const body={title,description:$('me-desc').value||null,location:$('me-loc').value||null,start_time:$('me-date').value+'T'+$('me-time').value+':00',end_time:$('me-edate').value+'T'+$('me-etime').value+':00'};$('me-save').textContent='Saving...';$('me-save').disabled=true;try{if(id)await fetch(A+'/calendar/events/'+id,{method:'PUT',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/calendar/events',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeEventModal();loadCalEvents()}catch(e){alert('Failed: '+e.message)}$('me-save').textContent=id?'Update Event':'Create Event';$('me-save').disabled=false}
+async function deleteEvent(){const id=$('me-id').value;if(!id||!confirm('Delete this event?'))return;$('me-del').textContent='Deleting...';$('me-del').disabled=true;try{await fetch(A+'/calendar/events/'+id,{method:'DELETE',headers:hdr()});closeEventModal();loadCalEvents()}catch{alert('Delete failed')}$('me-del').textContent='Delete';$('me-del').disabled=false}
+// ═══ Board/Tasks/Team/Messages/Reminders/Chat ═══
+async function loadBoard(){try{const r=await fetch(A+'/board',{headers:hdr()});const d=await r.json();const b=d.board;const cols=[{k:'todo',t:'To Do',i:'📋'},{k:'in_progress',t:'In Progress',i:'🔄'},{k:'review',t:'Review',i:'👀'},{k:'done',t:'Done',i:'✅'}];$('board').innerHTML=cols.map(c=>{const ts=b[c.k]||[];return`<div class="bc"><div class="bh"><span>${c.i}</span>${c.t}<span class="badge" style="background:var(--sf);color:var(--mt)">${ts.length}</span></div><div class="bl" data-status="${c.k}" ondragover="event.preventDefault()" ondrop="dropTask(event,'${c.k}')">${ts.length?ts.slice(0,20).map(t=>`<div class="bk" draggable="true" ondragstart="event.dataTransfer.setData('id','${t.id}')" onclick="openModal('task',${JSON.stringify(t).replace(/"/g,'&quot;')})" style="border-left-color:${PC[t.priority]||PC.medium}"><div class="bk-t">${t.title}</div><div class="bk-m"><span>${t.assignee||'?'}</span>${t.category?`<span class="badge" style="background:var(--as);color:var(--ac)">${t.category}</span>`:''}${dueBadge(t)}<span class="badge" style="background:${PB[t.priority]};color:${PC[t.priority]}">${t.priority}</span></div></div>`).join(''):'<div class="empty">No tasks</div>'}</div></div>`}).join('')}catch{$('board').innerHTML='<div class="empty">Failed</div>'}}
+async function dropTask(e,s){const id=e.dataTransfer.getData('id');if(id){await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({status:s})});loadBoard()}}
+async function loadTasks(){try{let url=A+'/tasks?limit=100';if(curCat!=='all')url+='&category='+curCat;const r=await fetch(url,{headers:hdr()});allT=(await r.json()).tasks||[];renderTF();renderCF();renderTL()}catch{$('tl').innerHTML='<div class="empty">Failed</div>'}}
 function renderTF(){const fs=[{i:'all',l:'All'},{i:'todo',l:'To Do'},{i:'in_progress',l:'Active'},{i:'review',l:'Review'},{i:'done',l:'Done'}];$('tfl').innerHTML=fs.map(f=>`<button class="fb ${curF===f.i?'a':''}" onclick="curF='${f.i}';renderTL()">${f.l}</button>`).join('')}
 function renderCF(){const cs=['all',...new Set(allT.map(t=>t.category).filter(Boolean))];$('catfl').innerHTML=cs.map(c=>`<button class="fb ${curCat===c?'a':''}" onclick="curCat='${c}';loadTasks()">${c==='all'?'All Categories':c}</button>`).join('')}
-function renderTL(){const ts=curF==='all'?allT:allT.filter(t=>t.status===curF);$('tl').innerHTML=ts.length?ts.map(t=>{const pc=PC[t.priority]||PC.medium;const pb=PB[t.priority]||PB.medium;const dn=t.status==='done';
-return`<div class="tr" onclick="openModal('task',${JSON.stringify(t).replace(/"/g,'&quot;')})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${dn?'text-decoration:line-through;opacity:.5':''}">${t.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${t.assignee||'Unassigned'}${t.category?' · '+t.category:''}${t.subcategory?' / '+t.subcategory:''}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div></div>${dueBadge(t)}<span class="badge" style="background:${pb};color:${pc}">${t.priority}</span><select class="sel" onclick="event.stopPropagation()" onchange="chStatus(${t.id},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>To Do</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>Active</option><option value="review" ${t.status==='review'?'selected':''}>Review</option><option value="done" ${t.status==='done'?'selected':''}>Done</option></select></div>`}).join(''):'<div class="empty">No tasks</div>'}
+function renderTL(){const ts=curF==='all'?allT:allT.filter(t=>t.status===curF);$('tl').innerHTML=ts.length?ts.map(t=>{const pc=PC[t.priority]||PC.medium,pb=PB[t.priority]||PB.medium,dn=t.status==='done';return`<div class="tr" onclick="openModal('task',${JSON.stringify(t).replace(/"/g,'&quot;')})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${dn?'text-decoration:line-through;opacity:.5':''}">${t.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${t.assignee||'Unassigned'}${t.category?' · '+t.category:''}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div></div>${dueBadge(t)}<span class="badge" style="background:${pb};color:${pc}">${t.priority}</span><select class="sel" onclick="event.stopPropagation()" onchange="chStatus(${t.id},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>To Do</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>Active</option><option value="review" ${t.status==='review'?'selected':''}>Review</option><option value="done" ${t.status==='done'?'selected':''}>Done</option></select></div>`}).join(''):'<div class="empty">No tasks</div>'}
 async function chStatus(id,s){await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({status:s})});loadTasks()}
-async function saveTask(){const id=$('mt-id').value;const body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null};
-if(!body.title){alert('Title required');return}
-if(id){await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)})}
-else{await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)})}
-closeModal('task');loadTasks();loadBoard();loadDash();loadCats()}
-async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete this task?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash()}}
-
-// --- Export Functions ---
-function exportCSV(){
-  const tasks=allT.length?allT:[];if(!tasks.length){alert('No tasks to export');return}
-  const headers=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];
-  const rows=tasks.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);
-  const csv=[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
-  downloadFile(csv,'tasks_export_'+new Date().toISOString().split('T')[0]+'.csv','text/csv');
-}
-function exportJSON(){
-  const tasks=allT.length?allT:[];if(!tasks.length){alert('No tasks to export');return}
-  const data=tasks.map(t=>({id:t.id,title:t.title,description:t.description,status:t.status,priority:t.priority,assignee:t.assignee,category:t.category,subcategory:t.subcategory,due_date:t.due_date,created_at:t.created_at}));
-  downloadFile(JSON.stringify(data,null,2),'tasks_export_'+new Date().toISOString().split('T')[0]+'.json','application/json');
-}
-function downloadFile(content,filename,type){
-  const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();
-  document.body.removeChild(a);URL.revokeObjectURL(url);
-}
-
-// Team
-async function loadTeam(){try{const r=await fetch(A+'/team',{headers:hdr()});const d=await r.json();const r2=await fetch(A+'/team/stats',{headers:hdr()});const d2=await r2.json();
-$('team-list').innerHTML=(d.members||[]).map(m=>{const s=d2.stats?.[m.first_name]||{};const t=s.total||0;const dn=s.done||0;const p=t?Math.round(dn/t*100):0;
-return`<div class="cd" style="display:flex;align-items:center;gap:14px"><div style="width:40px;height:40px;border-radius:10px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.first_name||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${m.first_name||''} ${m.last_name||''}${m.is_admin?' 👑':''}</div><div style="font-size:10px;color:var(--mt)">@${m.username||'no username'} · ${t} tasks · ${p}% done</div></div><div style="width:80px;flex-shrink:0"><div class="pi-b"><div class="pi-f" style="width:${p}%"></div></div></div></div>`}).join('')||'<div class="empty">No team members. Have everyone /start the bot.</div>'
-}catch{$('team-list').innerHTML='<div class="empty">Failed</div>'}}
-
-// Messages
-let curG=null;
-async function loadMsgs(){try{const r=await fetch(A+'/messages/groups',{headers:hdr()});const d=await r.json();const gs=d.groups||[];
-$('gfl').innerHTML=gs.map(g=>`<button class="fb ${curG===g.chat_id?'a':''}" onclick="curG=${g.chat_id};loadMsgList()">${g.title} (${g.count})</button>`).join('')||'<div class="empty">No groups yet</div>';
-if(curG)loadMsgList();else $('ml').innerHTML='<div class="empty">Select a group above</div>'
-}catch{$('ml').innerHTML='<div class="empty">Failed</div>'}}
-async function loadMsgList(){try{const r=await fetch(A+'/messages?chat_id='+curG+'&limit=30',{headers:hdr()});const d=await r.json();
-$('ml').innerHTML=(d.messages||[]).map(m=>`<div style="padding:8px 0;border-bottom:1px solid var(--bd);display:flex;gap:10px"><div style="width:28px;height:28px;border-radius:7px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.sender||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">${m.sender||'?'} <span style="font-weight:400;color:var(--mt)">${m.created_at?new Date(m.created_at).toLocaleTimeString():''}</span></div><div style="font-size:12px;margin-top:2px;word-break:break-word">${esc(m.text||'')}</div></div>${m.has_task_keyword?'<span class="badge" style="background:var(--os);color:var(--or);flex-shrink:0">ACTION</span>':''}</div>`).join('')||'<div class="empty">No messages</div>'
-}catch{}}
-
-// Reminders
-async function loadRemind(){try{const r=await fetch(A+'/reminders',{headers:hdr()});const d=await r.json();
-$('rl').innerHTML=(d.reminders||[]).map(rm=>`<div class="tr"><span style="font-size:16px">⏰</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${rm.message}</div><div style="font-size:10px;color:var(--mt)">${rm.remind_at?new Date(rm.remind_at).toLocaleString():''}</div></div><button class="btn d" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();delRemind(${rm.id})">✕</button></div>`).join('')||'<div class="empty">No pending reminders</div>'
-}catch{$('rl').innerHTML='<div class="empty">Failed</div>'}}
-async function saveReminder(){const msg=$('mr-msg').value;const min=$('mr-min').value;if(!msg){alert('Message required');return}
-await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:msg,minutes:parseInt(min)||30})});closeModal('remind');loadRemind()}
+async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeModal('task');loadTasks();loadBoard();loadDash();loadCats()}
+async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash()}}
+function exportCSV(){if(!allT.length){alert('No tasks');return}const h=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];const rows=allT.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);dl([h.join(','),...rows.map(r=>r.join(','))].join('\n'),'tasks_'+new Date().toISOString().split('T')[0]+'.csv','text/csv')}
+function exportJSON(){if(!allT.length){alert('No tasks');return}dl(JSON.stringify(allT.map(t=>({id:t.id,title:t.title,description:t.description,status:t.status,priority:t.priority,assignee:t.assignee,category:t.category,due_date:t.due_date})),null,2),'tasks_'+new Date().toISOString().split('T')[0]+'.json','application/json')}
+function dl(c,f,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)}
+async function loadTeam(){try{const r=await fetch(A+'/team',{headers:hdr()});const d=await r.json();const r2=await fetch(A+'/team/stats',{headers:hdr()});const d2=await r2.json();$('team-list').innerHTML=(d.members||[]).map(m=>{const s=d2.stats?.[m.first_name]||{},t=s.total||0,dn=s.done||0,p=t?Math.round(dn/t*100):0;return`<div class="cd" style="display:flex;align-items:center;gap:14px"><div style="width:40px;height:40px;border-radius:10px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.first_name||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${m.first_name||''} ${m.last_name||''}${m.is_admin?' 👑':''}</div><div style="font-size:10px;color:var(--mt)">@${m.username||'?'} · ${t} tasks · ${p}% done</div></div><div style="width:80px;flex-shrink:0"><div class="pi-b"><div class="pi-f" style="width:${p}%"></div></div></div></div>`}).join('')||'<div class="empty">No team members</div>'}catch{$('team-list').innerHTML='<div class="empty">Failed</div>'}}
+let curG=null;async function loadMsgs(){try{const r=await fetch(A+'/messages/groups',{headers:hdr()});const gs=(await r.json()).groups||[];$('gfl').innerHTML=gs.map(g=>`<button class="fb ${curG===g.chat_id?'a':''}" onclick="curG=${g.chat_id};loadMsgList()">${g.title} (${g.count})</button>`).join('')||'<div class="empty">No groups</div>';if(curG)loadMsgList();else $('ml').innerHTML='<div class="empty">Select a group</div>'}catch{$('ml').innerHTML='<div class="empty">Failed</div>'}}
+async function loadMsgList(){try{const d=await(await fetch(A+'/messages?chat_id='+curG+'&limit=30',{headers:hdr()})).json();$('ml').innerHTML=(d.messages||[]).map(m=>`<div style="padding:8px 0;border-bottom:1px solid var(--bd);display:flex;gap:10px"><div style="width:28px;height:28px;border-radius:7px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.sender||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">${m.sender||'?'} <span style="font-weight:400;color:var(--mt)">${m.created_at?new Date(m.created_at).toLocaleTimeString():''}</span></div><div style="font-size:12px;margin-top:2px;word-break:break-word">${esc(m.text||'')}</div></div>${m.has_task_keyword?'<span class="badge" style="background:var(--os);color:var(--or);flex-shrink:0">ACTION</span>':''}</div>`).join('')||'<div class="empty">No messages</div>'}catch{}}
+async function loadRemind(){try{const d=await(await fetch(A+'/reminders',{headers:hdr()})).json();$('rl').innerHTML=(d.reminders||[]).map(rm=>`<div class="tr"><span style="font-size:16px">⏰</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${rm.message}</div><div style="font-size:10px;color:var(--mt)">${rm.remind_at?new Date(rm.remind_at).toLocaleString():''}</div></div><button class="btn d" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();delRemind(${rm.id})">✕</button></div>`).join('')||'<div class="empty">No reminders</div>'}catch{$('rl').innerHTML='<div class="empty">Failed</div>'}}
+async function saveReminder(){const msg=$('mr-msg').value,min=$('mr-min').value;if(!msg){alert('Message required');return}await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:msg,minutes:parseInt(min)||30})});closeModal('remind');loadRemind()}
 async function delRemind(id){await fetch(A+'/reminders/'+id,{method:'DELETE',headers:hdr()});loadRemind()}
-
-// AI Chat
-let chL=false,chFile=null;
-function onFileSelect(){const f=$('chf').files[0];if(f){chFile=f;$('chfn').style.display='block';$('chfn').innerHTML=`📎 ${f.name} (${(f.size/1024).toFixed(1)}KB) <button onclick="clearFile()" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:11px">✕ Remove</button>`}};
-function clearFile(){chFile=null;$('chf').value='';$('chfn').style.display='none';$('chfn').innerHTML=''}
-async function sendAI(){const i=$('chi');const m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm');
-const dispMsg=m||(chFile?`Analyze: ${chFile.name}`:'');
-c.innerHTML+=`<div class="ch-b ch-u">${esc(dispMsg)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl" style="color:var(--mt)">${chFile?'Processing file...':'Thinking...'}</div>`;c.scrollTop=c.scrollHeight;chL=true;
-try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');const r=await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd});d=await r.json();clearFile()}else{const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m})});d=await r.json()}
-$('chl').remove();c.innerHTML+=`<div class="ch-b ch-a">${esc(d.response||'No response')}</div>`}
-catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">Error: ${e.message||'Connection failed'}</div>`}
-chL=false;c.scrollTop=c.scrollHeight}
+let chL=false,chFile=null;function onFileSelect(){const f=$('chf').files[0];if(f){chFile=f;$('chfn').style.display='block';$('chfn').innerHTML=`📎 ${f.name} <button onclick="clearFile()" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:11px">✕</button>`}}
+function clearFile(){chFile=null;$('chf').value='';$('chfn').style.display='none'}
+async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl" style="color:var(--mt)">${chFile?'Processing...':'Thinking...'}</div>`;c.scrollTop=c.scrollHeight;chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m})})).json();$('chl').remove();c.innerHTML+=`<div class="ch-b ch-a">${esc(d.response||'No response')}</div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">Error: ${e.message||'Failed'}</div>`}chL=false;c.scrollTop=c.scrollHeight}
 </script>
 </body>
 </html>
