@@ -1,7 +1,7 @@
 """
 Task model — collaborative task management with assignments.
 """
-from sqlalchemy import Column, Integer, BigInteger, String, Text, DateTime, Enum
+from sqlalchemy import Column, Integer, BigInteger, String, Text, DateTime, Enum, ForeignKey
 from sqlalchemy.sql import func
 from app.core.database import Base
 import enum
@@ -32,6 +32,10 @@ class Task(Base):
     label = Column(String(100), nullable=True)
     category = Column(String(100), nullable=True)      # e.g., "GDT", "Kado24", "Personal"
     subcategory = Column(String(100), nullable=True)    # e.g., "ETL", "Frontend", "Learning"
+
+    # Task Group hierarchy
+    group_id = Column(Integer, ForeignKey("task_groups.id", ondelete="SET NULL"), nullable=True)
+    subgroup_id = Column(Integer, ForeignKey("task_subgroups.id", ondelete="SET NULL"), nullable=True)
 
     # Creator and assignee (Telegram IDs)
     creator_id = Column(BigInteger, nullable=False)

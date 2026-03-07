@@ -46,6 +46,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .badge{padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;display:inline-block}
 .btn{padding:7px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--tx);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.2s}
 .btn:hover{border-color:var(--ac)}.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}.btn.d{background:var(--rs);color:var(--rd);border-color:transparent}.btn.ex{background:var(--gs);color:var(--gn);border-color:transparent}
+.btn.gm{background:var(--ps);color:var(--pp);border-color:transparent}
 .inp{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:12px;outline:none;font-family:'DM Sans',sans-serif;width:100%}.inp:focus{border-color:var(--ac)}
 .sel{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;color:var(--ac);font-size:11px;font-weight:600;cursor:pointer;outline:none}
 .tr{background:var(--cd);border-radius:10px;padding:10px 14px;border:1px solid var(--bd);display:flex;align-items:center;gap:10px;margin-bottom:6px}.tr:hover{border-color:var(--ac)}
@@ -111,6 +112,52 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .cal-mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
 .cal-mini-hdr{text-align:center;font-size:9px;font-weight:700;color:var(--mt);padding:4px 0}
 .cal-mini-day{text-align:center;padding:5px 2px;border-radius:6px;font-size:11px;cursor:pointer}.cal-mini-day:hover{background:var(--as)}.cal-mini-day.today{background:var(--as);color:var(--ac);font-weight:700}.cal-mini-day.other{opacity:.3}
+/* ── Task Group Tabs ── */
+.gtabs-wrap{margin-bottom:10px;overflow:hidden}
+.gtabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.gtabs-scroll::-webkit-scrollbar{display:none}
+.gtabs{display:flex;gap:5px;min-width:max-content}
+.gtab{display:flex;align-items:center;gap:5px;padding:7px 14px;border:1px solid var(--bd);border-radius:8px;background:transparent;color:var(--mt);font-size:11px;font-weight:600;cursor:pointer;transition:.2s;white-space:nowrap;position:relative;font-family:'DM Sans',sans-serif}
+.gtab:hover{background:var(--as);color:var(--tx);border-color:rgba(59,130,246,.2)}
+.gtab.a{background:var(--as);color:var(--ac);border-color:rgba(59,130,246,.3);font-weight:700}
+.gtab.a::after{content:'';position:absolute;bottom:-1px;left:12px;right:12px;height:2px;border-radius:2px;background:var(--tab-color,var(--ac))}
+.gtab .gi{font-size:12px}.gtab .gc{background:rgba(255,255,255,.06);padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700;min-width:16px;text-align:center}
+.gtab.a .gc{background:rgba(59,130,246,.2);color:var(--ac)}
+/* ── SubGroup Chips ── */
+.sg-chips{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;align-items:center;padding:6px 10px;background:rgba(255,255,255,.015);border-radius:8px;border:1px solid rgba(255,255,255,.04)}
+.sgc{padding:4px 12px;border-radius:16px;border:1px solid var(--bd);background:transparent;color:var(--mt);font-size:10px;font-weight:600;cursor:pointer;transition:.2s;font-family:'DM Sans',sans-serif}
+.sgc:hover{background:var(--as);color:var(--tx)}
+.sgc.a{background:var(--as);color:var(--ac);border-color:rgba(59,130,246,.3);font-weight:700}
+.sgc.add{border-style:dashed;color:var(--mt);font-size:12px;padding:4px 10px}.sgc.add:hover{color:var(--ac);border-color:rgba(59,130,246,.3)}
+/* ── Group Manager Modal ── */
+.gm-panel{max-width:600px}
+.gm-add{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.gm-inp{padding:7px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.gm-inp:focus{border-color:var(--ac)}.gm-inp::placeholder{color:var(--mt)}
+.gm-icon{width:44px;text-align:center}
+.gm-color{width:34px;height:34px;border:1px solid var(--bd);border-radius:8px;cursor:pointer;background:transparent;padding:2px}
+.gm-card{background:rgba(255,255,255,.02);border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.gm-hdr{display:flex;align-items:center;padding:10px 14px;gap:8px}
+.gm-hdr .gm-name{flex:1;font-size:12px;font-weight:600}
+.gm-hdr .gm-cnt{font-size:10px;color:var(--mt)}
+.gm-acts{display:flex;gap:2px}
+.gm-acts button{background:none;border:none;color:var(--mt);cursor:pointer;padding:3px 5px;font-size:11px;border-radius:4px;transition:.15s;font-family:'DM Sans',sans-serif}
+.gm-acts button:hover{background:rgba(255,255,255,.05);color:var(--tx)}
+.gm-acts .del:hover{color:var(--rd);background:var(--rs)}
+.gm-sgs{padding:0 14px 10px 36px;display:flex;flex-direction:column;gap:4px}
+.gm-sg{display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(255,255,255,.015);border-radius:6px;font-size:11px;color:var(--mt)}
+.gm-sg .sg-n{flex:1}.gm-sg .sg-c{font-size:9px;color:var(--mt)}
+.gm-sg button{background:none;border:none;color:var(--mt);cursor:pointer;padding:1px 3px;font-size:10px;font-family:'DM Sans',sans-serif}.gm-sg button:hover{color:var(--rd)}
+.gm-sg-add{display:flex;gap:4px;align-items:center;padding:2px 8px}
+.gm-sg-add input{flex:1;padding:4px 8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:5px;color:var(--tx);font-size:10px;font-family:'DM Sans',sans-serif;outline:none}
+.gm-sg-add input:focus{border-color:rgba(59,130,246,.3)}
+.gm-sg-add input::placeholder{color:var(--mt)}
+/* ── Task Move Button ── */
+.tmv{background:none;border:none;color:var(--mt);cursor:pointer;padding:3px;font-size:13px;transition:.15s;font-family:'DM Sans',sans-serif;flex-shrink:0}
+.tmv:hover{color:var(--ac)}
+/* ── Group badge in task row ── */
+.grp-badge{display:inline-flex;align-items:center;gap:2px;padding:1px 6px;background:rgba(255,255,255,.04);border-radius:4px;font-size:9px;cursor:pointer;transition:.15s}
+.grp-badge:hover{background:var(--as)}
 @media(max-width:768px){
   .mobile-hdr{display:flex}.sb{transform:translateX(-100%)}.sb.open{transform:translateX(0)}.sb-overlay.open{display:block}
   .mn{margin-left:0;padding:12px;padding-top:64px;max-height:none;min-height:100vh}
@@ -119,6 +166,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   .tr{padding:8px 10px;gap:8px}.modal{padding:16px;border-radius:12px}h2{font-size:18px}
   .cal-cell{min-height:60px}.cal-evt{font-size:8px}.cal-toolbar{flex-direction:column;align-items:flex-start}
   .btn{padding:6px 10px;font-size:11px}
+  .gtab{padding:5px 10px;font-size:10px}
 }
 @media(max-width:400px){.sc{min-width:100%;flex:1 1 100%}.row{flex-direction:column}}
 </style>
@@ -147,7 +195,30 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
       <div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">📅 Calendar</h3><div style="display:flex;gap:4px"><button class="cal-nav-btn" style="width:24px;height:24px;font-size:11px" onclick="miniCalNav(-1)">◀</button><span id="mini-cal-month" style="font-size:11px;font-weight:600;padding:0 6px"></span><button class="cal-nav-btn" style="width:24px;height:24px;font-size:11px" onclick="miniCalNav(1)">▶</button></div></div><div class="cal-mini-grid" id="mini-cal"></div></div>
     </div><div><div class="cd"><h3>Recent Tasks</h3><div id="rt"></div></div><div class="cd"><h3>⏰ Upcoming Deadlines</h3><div id="deadlines"></div></div></div></div><div id="od"></div></div>
   <div id="pg-board" class="pg"><h2>Task Board</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0">Drag cards to change status</div><div style="display:flex;gap:6px"><button class="btn ex" onclick="exportCSV()">📊 CSV</button><button class="btn ex" onclick="exportJSON()">📋 JSON</button></div></div><div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px" id="board"></div></div>
-  <div id="pg-tasks" class="pg"><h2>Tasks</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="fl" id="tfl" style="margin:0"></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn ex" onclick="exportCSV()">📊 CSV</button><button class="btn ex" onclick="exportJSON()">📋 JSON</button><button class="btn p" onclick="openModal('task')">+ New Task</button></div></div><div class="fl" id="catfl"></div><div id="tl"></div></div>
+
+  <!-- ═══ UPDATED TASKS PAGE WITH GROUPS ═══ -->
+  <div id="pg-tasks" class="pg">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">Tasks</h2>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn ex" onclick="exportCSV()">📊 CSV</button>
+        <button class="btn ex" onclick="exportJSON()">📋 JSON</button>
+        <button class="btn gm" onclick="openGM()">⚙️ Groups</button>
+        <button class="btn p" onclick="openModal('task')">+ New Task</button>
+      </div>
+    </div>
+    <!-- Group Tabs -->
+    <div class="gtabs-wrap"><div class="gtabs-scroll"><div class="gtabs" id="gtabs"></div></div></div>
+    <!-- SubGroup Chips -->
+    <div class="sg-chips" id="sg-chips" style="display:none"></div>
+    <!-- Status Filters -->
+    <div class="fl" id="tfl" style="margin-bottom:8px"></div>
+    <!-- Category Filters (existing) -->
+    <div class="fl" id="catfl"></div>
+    <!-- Task List -->
+    <div id="tl"></div>
+  </div>
+
   <div id="pg-team" class="pg"><h2>Team Members</h2><div class="st">Registered team members</div><div id="team-list"></div></div>
   <div id="pg-msgs" class="pg"><h2>Messages</h2><div class="st">Telegram group messages</div><div class="fl" id="gfl"></div><div id="ml"></div></div>
   <div id="pg-remind" class="pg"><h2>Reminders</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0">Scheduled notifications</div><button class="btn p" onclick="openModal('remind')">+ New Reminder</button></div><div id="rl"></div></div>
@@ -167,6 +238,8 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
     <div id="rec-list"></div>
   </div>
 </div></div>
+
+<!-- Task Modal (updated with group/subgroup fields) -->
 <div class="modal-overlay" id="modal-task"><div class="modal"><h3 id="modal-task-title">New Task</h3>
 <div class="fg"><label>Title</label><input class="inp" id="mt-title" placeholder="Task title..."></div>
 <div class="fg"><label>Description</label><textarea class="inp" id="mt-desc" rows="3" placeholder="Description..." style="resize:vertical"></textarea></div>
@@ -177,6 +250,8 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="fg"><label>Due Date</label><input class="inp" id="mt-due" type="date"></div>
 <div class="fg"><label>Category</label><input class="inp" id="mt-cat" placeholder="e.g. GDT" list="cats"></div>
 <div class="fg"><label>Subcategory</label><input class="inp" id="mt-sub" placeholder="e.g. ETL" list="subs"></div>
+<div class="fg"><label>Group</label><select class="inp" id="mt-group" onchange="onMtGroupChange()"><option value="">— None —</option></select></div>
+<div class="fg"><label>Sub-Group</label><select class="inp" id="mt-subgroup"><option value="">— None —</option></select></div>
 </div><datalist id="cats"></datalist><datalist id="subs"></datalist><input type="hidden" id="mt-id" value="">
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeModal('task')">Cancel</button><button class="btn d" id="mt-del" onclick="deleteTask()" style="display:none">Delete</button><button class="btn p" onclick="saveTask()">Save</button></div></div></div>
 <!-- Reminder Modal -->
@@ -227,6 +302,30 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <input type="hidden" id="rc-id" value="">
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeRecModal()">Cancel</button><button class="btn d" id="rc-del" onclick="deleteRec()" style="display:none">Delete</button><button class="btn p" id="rc-save" onclick="saveRec()">Create</button></div></div></div>
 
+<!-- Group Manager Modal -->
+<div class="modal-overlay" id="modal-gm" onclick="if(event.target===this)closeGM()"><div class="modal gm-panel"><h3>⚙️ Manage Task Groups</h3>
+<div class="gm-add">
+  <input type="text" id="gm-name" class="gm-inp" placeholder="Group name" style="flex:1;min-width:120px" maxlength="100">
+  <input type="text" id="gm-icon" class="gm-inp gm-icon" placeholder="📁" maxlength="4">
+  <input type="color" id="gm-color" value="#3b82f6" class="gm-color">
+  <button class="btn p" style="padding:7px 14px" onclick="createGrp()">Add</button>
+</div>
+<div id="gm-list"></div>
+</div></div>
+
+<!-- Assign Group Modal -->
+<div class="modal-overlay" id="modal-assign" onclick="if(event.target===this)closeAssign()"><div class="modal" style="max-width:380px"><h3>📂 Move to Group</h3>
+<div class="fg"><label>Group</label><select class="inp" id="asg-group" onchange="onAsgGroupChange()"><option value="">— Ungrouped —</option></select></div>
+<div class="fg"><label>Sub-Group</label><select class="inp" id="asg-sg" style="display:none"><option value="">— None —</option></select></div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeAssign()">Cancel</button><button class="btn p" onclick="confirmAssign()">Move</button></div>
+</div></div>
+
+<!-- Add SubGroup Modal -->
+<div class="modal-overlay" id="modal-addsg" onclick="if(event.target===this)closeAddSg()"><div class="modal" style="max-width:360px"><h3>Add Sub-Group</h3>
+<div class="fg"><input class="inp" id="addsg-name" placeholder="Sub-group name..." maxlength="100"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeAddSg()">Cancel</button><button class="btn p" onclick="createSgFromModal()">Create</button></div>
+</div></div>
+
 <script>
 const A=window.location.origin+'/api/v1',PC={urgent:'#ef4444',high:'#f97316',medium:'#eab308',low:'#22c55e'},PB={urgent:'rgba(239,68,68,.1)',high:'rgba(249,115,22,.1)',medium:'rgba(234,179,8,.1)',low:'rgba(34,197,94,.1)'},SI={todo:'📋',in_progress:'🔄',review:'👀',done:'✅'};
 let tok=null,usr=null,allT=[],curF='all',curCat='all';const $=id=>document.getElementById(id);
@@ -243,8 +342,8 @@ function showApp(){$('login').style.display='none';$('app').classList.add('v');i
 window.onload=async()=>{if(await checkSession()){showApp();return}try{const r=await fetch(A+'/auth/client-id');const d=await r.json();if(d.client_id){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'})}}catch{$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks')loadTasks();if(p==='team')loadTeam();if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring()}
-function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?'Edit Task #'+data.id:'New Task';$('mt-del').style.display=data?.id?'block':'none'}}
+function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team')loadTeam();if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring()}
+function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?'Edit Task #'+data.id:'New Task';$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data)}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let cats=[];async function loadCats(){try{const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();cats=d.categories||[];$('cats').innerHTML=cats.map(c=>`<option value="${c}">`).join('')}catch{}}
 function getDueStatus(d){if(!d)return null;const n=new Date();n.setHours(0,0,0,0);const u=new Date(d);u.setHours(0,0,0,0);const df=Math.floor((u-n)/864e5);if(df<0)return{cls:'due-overdue',text:'Overdue '+Math.abs(df)+'d',type:'overdue'};if(df===0)return{cls:'due-today',text:'Due Today',type:'today'};if(df<=3)return{cls:'due-soon',text:'Due in '+df+'d',type:'soon'};return null}
@@ -278,7 +377,7 @@ function calWeekClick(dt,hr){openEventModal(dt,hr)}
 function renderDay(){const dt=fmt(calCur.getFullYear(),calCur.getMonth(),calCur.getDate()),map=buildEvtMap(),evts=map[dt]||[];let h='<div class="cal-day-view">';for(let hr=6;hr<=22;hr++){let se='';evts.filter(e=>e.type==='gcal').forEach(e=>{const sh=pth(e.start_raw);if(sh!==null&&Math.floor(sh)===hr){const eh=pth(e.end_raw)||sh+1;se+=`<div class="cal-day-evt gcal" onclick="event.stopPropagation();openEventFromCal('${e.id}')" style="top:${(sh-Math.floor(sh))*48}px;height:${Math.max((eh-sh)*48,24)}px">${e.start||''} ${esc(e.title)}</div>`}});let te='';if(hr===6)evts.filter(e=>e.type!=='gcal').forEach(e=>{te+=`<div style="padding:2px 4px;font-size:10px;color:var(--ac)">📋 ${esc(e.title)}</div>`});h+=`<div class="cal-day-row"><div class="cal-day-time">${hr>12?(hr-12)+' PM':(hr||12)+' AM'}</div><div class="cal-day-slot" onclick="calDayClick(${hr})">${se}${te}</div></div>`}h+='</div>';$('cal-container').innerHTML=h}
 function calDayClick(hr){openEventModal(fmt(calCur.getFullYear(),calCur.getMonth(),calCur.getDate()),hr)}
 // ═══ EVENT MODAL ═══
-let evtDuration=60; // default 1 hour in minutes
+let evtDuration=60;
 function syncEndDate(){$('me-edate').value=$('me-date').value;syncEndTime()}
 function syncEndTime(){const st=$('me-time').value;if(!st)return;const[h,m]=st.split(':').map(Number);const end=h*60+m+evtDuration;const eh=Math.min(Math.floor(end/60),23),em=end%60;$('me-etime').value=String(eh).padStart(2,'0')+':'+String(em).padStart(2,'0');$('me-edate').value=$('me-date').value;if(end>=1440){$('me-etime').value='23:59'}}
 function calcDuration(){const sd=$('me-date').value,st=$('me-time').value,ed=$('me-edate').value,et=$('me-etime').value;if(sd&&st&&ed&&et){const s=new Date(sd+'T'+st),e=new Date(ed+'T'+et);const diff=(e-s)/60000;if(diff>0)evtDuration=diff}}
@@ -291,14 +390,12 @@ function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)retur
 function closeEventModal(){$('modal-event').classList.remove('v');clearEvtFile()}
 async function saveEvent(){const id=$('me-id').value,title=$('me-title').value.trim();if(!title){alert('Title required');return}$('me-save').textContent='Saving...';$('me-save').disabled=true;
 try{if(evtFile&&!id){
-  // Create with file using FormData
   const fd=new FormData();fd.append('title',title);fd.append('start_time',$('me-date').value+'T'+$('me-time').value+':00');fd.append('end_time',$('me-edate').value+'T'+$('me-etime').value+':00');if($('me-desc').value)fd.append('description',$('me-desc').value);if($('me-loc').value)fd.append('location',$('me-loc').value);fd.append('file',evtFile);
   await fetch(A+'/calendar/events/create-with-file',{method:'POST',headers:hdr(),body:fd});
 }else{
   const body={title,description:$('me-desc').value||null,location:$('me-loc').value||null,start_time:$('me-date').value+'T'+$('me-time').value+':00',end_time:$('me-edate').value+'T'+$('me-etime').value+':00'};
   if(id){
     await fetch(A+'/calendar/events/'+id,{method:'PUT',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
-    // If there's a file to attach to existing event
     if(evtFile){const fd=new FormData();fd.append('file',evtFile);await fetch(A+'/calendar/events/'+id+'/attach',{method:'POST',headers:hdr(),body:fd})}
   }else{
     await fetch(A+'/calendar/events',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
@@ -308,13 +405,122 @@ async function deleteEvent(){const id=$('me-id').value;if(!id||!confirm('Delete 
 // ═══ Board/Tasks/Team/Messages/Reminders/Chat ═══
 async function loadBoard(){try{const r=await fetch(A+'/board',{headers:hdr()});const d=await r.json();const b=d.board;const cols=[{k:'todo',t:'To Do',i:'📋'},{k:'in_progress',t:'In Progress',i:'🔄'},{k:'review',t:'Review',i:'👀'},{k:'done',t:'Done',i:'✅'}];$('board').innerHTML=cols.map(c=>{const ts=b[c.k]||[];return`<div class="bc"><div class="bh"><span>${c.i}</span>${c.t}<span class="badge" style="background:var(--sf);color:var(--mt)">${ts.length}</span></div><div class="bl" data-status="${c.k}" ondragover="event.preventDefault()" ondrop="dropTask(event,'${c.k}')">${ts.length?ts.slice(0,20).map(t=>`<div class="bk" draggable="true" ondragstart="event.dataTransfer.setData('id','${t.id}')" onclick="openModal('task',${JSON.stringify(t).replace(/"/g,'&quot;')})" style="border-left-color:${PC[t.priority]||PC.medium}"><div class="bk-t">${t.title}</div><div class="bk-m"><span>${t.assignee||'?'}</span>${t.category?`<span class="badge" style="background:var(--as);color:var(--ac)">${t.category}</span>`:''}${dueBadge(t)}<span class="badge" style="background:${PB[t.priority]};color:${PC[t.priority]}">${t.priority}</span></div></div>`).join(''):'<div class="empty">No tasks</div>'}</div></div>`}).join('')}catch{$('board').innerHTML='<div class="empty">Failed</div>'}}
 async function dropTask(e,s){const id=e.dataTransfer.getData('id');if(id){await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({status:s})});loadBoard()}}
-async function loadTasks(){try{let url=A+'/tasks?limit=100';if(curCat!=='all')url+='&category='+curCat;const r=await fetch(url,{headers:hdr()});allT=(await r.json()).tasks||[];renderTF();renderCF();renderTL()}catch{$('tl').innerHTML='<div class="empty">Failed</div>'}}
+
+// ═══ TASK GROUPS ═══
+let tGroups=[],ungroupedCnt=0,activeGrp='all',activeSg='all';
+
+async function loadGrps(){
+  try{const r=await fetch(A+'/task-groups',{headers:hdr()});const d=await r.json();tGroups=d.groups||[];ungroupedCnt=d.ungrouped_count||0;renderGTabs()}catch(e){console.error('loadGrps:',e)}
+}
+
+function renderGTabs(){
+  const total=allT.length;
+  let h=`<button class="gtab ${activeGrp==='all'?'a':''}" onclick="selGrp('all')" style="--tab-color:var(--ac)"><span class="gi">📋</span>All<span class="gc">${total}</span></button>`;
+  h+=`<button class="gtab ${activeGrp==='ungrouped'?'a':''}" onclick="selGrp('ungrouped')" style="--tab-color:#64748b"><span class="gi">📥</span>Ungrouped<span class="gc">${ungroupedCnt}</span></button>`;
+  for(const g of tGroups){
+    h+=`<button class="gtab ${activeGrp==g.id?'a':''}" onclick="selGrp(${g.id})" style="--tab-color:${g.color||'var(--ac)'}"><span class="gi">${g.icon||'📁'}</span>${esc(g.name)}<span class="gc">${g.task_count||0}</span></button>`;
+  }
+  $('gtabs').innerHTML=h;
+  renderSgChips();
+}
+
+function selGrp(id){activeGrp=id;activeSg='all';renderGTabs();renderTL()}
+function selSg(id){activeSg=id;renderSgChips();renderTL()}
+
+function renderSgChips(){
+  const el=$('sg-chips');
+  if(activeGrp==='all'||activeGrp==='ungrouped'){el.style.display='none';return}
+  const g=tGroups.find(x=>x.id==activeGrp);
+  if(!g){el.style.display='none';return}
+  el.style.display='flex';
+  let h=`<button class="sgc ${activeSg==='all'?'a':''}" onclick="selSg('all')">All</button>`;
+  for(const sg of(g.subgroups||[])){
+    h+=`<button class="sgc ${activeSg==sg.id?'a':''}" onclick="selSg(${sg.id})">${esc(sg.name)} <span style="opacity:.5">${sg.task_count||0}</span></button>`;
+  }
+  h+=`<button class="sgc add" onclick="openAddSg()" title="Add sub-group">+</button>`;
+  el.innerHTML=h;
+}
+
+async function loadTasks(){try{let url=A+'/tasks?limit=100';if(curCat!=='all')url+='&category='+curCat;const r=await fetch(url,{headers:hdr()});allT=(await r.json()).tasks||[];renderTF();renderCF();renderGTabs();renderTL()}catch{$('tl').innerHTML='<div class="empty">Failed</div>'}}
 function renderTF(){const fs=[{i:'all',l:'All'},{i:'todo',l:'To Do'},{i:'in_progress',l:'Active'},{i:'review',l:'Review'},{i:'done',l:'Done'}];$('tfl').innerHTML=fs.map(f=>`<button class="fb ${curF===f.i?'a':''}" onclick="curF='${f.i}';renderTL()">${f.l}</button>`).join('')}
 function renderCF(){const cs=['all',...new Set(allT.map(t=>t.category).filter(Boolean))];$('catfl').innerHTML=cs.map(c=>`<button class="fb ${curCat===c?'a':''}" onclick="curCat='${c}';loadTasks()">${c==='all'?'All Categories':c}</button>`).join('')}
-function renderTL(){const ts=curF==='all'?allT:allT.filter(t=>t.status===curF);$('tl').innerHTML=ts.length?ts.map(t=>{const pc=PC[t.priority]||PC.medium,pb=PB[t.priority]||PB.medium,dn=t.status==='done';return`<div class="tr" onclick="openModal('task',${JSON.stringify(t).replace(/"/g,'&quot;')})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${dn?'text-decoration:line-through;opacity:.5':''}">${t.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${t.assignee||'Unassigned'}${t.category?' · '+t.category:''}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div></div>${dueBadge(t)}<span class="badge" style="background:${pb};color:${pc}">${t.priority}</span><select class="sel" onclick="event.stopPropagation()" onchange="chStatus(${t.id},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>To Do</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>Active</option><option value="review" ${t.status==='review'?'selected':''}>Review</option><option value="done" ${t.status==='done'?'selected':''}>Done</option></select></div>`}).join(''):'<div class="empty">No tasks</div>'}
+
+function renderTL(){
+  let ts=curF==='all'?[...allT]:allT.filter(t=>t.status===curF);
+  // Group filter
+  if(activeGrp==='ungrouped')ts=ts.filter(t=>!t.group_id);
+  else if(activeGrp!=='all')ts=ts.filter(t=>t.group_id==activeGrp);
+  // Subgroup filter
+  if(activeSg!=='all')ts=ts.filter(t=>t.subgroup_id==activeSg);
+
+  $('tl').innerHTML=ts.length?ts.map(t=>{
+    const pc=PC[t.priority]||PC.medium,pb=PB[t.priority]||PB.medium,dn=t.status==='done';
+    const gb=getGrpBadge(t);
+    return`<div class="tr" onclick="openModal('task',${JSON.stringify(t).replace(/"/g,'&quot;')})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${dn?'text-decoration:line-through;opacity:.5':''}">${t.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${t.assignee||'Unassigned'}${gb}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div></div>${dueBadge(t)}<span class="badge" style="background:${pb};color:${pc}">${t.priority}</span><select class="sel" onclick="event.stopPropagation()" onchange="chStatus(${t.id},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>To Do</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>Active</option><option value="review" ${t.status==='review'?'selected':''}>Review</option><option value="done" ${t.status==='done'?'selected':''}>Done</option></select><button class="tmv" onclick="event.stopPropagation();openAssign(${t.id})" title="Move to group">📂</button></div>`
+  }).join(''):'<div class="empty">No tasks</div>';
+}
+
+function getGrpBadge(t){
+  if(!t.group_id)return'';
+  const g=tGroups.find(x=>x.id===t.group_id);if(!g)return'';
+  let lbl=g.icon+' '+g.name;
+  if(t.subgroup_id&&g.subgroups){const sg=g.subgroups.find(s=>s.id===t.subgroup_id);if(sg)lbl+=' › '+sg.name}
+  return` · <span class="grp-badge" onclick="event.stopPropagation();selGrp(${g.id})">${esc(lbl)}</span>`;
+}
+
 async function chStatus(id,s){await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({status:s})});loadTasks()}
-async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeModal('task');loadTasks();loadBoard();loadDash();loadCats()}
-async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash()}}
+
+// Task modal group/subgroup fields
+function populateMtGroups(data){
+  const gs=$('mt-group');
+  gs.innerHTML='<option value="">— None —</option>'+tGroups.map(g=>`<option value="${g.id}">${g.icon} ${g.name}</option>`).join('');
+  gs.value=data?.group_id||'';
+  onMtGroupChange(data?.subgroup_id);
+}
+function onMtGroupChange(preselSg){
+  const gid=$('mt-group').value,sgSel=$('mt-subgroup');
+  sgSel.innerHTML='<option value="">— None —</option>';
+  if(!gid)return;
+  const g=tGroups.find(x=>x.id==gid);
+  if(g&&g.subgroups)sgSel.innerHTML+= g.subgroups.map(sg=>`<option value="${sg.id}">${sg.name}</option>`).join('');
+  if(preselSg)sgSel.value=preselSg;
+}
+
+async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeModal('task');loadTasks();loadBoard();loadDash();loadCats();loadGrps()}
+async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash();loadGrps()}}
+
+// ═══ GROUP MANAGER ═══
+function openGM(){$('modal-gm').classList.add('v');renderGMList()}
+function closeGM(){$('modal-gm').classList.remove('v')}
+function renderGMList(){
+  if(!tGroups.length){$('gm-list').innerHTML='<div class="empty">No groups yet. Create your first group above.</div>';return}
+  $('gm-list').innerHTML=tGroups.map(g=>`<div class="gm-card"><div class="gm-hdr"><span style="font-size:14px">${g.icon||'📁'}</span><span class="gm-name">${esc(g.name)}</span><span class="gm-cnt">${g.task_count||0} tasks</span><div class="gm-acts"><button onclick="editGrp(${g.id},'${esc(g.name).replace(/'/g,"\\'")}')" title="Rename">✏️</button><button class="del" onclick="delGrp(${g.id},'${esc(g.name).replace(/'/g,"\\'")}')" title="Delete">🗑️</button></div></div><div class="gm-sgs">${(g.subgroups||[]).map(sg=>`<div class="gm-sg"><span class="sg-n">${esc(sg.name)}</span><span class="sg-c">${sg.task_count||0}</span><button onclick="delSg(${sg.id},'${esc(sg.name).replace(/'/g,"\\'")}')" title="Delete">✕</button></div>`).join('')}<div class="gm-sg-add"><input type="text" placeholder="New sub-group..." id="gm-sgi-${g.id}" onkeydown="if(event.key==='Enter')addSgInGM(${g.id})"><button class="btn p" style="padding:4px 10px;font-size:10px" onclick="addSgInGM(${g.id})">+</button></div></div></div>`).join('');
+}
+async function createGrp(){const n=$('gm-name').value.trim();if(!n)return;const i=$('gm-icon').value.trim()||'📁',c=$('gm-color').value;try{await fetch(A+'/task-groups',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({name:n,icon:i,color:c})});$('gm-name').value='';$('gm-icon').value='';await loadGrps();renderGMList()}catch{alert('Failed')}}
+async function editGrp(id,cur){const n=prompt('Rename group:',cur);if(!n||n===cur)return;try{await fetch(A+'/task-groups/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({name:n})});await loadGrps();renderGMList()}catch{}}
+async function delGrp(id,name){if(!confirm('Delete "'+name+'"? Tasks become ungrouped.'))return;try{await fetch(A+'/task-groups/'+id,{method:'DELETE',headers:hdr()});if(activeGrp==id)activeGrp='all';await loadGrps();await loadTasks();renderGMList()}catch{}}
+async function addSgInGM(gid){const inp=$('gm-sgi-'+gid);const n=inp.value.trim();if(!n)return;try{await fetch(A+'/task-groups/subgroups',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({name:n,group_id:gid})});inp.value='';await loadGrps();renderGMList()}catch{}}
+async function delSg(id,name){if(!confirm('Delete sub-group "'+name+'"?'))return;try{await fetch(A+'/task-groups/subgroups/'+id,{method:'DELETE',headers:hdr()});await loadGrps();renderGMList()}catch{}}
+
+// ═══ ASSIGN GROUP MODAL ═══
+let assignTid=null;
+function openAssign(tid){assignTid=tid;const t=allT.find(x=>x.id===tid);
+  $('asg-group').innerHTML='<option value="">— Ungrouped —</option>'+tGroups.map(g=>`<option value="${g.id}" ${t&&t.group_id==g.id?'selected':''}>${g.icon} ${g.name}</option>`).join('');
+  onAsgGroupChange();if(t&&t.subgroup_id)$('asg-sg').value=t.subgroup_id;
+  $('modal-assign').classList.add('v');
+}
+function closeAssign(){$('modal-assign').classList.remove('v');assignTid=null}
+function onAsgGroupChange(){const gid=$('asg-group').value,sel=$('asg-sg');if(!gid){sel.style.display='none';return}const g=tGroups.find(x=>x.id==gid);if(!g||!(g.subgroups||[]).length){sel.style.display='none';return}sel.style.display='block';sel.innerHTML='<option value="">— None —</option>'+(g.subgroups||[]).map(sg=>`<option value="${sg.id}">${sg.name}</option>`).join('')}
+async function confirmAssign(){if(!assignTid)return;const gid=$('asg-group').value||null,sgid=$('asg-sg').value||null;
+  try{await fetch(A+'/task-groups/tasks/'+assignTid+'/assign',{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({group_id:gid?+gid:null,subgroup_id:sgid?+sgid:null})});
+  const t=allT.find(x=>x.id===assignTid);if(t){t.group_id=gid?+gid:null;t.subgroup_id=sgid?+sgid:null}
+  closeAssign();await loadGrps();renderTL()}catch{alert('Failed')}}
+
+// ═══ ADD SUBGROUP MODAL (from chips) ═══
+function openAddSg(){if(activeGrp==='all'||activeGrp==='ungrouped')return;$('addsg-name').value='';$('modal-addsg').classList.add('v');setTimeout(()=>$('addsg-name').focus(),100)}
+function closeAddSg(){$('modal-addsg').classList.remove('v')}
+async function createSgFromModal(){const n=$('addsg-name').value.trim();if(!n)return;try{await fetch(A+'/task-groups/subgroups',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({name:n,group_id:activeGrp})});closeAddSg();await loadGrps()}catch{alert('Failed')}}
+
 function exportCSV(){if(!allT.length){alert('No tasks');return}const h=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];const rows=allT.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);dl([h.join(','),...rows.map(r=>r.join(','))].join('\n'),'tasks_'+new Date().toISOString().split('T')[0]+'.csv','text/csv')}
 function exportJSON(){if(!allT.length){alert('No tasks');return}dl(JSON.stringify(allT.map(t=>({id:t.id,title:t.title,description:t.description,status:t.status,priority:t.priority,assignee:t.assignee,category:t.category,due_date:t.due_date})),null,2),'tasks_'+new Date().toISOString().split('T')[0]+'.json','application/json')}
 function dl(c,f,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u)}

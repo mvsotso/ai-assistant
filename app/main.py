@@ -12,8 +12,10 @@ from app.core.database import init_db, close_db, engine
 from app.api.router import router
 from app.api.calendar_api import calendar_router
 from app.api.recurring_api import recurring_router
+from app.api.task_group_api import router as task_group_router
 from app.api.auth import auth_router
 from app.models.recurring_task import RecurringTask  # noqa: ensure table creation
+from app.models.task_group import TaskGroup, TaskSubGroup  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -52,6 +54,57 @@ async def lifespan(app: FastAPI):
                 if not result.fetchall():
                     await conn.execute(text(sql))
                     logger.info(f"🔧 Added {col} column to {table} table")
+
+            # ── Task Groups migration ──
+            # Create task_groups table
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_groups (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    description TEXT,
+                    icon VARCHAR(10) DEFAULT '📁',
+                    color VARCHAR(7) DEFAULT '#3b82f6',
+                    sort_order INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    creator_id INTEGER REFERENCES users(id),
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+
+            # Create task_subgroups table
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_subgroups (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    description TEXT,
+                    group_id INTEGER NOT NULL REFERENCES task_groups(id) ON DELETE CASCADE,
+                    sort_order INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+
+            # Add group_id and subgroup_id to tasks
+            await conn.execute(text("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='group_id') THEN
+                        ALTER TABLE tasks ADD COLUMN group_id INTEGER REFERENCES task_groups(id) ON DELETE SET NULL;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='subgroup_id') THEN
+                        ALTER TABLE tasks ADD COLUMN subgroup_id INTEGER REFERENCES task_subgroups(id) ON DELETE SET NULL;
+                    END IF;
+                END $$
+            """))
+
+            # Create indexes
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_tasks_group_id ON tasks(group_id)'))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_tasks_subgroup_id ON tasks(subgroup_id)'))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_subgroups_group_id ON task_subgroups(group_id)'))
+            logger.info("🔧 Task groups migration checked")
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 
@@ -96,6 +149,7 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(calendar_router)
 app.include_router(recurring_router)
+app.include_router(task_group_router)
 app.include_router(auth_router)
 
 

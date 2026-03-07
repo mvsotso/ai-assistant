@@ -1,0 +1,1368 @@
+<!--
+  TASK GROUPS FEATURE — Drop-in replacement for the Tasks section in index.html
+  
+  This file contains:
+  1. The updated Tasks page HTML (replaces existing tasks section)
+  2. Group management modals
+  3. All CSS styles
+  4. All JavaScript logic
+  
+  INTEGRATION INSTRUCTIONS:
+  ═══════════════════════════════════════════════════════════
+  
+  1. In your existing index.html, find the Tasks page section.
+     Look for something like:
+       <div id="page-tasks" class="page-content" ...>
+     
+  2. Replace that entire <div id="page-tasks"> ... </div> block
+     with the HTML from SECTION A below.
+  
+  3. Add the CSS from SECTION B into your existing <style> block
+     (or at the end of it).
+  
+  4. Add the JavaScript from SECTION C into your existing <script> block.
+     - Replace your existing loadTasks() function with the new one
+     - Replace your existing renderTasks() function with the new one
+     - Add all the new group management functions
+  
+  5. In your existing router/page-switching logic, make sure
+     when "tasks" page loads it calls: loadTaskGroups(); loadTasks();
+  
+  6. BACKEND: Add these to your main.py:
+     from app.api.task_group_api import router as task_group_router
+     app.include_router(task_group_router)
+  
+  7. MIGRATION: Run the migration in scripts/migrate_task_groups.py
+  
+  8. MODEL UPDATE: Add to your Task model (app/models/task.py):
+     group_id = Column(Integer, ForeignKey("task_groups.id", ondelete="SET NULL"), nullable=True)
+     subgroup_id = Column(Integer, ForeignKey("task_subgroups.id", ondelete="SET NULL"), nullable=True)
+     
+     And in the to_dict() method add:
+     "group_id": self.group_id,
+     "subgroup_id": self.subgroup_id,
+  ═══════════════════════════════════════════════════════════
+-->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION A: HTML — Replace your <div id="page-tasks"> block
+     ══════════════════════════════════════════════════════════ -->
+
+<!--
+<div id="page-tasks" class="page-content" style="display:none;">
+-->
+
+  <!-- Tasks Header -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+    <h2 style="margin:0; font-size:1.6rem;">Tasks</h2>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button onclick="openExportModal('csv')" class="btn-export" title="Export CSV">📊 CSV</button>
+      <button onclick="openExportModal('json')" class="btn-export" title="Export JSON">📋 JSON</button>
+      <button onclick="openGroupManager()" class="btn-manage-groups" title="Manage Groups">⚙️ Groups</button>
+      <button onclick="openNewTaskModal()" class="btn-primary">+ New Task</button>
+    </div>
+  </div>
+
+  <!-- Group Tabs -->
+  <div id="group-tabs-container" class="group-tabs-wrapper">
+    <div class="group-tabs-scroll">
+      <div id="group-tabs" class="group-tabs">
+        <button class="group-tab active" data-group-id="all" onclick="selectGroupTab('all')">
+          <span class="tab-icon">📋</span>
+          <span class="tab-label">All Tasks</span>
+          <span class="tab-count" id="tab-count-all">0</span>
+        </button>
+        <button class="group-tab" data-group-id="ungrouped" onclick="selectGroupTab('ungrouped')">
+          <span class="tab-icon">📥</span>
+          <span class="tab-label">Ungrouped</span>
+          <span class="tab-count" id="tab-count-ungrouped">0</span>
+        </button>
+        <!-- Dynamic group tabs inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SubGroup Filter Chips (shown when a group tab is selected) -->
+  <div id="subgroup-filters" class="subgroup-filters" style="display:none;">
+    <button class="subgroup-chip active" data-subgroup-id="all" onclick="selectSubGroup('all')">All</button>
+    <!-- Dynamic subgroup chips inserted here -->
+    <button class="subgroup-chip add-subgroup-btn" onclick="openAddSubGroup()" title="Add sub-group">+</button>
+  </div>
+
+  <!-- Status Filters -->
+  <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+    <div class="status-filters">
+      <button class="status-btn active" data-status="all" onclick="filterTaskStatus('all')">All</button>
+      <button class="status-btn" data-status="todo" onclick="filterTaskStatus('todo')">To Do</button>
+      <button class="status-btn" data-status="active" onclick="filterTaskStatus('active')">Active</button>
+      <button class="status-btn" data-status="review" onclick="filterTaskStatus('review')">Review</button>
+      <button class="status-btn" data-status="done" onclick="filterTaskStatus('done')">Done</button>
+    </div>
+  </div>
+
+  <!-- Task List -->
+  <div id="task-list" class="task-list">
+    <div class="loading-placeholder">Loading tasks...</div>
+  </div>
+
+<!--
+</div>
+-->
+
+
+<!-- ═══ Group Manager Modal ═══ -->
+<div id="group-manager-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeGroupManager()">
+  <div class="modal-panel group-manager-panel">
+    <div class="modal-header">
+      <h3>⚙️ Manage Task Groups</h3>
+      <button class="modal-close" onclick="closeGroupManager()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Add New Group -->
+      <div class="gm-add-section">
+        <h4>Create New Group</h4>
+        <div class="gm-add-form">
+          <input type="text" id="gm-new-group-name" placeholder="Group name" class="gm-input" maxlength="100" />
+          <input type="text" id="gm-new-group-icon" placeholder="📁" class="gm-input gm-icon-input" maxlength="4" />
+          <input type="color" id="gm-new-group-color" value="#3b82f6" class="gm-color-input" />
+          <button onclick="createGroupFromManager()" class="btn-primary btn-sm">Add</button>
+        </div>
+      </div>
+
+      <hr class="gm-divider" />
+
+      <!-- Existing Groups List -->
+      <div id="gm-groups-list" class="gm-groups-list">
+        <div class="loading-placeholder">Loading groups...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ Add SubGroup Modal (small) ═══ -->
+<div id="subgroup-add-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeAddSubGroup()">
+  <div class="modal-panel modal-sm">
+    <div class="modal-header">
+      <h3>Add Sub-Group</h3>
+      <button class="modal-close" onclick="closeAddSubGroup()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="sg-new-name" placeholder="Sub-group name" class="gm-input" maxlength="100" style="width:100%; margin-bottom:12px;" />
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button onclick="closeAddSubGroup()" class="btn-secondary btn-sm">Cancel</button>
+        <button onclick="createSubGroupFromModal()" class="btn-primary btn-sm">Create</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ Assign Task to Group Modal ═══ -->
+<div id="assign-group-modal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeAssignModal()">
+  <div class="modal-panel modal-sm">
+    <div class="modal-header">
+      <h3>Move to Group</h3>
+      <button class="modal-close" onclick="closeAssignModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <select id="assign-group-select" class="gm-select" onchange="onAssignGroupChange()">
+        <option value="">— Ungrouped —</option>
+      </select>
+      <select id="assign-subgroup-select" class="gm-select" style="margin-top:8px; display:none;">
+        <option value="">— No Sub-group —</option>
+      </select>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+        <button onclick="closeAssignModal()" class="btn-secondary btn-sm">Cancel</button>
+        <button onclick="confirmAssignGroup()" class="btn-primary btn-sm">Move</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION B: CSS — Add to your existing <style> block
+     ══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ── Group Tabs ── */
+.group-tabs-wrapper {
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.group-tabs-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.group-tabs-scroll::-webkit-scrollbar { display: none; }
+
+.group-tabs {
+  display: flex;
+  gap: 6px;
+  min-width: max-content;
+}
+
+.group-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+  font-family: inherit;
+}
+.group-tab:hover {
+  background: rgba(255,255,255,0.06);
+  color: #e2e8f0;
+  border-color: rgba(255,255,255,0.15);
+}
+.group-tab.active {
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  border-color: rgba(59,130,246,0.3);
+  font-weight: 600;
+}
+.group-tab .tab-icon { font-size: 1rem; }
+.group-tab .tab-count {
+  background: rgba(255,255,255,0.08);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+}
+.group-tab.active .tab-count {
+  background: rgba(59,130,246,0.25);
+  color: #93c5fd;
+}
+
+/* Color accent bar on active tab */
+.group-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--tab-color, #3b82f6);
+}
+
+/* ── SubGroup Filter Chips ── */
+.subgroup-filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.subgroup-chip {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.subgroup-chip:hover {
+  background: rgba(255,255,255,0.06);
+  color: #e2e8f0;
+}
+.subgroup-chip.active {
+  background: rgba(59,130,246,0.15);
+  color: #60a5fa;
+  border-color: rgba(59,130,246,0.3);
+  font-weight: 600;
+}
+.subgroup-chip.add-subgroup-btn {
+  border-style: dashed;
+  color: #64748b;
+  font-size: 0.9rem;
+  padding: 5px 12px;
+}
+.subgroup-chip.add-subgroup-btn:hover {
+  color: #60a5fa;
+  border-color: rgba(59,130,246,0.4);
+}
+
+/* ── Status Filters ── */
+.status-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.status-btn {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.status-btn:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+.status-btn.active {
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  border-color: rgba(59,130,246,0.3);
+}
+
+/* ── Task Cards (enhanced) ── */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+
+.task-card {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  gap: 14px;
+}
+.task-card:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.task-card .priority-bar {
+  width: 3px;
+  height: 36px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.priority-bar.high { background: #ef4444; }
+.priority-bar.medium { background: #eab308; }
+.priority-bar.low { background: #22c55e; }
+
+.task-card .task-info { flex: 1; min-width: 0; }
+.task-card .task-title {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #e2e8f0;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-card .task-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.task-meta .group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.task-meta .group-badge:hover {
+  background: rgba(59,130,246,0.15);
+}
+
+.task-card .task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.priority-badge {
+  font-size: 0.7rem;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+.priority-badge.high { background: rgba(239,68,68,0.15); color: #f87171; }
+.priority-badge.medium { background: rgba(234,179,8,0.15); color: #facc15; }
+.priority-badge.low { background: rgba(34,197,94,0.15); color: #4ade80; }
+
+.task-status-select {
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.task-move-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 1rem;
+  transition: color 0.15s;
+  font-family: inherit;
+}
+.task-move-btn:hover { color: #60a5fa; }
+
+/* ── Group Manager Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.modal-panel {
+  background: #1a1f2e;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+}
+.modal-panel.modal-sm { max-width: 400px; }
+.modal-panel.group-manager-panel { max-width: 650px; }
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.modal-header h3 { margin: 0; font-size: 1.1rem; color: #e2e8f0; }
+.modal-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  font-family: inherit;
+}
+.modal-close:hover { color: #e2e8f0; }
+
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+
+/* ── Group Manager Styles ── */
+.gm-add-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.gm-add-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.gm-input {
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+.gm-input:focus {
+  outline: none;
+  border-color: rgba(59,130,246,0.5);
+}
+.gm-input::placeholder { color: #475569; }
+.gm-icon-input { width: 50px; text-align: center; }
+.gm-color-input {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  padding: 2px;
+}
+.gm-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+.gm-select:focus { outline: none; border-color: rgba(59,130,246,0.5); }
+
+.gm-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin: 16px 0;
+}
+
+.gm-groups-list { display: flex; flex-direction: column; gap: 12px; }
+
+.gm-group-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.gm-group-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gm-group-header:hover { background: rgba(255,255,255,0.03); }
+.gm-group-header .gm-group-icon { font-size: 1.1rem; }
+.gm-group-header .gm-group-name {
+  flex: 1;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+.gm-group-header .gm-group-count {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.gm-group-actions {
+  display: flex;
+  gap: 4px;
+}
+.gm-group-actions button {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.gm-group-actions button:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+.gm-group-actions button.delete-btn:hover { color: #f87171; background: rgba(239,68,68,0.1); }
+
+.gm-subgroups {
+  padding: 0 16px 12px 42px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gm-subgroup-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+.gm-subgroup-item .sg-name { flex: 1; }
+.gm-subgroup-item .sg-count { font-size: 0.72rem; color: #475569; }
+.gm-subgroup-item button {
+  background: none;
+  border: none;
+  color: #475569;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+.gm-subgroup-item button:hover { color: #f87171; }
+
+.gm-add-subgroup {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 10px;
+}
+.gm-add-subgroup input {
+  flex: 1;
+  padding: 5px 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-family: inherit;
+}
+.gm-add-subgroup input::placeholder { color: #475569; }
+.gm-add-subgroup input:focus { outline: none; border-color: rgba(59,130,246,0.4); }
+
+/* ── Buttons ── */
+.btn-primary {
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-sm { padding: 6px 14px; font-size: 0.8rem; border-radius: 8px; }
+
+.btn-secondary {
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.06);
+  color: #94a3b8;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+
+.btn-export {
+  padding: 8px 16px;
+  background: rgba(34,197,94,0.1);
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+}
+.btn-export:hover { background: rgba(34,197,94,0.18); }
+
+.btn-manage-groups {
+  padding: 8px 16px;
+  background: rgba(139,92,246,0.1);
+  color: #a78bfa;
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+}
+.btn-manage-groups:hover { background: rgba(139,92,246,0.18); }
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: #475569;
+}
+.empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.empty-state .empty-text { font-size: 0.9rem; color: #64748b; }
+.empty-state .empty-hint { font-size: 0.8rem; color: #475569; margin-top: 6px; }
+
+/* ── Loading ── */
+.loading-placeholder {
+  text-align: center;
+  padding: 32px;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .group-tabs { gap: 4px; }
+  .group-tab { padding: 6px 12px; font-size: 0.8rem; }
+  .task-card { padding: 10px 14px; flex-wrap: wrap; }
+  .task-card .task-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
+  .modal-panel { max-width: 95vw; }
+  .gm-add-form { flex-direction: column; }
+  .gm-add-form .gm-input { width: 100%; }
+}
+</style>
+
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION C: JAVASCRIPT — Add to your <script> block
+     ══════════════════════════════════════════════════════════ -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// TASK GROUPS — State & Logic
+// ═══════════════════════════════════════════════════════════
+
+let taskGroups = [];           // All groups with subgroups
+let ungroupedCount = 0;
+let activeGroupId = 'all';     // 'all', 'ungrouped', or numeric group ID
+let activeSubGroupId = 'all';  // 'all' or numeric subgroup ID
+let activeStatusFilter = 'all';
+let allTasks = [];             // Full task list from API
+
+
+// ── Load Groups ──
+async function loadTaskGroups() {
+  try {
+    const res = await fetch('/api/v1/task-groups', {
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+    if (!res.ok) throw new Error('Failed to load groups');
+    const data = await res.json();
+    taskGroups = data.groups || [];
+    ungroupedCount = data.ungrouped_count || 0;
+    renderGroupTabs();
+  } catch (err) {
+    console.error('loadTaskGroups error:', err);
+  }
+}
+
+
+// ── Render Group Tabs ──
+function renderGroupTabs() {
+  const container = document.getElementById('group-tabs');
+  const totalCount = allTasks.length;
+
+  let html = `
+    <button class="group-tab ${activeGroupId === 'all' ? 'active' : ''}" 
+            data-group-id="all" onclick="selectGroupTab('all')"
+            style="--tab-color: #3b82f6">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">All Tasks</span>
+      <span class="tab-count">${totalCount}</span>
+    </button>
+    <button class="group-tab ${activeGroupId === 'ungrouped' ? 'active' : ''}" 
+            data-group-id="ungrouped" onclick="selectGroupTab('ungrouped')"
+            style="--tab-color: #64748b">
+      <span class="tab-icon">📥</span>
+      <span class="tab-label">Ungrouped</span>
+      <span class="tab-count">${ungroupedCount}</span>
+    </button>
+  `;
+
+  for (const g of taskGroups) {
+    const isActive = activeGroupId == g.id;
+    html += `
+      <button class="group-tab ${isActive ? 'active' : ''}" 
+              data-group-id="${g.id}" onclick="selectGroupTab(${g.id})"
+              style="--tab-color: ${g.color || '#3b82f6'}">
+        <span class="tab-icon">${g.icon || '📁'}</span>
+        <span class="tab-label">${escapeHtml(g.name)}</span>
+        <span class="tab-count">${g.task_count || 0}</span>
+      </button>
+    `;
+  }
+
+  container.innerHTML = html;
+  renderSubGroupFilters();
+}
+
+
+// ── Select Group Tab ──
+function selectGroupTab(groupId) {
+  activeGroupId = groupId;
+  activeSubGroupId = 'all';
+  renderGroupTabs();
+  renderFilteredTasks();
+}
+
+
+// ── Render SubGroup Filter Chips ──
+function renderSubGroupFilters() {
+  const container = document.getElementById('subgroup-filters');
+
+  if (activeGroupId === 'all' || activeGroupId === 'ungrouped') {
+    container.style.display = 'none';
+    return;
+  }
+
+  const group = taskGroups.find(g => g.id == activeGroupId);
+  if (!group || !group.subgroups || group.subgroups.length === 0) {
+    // Show just the "+" button if group has no subgroups yet
+    container.style.display = 'flex';
+    container.innerHTML = `
+      <button class="subgroup-chip active" data-subgroup-id="all" onclick="selectSubGroup('all')">All</button>
+      <button class="subgroup-chip add-subgroup-btn" onclick="openAddSubGroup()" title="Add sub-group">+</button>
+    `;
+    return;
+  }
+
+  container.style.display = 'flex';
+  let html = `
+    <button class="subgroup-chip ${activeSubGroupId === 'all' ? 'active' : ''}" 
+            data-subgroup-id="all" onclick="selectSubGroup('all')">All</button>
+  `;
+
+  for (const sg of group.subgroups) {
+    html += `
+      <button class="subgroup-chip ${activeSubGroupId == sg.id ? 'active' : ''}" 
+              data-subgroup-id="${sg.id}" onclick="selectSubGroup(${sg.id})">
+        ${escapeHtml(sg.name)}
+        <span style="opacity:0.5; margin-left:3px;">${sg.task_count || 0}</span>
+      </button>
+    `;
+  }
+
+  html += `<button class="subgroup-chip add-subgroup-btn" onclick="openAddSubGroup()" title="Add sub-group">+</button>`;
+  container.innerHTML = html;
+}
+
+
+// ── Select SubGroup ──
+function selectSubGroup(sgId) {
+  activeSubGroupId = sgId;
+  renderSubGroupFilters();
+  renderFilteredTasks();
+}
+
+
+// ── Filter by Status ──
+function filterTaskStatus(status) {
+  activeStatusFilter = status;
+  document.querySelectorAll('.status-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.status === status);
+  });
+  renderFilteredTasks();
+}
+
+
+// ── Load Tasks (updated) ──
+async function loadTasks() {
+  try {
+    const res = await fetch('/api/v1/tasks', {
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+    if (!res.ok) throw new Error('Failed to load tasks');
+    const data = await res.json();
+    allTasks = data.tasks || data || [];
+    renderGroupTabs();  // Update counts
+    renderFilteredTasks();
+  } catch (err) {
+    console.error('loadTasks error:', err);
+    document.getElementById('task-list').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load tasks</div></div>';
+  }
+}
+
+
+// ── Filter & Render ──
+function renderFilteredTasks() {
+  let filtered = [...allTasks];
+
+  // Filter by group
+  if (activeGroupId === 'ungrouped') {
+    filtered = filtered.filter(t => !t.group_id);
+  } else if (activeGroupId !== 'all') {
+    filtered = filtered.filter(t => t.group_id == activeGroupId);
+  }
+
+  // Filter by subgroup
+  if (activeSubGroupId !== 'all') {
+    filtered = filtered.filter(t => t.subgroup_id == activeSubGroupId);
+  }
+
+  // Filter by status
+  if (activeStatusFilter !== 'all') {
+    filtered = filtered.filter(t => t.status === activeStatusFilter);
+  }
+
+  renderTasks(filtered);
+}
+
+
+// ── Render Task List (updated with group badges) ──
+function renderTasks(tasks) {
+  const container = document.getElementById('task-list');
+
+  if (!tasks || tasks.length === 0) {
+    const msg = activeGroupId === 'all' ? 'No tasks yet' : 'No tasks in this group';
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">${msg}</div>
+        <div class="empty-hint">Click "+ New Task" to create one</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = tasks.map(t => {
+    const priority = (t.priority || 'medium').toLowerCase();
+    const status = t.status || 'todo';
+    const groupBadge = getGroupBadge(t);
+    const dueBadge = getDueBadge(t);
+
+    return `
+      <div class="task-card" data-task-id="${t.id}">
+        <div class="priority-bar ${priority}"></div>
+        <div class="task-info">
+          <div class="task-title">${escapeHtml(t.title)}</div>
+          <div class="task-meta">
+            <span>${escapeHtml(t.assignee_name || t.creator_name || 'Unassigned')}</span>
+            ${groupBadge}
+            ${dueBadge}
+          </div>
+        </div>
+        <div class="task-actions">
+          <span class="priority-badge ${priority}">${priority}</span>
+          <select class="task-status-select" onchange="updateTaskStatus(${t.id}, this.value)">
+            <option value="todo" ${status === 'todo' ? 'selected' : ''}>To Do</option>
+            <option value="active" ${status === 'active' ? 'selected' : ''}>Active</option>
+            <option value="review" ${status === 'review' ? 'selected' : ''}>Review</option>
+            <option value="done" ${status === 'done' ? 'selected' : ''}>Done</option>
+          </select>
+          <button class="task-move-btn" onclick="openAssignModal(${t.id})" title="Move to group">📂</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+
+// ── Group Badge for Task ──
+function getGroupBadge(task) {
+  if (!task.group_id) return '';
+
+  const group = taskGroups.find(g => g.id === task.group_id);
+  if (!group) return '';
+
+  let label = group.icon + ' ' + group.name;
+  if (task.subgroup_id && group.subgroups) {
+    const sg = group.subgroups.find(s => s.id === task.subgroup_id);
+    if (sg) label += ' › ' + sg.name;
+  }
+
+  return `<span class="group-badge" onclick="event.stopPropagation(); selectGroupTab(${group.id})" title="View group">${escapeHtml(label)}</span>`;
+}
+
+
+// ── Due Date Badge ──
+function getDueBadge(task) {
+  if (!task.due_date) return '';
+  const now = new Date();
+  const due = new Date(task.due_date);
+  const diffDays = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+
+  if (task.status === 'done') return '';
+  if (diffDays < 0) return `<span style="color:#f87171; font-size:0.72rem;">⏰ Overdue</span>`;
+  if (diffDays === 0) return `<span style="color:#facc15; font-size:0.72rem;">⏰ Today</span>`;
+  if (diffDays <= 3) return `<span style="color:#fb923c; font-size:0.72rem;">⏰ ${diffDays}d</span>`;
+  return '';
+}
+
+
+// ── Update Task Status ──
+async function updateTaskStatus(taskId, newStatus) {
+  try {
+    await fetch(`/api/v1/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    // Update local state
+    const task = allTasks.find(t => t.id === taskId);
+    if (task) task.status = newStatus;
+    renderFilteredTasks();
+  } catch (err) {
+    console.error('updateTaskStatus error:', err);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// GROUP MANAGER
+// ═══════════════════════════════════════════════════════════
+
+function openGroupManager() {
+  document.getElementById('group-manager-modal').style.display = 'flex';
+  renderGroupManagerList();
+}
+
+function closeGroupManager() {
+  document.getElementById('group-manager-modal').style.display = 'none';
+}
+
+function renderGroupManagerList() {
+  const container = document.getElementById('gm-groups-list');
+
+  if (taskGroups.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:24px;">
+        <div class="empty-icon">📁</div>
+        <div class="empty-text">No groups yet</div>
+        <div class="empty-hint">Create your first group above to organize tasks</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = taskGroups.map(g => `
+    <div class="gm-group-card">
+      <div class="gm-group-header">
+        <span class="gm-group-icon">${g.icon || '📁'}</span>
+        <span class="gm-group-name">${escapeHtml(g.name)}</span>
+        <span class="gm-group-count">${g.task_count || 0} tasks</span>
+        <div class="gm-group-actions">
+          <button onclick="editGroupName(${g.id}, '${escapeHtml(g.name)}')" title="Edit">✏️</button>
+          <button class="delete-btn" onclick="deleteGroup(${g.id}, '${escapeHtml(g.name)}')" title="Delete">🗑️</button>
+        </div>
+      </div>
+      <div class="gm-subgroups">
+        ${(g.subgroups || []).map(sg => `
+          <div class="gm-subgroup-item">
+            <span class="sg-name">${escapeHtml(sg.name)}</span>
+            <span class="sg-count">${sg.task_count || 0}</span>
+            <button onclick="deleteSubGroup(${sg.id}, '${escapeHtml(sg.name)}')" title="Delete">✕</button>
+          </div>
+        `).join('')}
+        <div class="gm-add-subgroup">
+          <input type="text" placeholder="New sub-group..." id="gm-sg-input-${g.id}" 
+                 onkeydown="if(event.key==='Enter')addSubGroupInManager(${g.id})" />
+          <button class="btn-primary btn-sm" onclick="addSubGroupInManager(${g.id})">+</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+// ── Create Group ──
+async function createGroupFromManager() {
+  const name = document.getElementById('gm-new-group-name').value.trim();
+  if (!name) return;
+
+  const icon = document.getElementById('gm-new-group-icon').value.trim() || '📁';
+  const color = document.getElementById('gm-new-group-color').value;
+
+  try {
+    const res = await fetch('/api/v1/task-groups', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, icon, color })
+    });
+    if (!res.ok) throw new Error('Failed to create group');
+
+    document.getElementById('gm-new-group-name').value = '';
+    document.getElementById('gm-new-group-icon').value = '';
+    await loadTaskGroups();
+    renderGroupManagerList();
+  } catch (err) {
+    console.error('createGroup error:', err);
+    alert('Failed to create group');
+  }
+}
+
+
+// ── Edit Group Name ──
+async function editGroupName(groupId, currentName) {
+  const newName = prompt('Rename group:', currentName);
+  if (!newName || newName === currentName) return;
+
+  try {
+    await fetch(`/api/v1/task-groups/${groupId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: newName })
+    });
+    await loadTaskGroups();
+    renderGroupManagerList();
+  } catch (err) {
+    console.error('editGroupName error:', err);
+  }
+}
+
+
+// ── Delete Group ──
+async function deleteGroup(groupId, name) {
+  if (!confirm(`Delete group "${name}"? Tasks will become ungrouped.`)) return;
+
+  try {
+    await fetch(`/api/v1/task-groups/${groupId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+
+    if (activeGroupId == groupId) activeGroupId = 'all';
+    await loadTaskGroups();
+    await loadTasks();
+    renderGroupManagerList();
+  } catch (err) {
+    console.error('deleteGroup error:', err);
+  }
+}
+
+
+// ── Add SubGroup from Manager ──
+async function addSubGroupInManager(groupId) {
+  const input = document.getElementById(`gm-sg-input-${groupId}`);
+  const name = input.value.trim();
+  if (!name) return;
+
+  try {
+    await fetch('/api/v1/task-groups/subgroups', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, group_id: groupId })
+    });
+
+    input.value = '';
+    await loadTaskGroups();
+    renderGroupManagerList();
+  } catch (err) {
+    console.error('addSubGroup error:', err);
+  }
+}
+
+
+// ── Delete SubGroup ──
+async function deleteSubGroup(sgId, name) {
+  if (!confirm(`Delete sub-group "${name}"?`)) return;
+
+  try {
+    await fetch(`/api/v1/task-groups/subgroups/${sgId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+    await loadTaskGroups();
+    renderGroupManagerList();
+  } catch (err) {
+    console.error('deleteSubGroup error:', err);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// ADD SUBGROUP MODAL (from the filter chips)
+// ═══════════════════════════════════════════════════════════
+
+function openAddSubGroup() {
+  if (activeGroupId === 'all' || activeGroupId === 'ungrouped') return;
+  document.getElementById('sg-new-name').value = '';
+  document.getElementById('subgroup-add-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('sg-new-name').focus(), 100);
+}
+
+function closeAddSubGroup() {
+  document.getElementById('subgroup-add-modal').style.display = 'none';
+}
+
+async function createSubGroupFromModal() {
+  const name = document.getElementById('sg-new-name').value.trim();
+  if (!name) return;
+
+  try {
+    await fetch('/api/v1/task-groups/subgroups', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, group_id: activeGroupId })
+    });
+
+    closeAddSubGroup();
+    await loadTaskGroups();
+  } catch (err) {
+    console.error('createSubGroup error:', err);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// ASSIGN TASK TO GROUP MODAL
+// ═══════════════════════════════════════════════════════════
+
+let assigningTaskId = null;
+
+function openAssignModal(taskId) {
+  assigningTaskId = taskId;
+  const task = allTasks.find(t => t.id === taskId);
+
+  // Populate group select
+  const groupSelect = document.getElementById('assign-group-select');
+  groupSelect.innerHTML = '<option value="">— Ungrouped —</option>' +
+    taskGroups.map(g => `<option value="${g.id}" ${task && task.group_id == g.id ? 'selected' : ''}>${g.icon} ${escapeHtml(g.name)}</option>`).join('');
+
+  onAssignGroupChange();  // populate subgroups
+
+  // Pre-select subgroup
+  if (task && task.subgroup_id) {
+    const sgSelect = document.getElementById('assign-subgroup-select');
+    sgSelect.value = task.subgroup_id;
+  }
+
+  document.getElementById('assign-group-modal').style.display = 'flex';
+}
+
+function closeAssignModal() {
+  document.getElementById('assign-group-modal').style.display = 'none';
+  assigningTaskId = null;
+}
+
+function onAssignGroupChange() {
+  const groupId = document.getElementById('assign-group-select').value;
+  const sgSelect = document.getElementById('assign-subgroup-select');
+
+  if (!groupId) {
+    sgSelect.style.display = 'none';
+    return;
+  }
+
+  const group = taskGroups.find(g => g.id == groupId);
+  if (!group || !group.subgroups || group.subgroups.length === 0) {
+    sgSelect.style.display = 'none';
+    return;
+  }
+
+  sgSelect.style.display = 'block';
+  sgSelect.innerHTML = '<option value="">— No Sub-group —</option>' +
+    group.subgroups.map(sg => `<option value="${sg.id}">${escapeHtml(sg.name)}</option>`).join('');
+}
+
+async function confirmAssignGroup() {
+  if (!assigningTaskId) return;
+
+  const groupId = document.getElementById('assign-group-select').value || null;
+  const subgroupId = document.getElementById('assign-subgroup-select').value || null;
+
+  try {
+    await fetch(`/api/v1/task-groups/tasks/${assigningTaskId}/assign`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        group_id: groupId ? parseInt(groupId) : null,
+        subgroup_id: subgroupId ? parseInt(subgroupId) : null
+      })
+    });
+
+    // Update local state
+    const task = allTasks.find(t => t.id === assigningTaskId);
+    if (task) {
+      task.group_id = groupId ? parseInt(groupId) : null;
+      task.subgroup_id = subgroupId ? parseInt(subgroupId) : null;
+    }
+
+    closeAssignModal();
+    await loadTaskGroups();
+    renderFilteredTasks();
+  } catch (err) {
+    console.error('confirmAssignGroup error:', err);
+    alert('Failed to move task');
+  }
+}
+
+
+// ── Also update New Task Modal to include group selection ──
+// Add this to your existing openNewTaskModal() function:
+function injectGroupSelectIntoNewTaskModal() {
+  // If you have a new-task modal, add group/subgroup selectors into it.
+  // This function should be called after taskGroups are loaded.
+  const existingGroupField = document.getElementById('new-task-group-select');
+  if (existingGroupField) return; // Already injected
+
+  // Find the modal form — adjust selector to match your existing modal
+  const modalForm = document.querySelector('#new-task-modal .modal-body') ||
+                    document.querySelector('#task-modal .modal-body');
+  if (!modalForm) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'margin-top:12px; display:flex; gap:8px;';
+  wrapper.innerHTML = `
+    <div style="flex:1;">
+      <label style="font-size:0.78rem; color:#94a3b8; margin-bottom:4px; display:block;">Group</label>
+      <select id="new-task-group-select" class="gm-select" onchange="onNewTaskGroupChange()">
+        <option value="">— None —</option>
+        ${taskGroups.map(g => `<option value="${g.id}">${g.icon} ${g.name}</option>`).join('')}
+      </select>
+    </div>
+    <div style="flex:1;">
+      <label style="font-size:0.78rem; color:#94a3b8; margin-bottom:4px; display:block;">Sub-group</label>
+      <select id="new-task-subgroup-select" class="gm-select">
+        <option value="">— None —</option>
+      </select>
+    </div>
+  `;
+  modalForm.appendChild(wrapper);
+}
+
+function onNewTaskGroupChange() {
+  const groupId = document.getElementById('new-task-group-select').value;
+  const sgSelect = document.getElementById('new-task-subgroup-select');
+  sgSelect.innerHTML = '<option value="">— None —</option>';
+
+  if (!groupId) return;
+  const group = taskGroups.find(g => g.id == groupId);
+  if (group && group.subgroups) {
+    sgSelect.innerHTML += group.subgroups.map(sg =>
+      `<option value="${sg.id}">${sg.name}</option>`
+    ).join('');
+  }
+}
+
+
+// ── Utility ──
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// INITIALIZATION — Call these when Tasks page loads
+// ═══════════════════════════════════════════════════════════
+// In your page router, when switching to the tasks page:
+//   loadTaskGroups();
+//   loadTasks();
+//
+// This replaces the old single loadTasks() call.
+</script>
