@@ -291,8 +291,8 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="mn">
   <div id="pg-dash" class="pg a"><h2 data-i18n="dashboard">Dashboard</h2><div class="gr" id="greet"></div><div class="row" id="stats"></div>
     <div class="g2"><div><div class="cd"><h3 data-i18n="teamProgress">Team Progress</h3><div id="tp"></div></div>
-      <div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0" data-i18n="calendarWidget">📅 Calendar</h3><div style="display:flex;gap:4px"><button class="cal-nav-btn" style="width:24px;height:24px;font-size:11px" onclick="miniCalNav(-1)">◀</button><span id="mini-cal-month" style="font-size:11px;font-weight:600;padding:0 6px"></span><button class="cal-nav-btn" style="width:24px;height:24px;font-size:11px" onclick="miniCalNav(1)">▶</button></div></div><div class="cal-mini-grid" id="mini-cal"></div></div>
-    </div><div><div class="cd"><h3 data-i18n="recentTasks">Recent Tasks</h3><div id="rt"></div></div><div class="cd"><h3 data-i18n="upcomingDeadlines">⏰ Upcoming Deadlines</h3><div id="deadlines"></div></div></div></div><div id="od"></div></div>
+      <div class="cd"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">📅 <span data-i18n="calendarWidget">Calendar</span></h3><div style="display:flex;gap:4px"><button class="cal-nav-btn" style="width:24px;height:24px;font-size:11px" onclick="miniCalNav(-1)">◀</button><span id="mini-cal-month" style="font-size:11px;font-weight:600;padding:0 6px"></span><button class="cal-nav-btn" style="width:24px;height:24px;font-size:11px" onclick="miniCalNav(1)">▶</button></div></div><div class="cal-mini-grid" id="mini-cal"></div></div>
+    </div><div><div class="cd"><h3 data-i18n="recentTasks">Recent Tasks</h3><div id="rt"></div></div><div class="cd"><h3>⏰ <span data-i18n="upcomingDeadlines">Upcoming Deadlines</span></h3><div id="deadlines"></div></div></div></div><div id="od"></div></div>
   <div id="pg-board" class="pg"><h2 data-i18n="taskBoard">Task Board</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0" data-i18n="dragCards">Drag cards to change status</div><div style="display:flex;gap:6px"><button class="btn ex" onclick="exportCSV()" data-i18n="csv">📊 CSV</button><button class="btn ex" onclick="exportJSON()" data-i18n="json">📋 JSON</button></div></div><div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px" id="board"></div></div>
 
   <!-- ═══ UPDATED TASKS PAGE WITH GROUPS ═══ -->
@@ -331,7 +331,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   </div>
   <div id="pg-msgs" class="pg"><h2 data-i18n="messagesPage">Messages</h2><div class="st" data-i18n="telegramMsgs">Telegram group messages</div><div class="fl" id="gfl"></div><div id="ml"></div></div>
   <div id="pg-remind" class="pg"><h2 data-i18n="remindersPage">Reminders</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0" data-i18n="scheduledNotifs">Scheduled notifications</div><button class="btn p" onclick="openModal('remind')" data-i18n="newReminder">+ New Reminder</button></div><div id="rl"></div></div>
-  <div id="pg-chat" class="pg"><h2 data-i18n="aiAssistant">✨ AI Assistant</h2><div class="st" data-i18n="aiSub">Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything or upload files for analysis.</div></div><div class="ch-r"><input type="file" id="chf" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.csv,.docx,.doc,.sql,.py,.js,.json,.txt,.md,.xml,.yaml,.html" onchange="onFileSelect()"><button onclick="$('chf').click()" style="width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--mt);font-size:14px;cursor:pointer;flex-shrink:0">📎</button><input class="ch-i" id="chi" placeholder="Ask anything..." data-i18n-ph="phAskAnything" onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div><div id="chfn" style="display:none;padding:6px 0;font-size:11px;color:var(--ac)"></div></div></div>
+  <div id="pg-chat" class="pg"><h2>✨ <span data-i18n="aiAssistant">AI Assistant</span></h2><div class="st" data-i18n="aiSub">Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything or upload files for analysis.</div></div><div class="ch-r"><input type="file" id="chf" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.csv,.docx,.doc,.sql,.py,.js,.json,.txt,.md,.xml,.yaml,.html" onchange="onFileSelect()"><button onclick="$('chf').click()" style="width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--mt);font-size:14px;cursor:pointer;flex-shrink:0">📎</button><input class="ch-i" id="chi" placeholder="Ask anything..." data-i18n-ph="phAskAnything" onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div><div id="chfn" style="display:none;padding:6px 0;font-size:11px;color:var(--ac)"></div></div></div>
   <div id="pg-calendar" class="pg">
     <div class="cal-toolbar"><div class="left"><button class="cal-today-btn" onclick="calGoToday()" data-i18n="today">Today</button><button class="cal-nav-btn" onclick="calGo(-1)">◀</button><button class="cal-nav-btn" onclick="calGo(1)">▶</button><span class="cal-title" id="cal-title"></span></div>
     <div class="right"><button class="btn p" onclick="openEventModal()" style="margin-right:8px" data-i18n="event">+ Event</button><button class="cal-view-btn a" id="cv-month" onclick="setCalView('month')" data-i18n="month">Month</button><button class="cal-view-btn" id="cv-week" onclick="setCalView('week')" data-i18n="week">Week</button><button class="cal-view-btn" id="cv-day" onclick="setCalView('day')" data-i18n="day">Day</button></div></div>
@@ -378,6 +378,15 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
       <h3 data-i18n="completionTrend">Completion Rate (Last 7 Days)</h3>
       <div style="position:relative;height:180px"><canvas id="chart-completion"></canvas></div>
     </div>
+
+    <!-- AI Insights & Recommendations -->
+    <div class="cd" style="border-color:rgba(59,130,246,.2);background:linear-gradient(135deg,rgba(59,130,246,.03),rgba(168,85,247,.03))">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0"><span style="font-size:16px">✨</span><span data-i18n="aiInsights">AI Insights & Recommendations</span></h3>
+        <button class="btn p" onclick="generateInsights()" id="btn-insights" style="padding:5px 14px;font-size:11px" data-i18n="generateInsights">Generate AI Insights</button>
+      </div>
+      <div id="analytics-insights" style="font-size:12px;line-height:1.8;color:var(--tx)"></div>
+    </div>
   </div>
 
   <!-- Global Search Overlay -->
@@ -422,7 +431,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
     <div class="td-meta" id="td-meta"></div>
   </div>
   <div style="display:flex;gap:4px">
-    <button class="btn" onclick="editTaskFromTD()" style="padding:5px 10px;font-size:11px" data-i18n="edit">✏️ Edit</button>
+    <button class="btn" onclick="editTaskFromTD()" style="padding:5px 10px;font-size:11px">✏️ <span data-i18n="edit">Edit</span></button>
     <button class="btn" onclick="closeTD()" style="padding:5px 10px;font-size:11px">✕</button>
   </div>
 </div>
@@ -431,7 +440,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <!-- Actions Section -->
 <div class="td-section">
   <div class="td-section-hdr">
-    <h4 data-i18n="actions">☑ Actions</h4>
+    <h4>☑ <span data-i18n="actions">Actions</span></h4>
     <span id="td-act-count" style="font-size:11px;color:var(--mt)"></span>
   </div>
   <div class="td-progress" id="td-progress" style="display:none">
@@ -1217,6 +1226,69 @@ function renderChart(id,type,data,opts){
   chartInstances[id]=new Chart(ctx,{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
 }
 
+// ═══ AI INSIGHTS ═══
+async function generateInsights(){
+  const el=$('analytics-insights');
+  const btn=$('btn-insights');
+  btn.disabled=true;btn.textContent='⏳ ...';
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mt)">'+t('loadingInsights')+'</div>';
+  try{
+    const tR=await fetch(A+'/tasks?limit=500',{headers:hdr()}).then(r=>r.json());
+    const tasks=tR.tasks||[];
+    if(!tasks.length){el.innerHTML='<div class="empty">'+t('noTasks')+'</div>';btn.disabled=false;btn.textContent=t('generateInsights');return}
+    // Build summary for AI
+    const total=tasks.length;
+    const done=tasks.filter(x=>x.status==='done').length;
+    const todo=tasks.filter(x=>x.status==='todo').length;
+    const ip=tasks.filter(x=>x.status==='in_progress').length;
+    const rev=tasks.filter(x=>x.status==='review').length;
+    const pct=total?Math.round(done/total*100):0;
+    const overdue=tasks.filter(x=>{if(!x.due_date||x.status==='done')return false;return new Date(x.due_date)<new Date()});
+    const urgent=tasks.filter(x=>x.priority==='urgent'&&x.status!=='done');
+    const high=tasks.filter(x=>x.priority==='high'&&x.status!=='done');
+    // Category breakdown
+    const catMap={};tasks.forEach(x=>{const c=x.category||'Uncategorized';catMap[c]=(catMap[c]||0)+1});
+    // Team workload
+    const teamMap={};tasks.forEach(x=>{const a=x.assignee||'Unassigned';if(!teamMap[a])teamMap[a]={total:0,done:0};teamMap[a].total++;if(x.status==='done')teamMap[a].done++});
+    // Completion last 7 days
+    let weekDone=0;for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().split('T')[0];weekDone+=tasks.filter(x=>x.completed_at&&x.completed_at.startsWith(ds)).length}
+    // Overdue details
+    const overdueList=overdue.slice(0,5).map(x=>`"${x.title}" (${x.assignee||'Unassigned'})`).join(', ');
+    // Team stats string
+    const teamStr=Object.entries(teamMap).map(([n,s])=>`${n}: ${s.done}/${s.total} (${s.total?Math.round(s.done/s.total*100):0}%)`).join(', ');
+    // Category string
+    const catStr=Object.entries(catMap).map(([c,n])=>`${c}: ${n}`).join(', ');
+
+    const lang=curLang==='kh'?'Khmer':'English';
+    const prompt=`You are a personal AI assistant analyzing task management data. Respond in ${lang}. Be concise and actionable.
+
+Here is the current task data:
+- Total tasks: ${total} | Done: ${done} (${pct}%) | To Do: ${todo} | In Progress: ${ip} | Review: ${rev}
+- Overdue tasks: ${overdue.length}${overdueList?' — '+overdueList:''}
+- Urgent open tasks: ${urgent.length} | High priority open: ${high.length}
+- Tasks completed this week: ${weekDone}
+- Categories: ${catStr}
+- Team workload: ${teamStr}
+
+Based on this data, provide:
+1. A brief performance summary (2-3 sentences)
+2. Top 3 specific actionable recommendations with emoji bullets
+3. One risk/warning if any overdue or urgent tasks need attention
+4. A motivational closing line
+
+Keep the total response under 200 words. Use clear formatting with line breaks.`;
+
+    const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:prompt})});
+    const d=await r.json();
+    const resp=d.response||'No insights available';
+    el.innerHTML='<div style="white-space:pre-wrap;line-height:1.8">'+esc(resp)+'</div>';
+  }catch(e){
+    console.error('generateInsights:',e);
+    el.innerHTML='<div class="empty" style="color:var(--rd)">Failed to generate insights: '+e.message+'</div>';
+  }
+  btn.disabled=false;btn.textContent=t('generateInsights');
+}
+
 // ═══ GLOBAL SEARCH ═══
 function openSearch(){$('search-overlay').style.display='flex';$('search-input').value='';$('search-results').innerHTML='<div class="sr-empty">'+t('typeToSearch')+'</div>';setTimeout(()=>$('search-input').focus(),100)}
 function closeSearch(){$('search-overlay').style.display='none'}
@@ -1255,7 +1327,7 @@ const I18N={
     // Sidebar nav labels
     home:'Home',board:'Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Remind',aiChat:'AI Chat',calendarNav:'Calendar',recurringNav:'Recurring',analyticsNav:'Analytics',
     // Page headers
-    dashboard:'Dashboard',taskBoard:'Task Board',tasksPage:'Tasks',teamMembers:'Team Members',messagesPage:'Messages',remindersPage:'Reminders',aiAssistant:'✨ AI Assistant',calendarPage:'Calendar',recurringTasks:'🔁 Recurring Tasks',analyticsPage:'📊 Analytics',
+    dashboard:'Dashboard',taskBoard:'Task Board',tasksPage:'Tasks',teamMembers:'Team Members',messagesPage:'Messages',remindersPage:'Reminders',aiAssistant:'AI Assistant',calendarPage:'Calendar',recurringTasks:'Recurring Tasks',analyticsPage:'Analytics',
     // Subtitles / descriptions
     telegramMsgs:'Telegram group messages',scheduledNotifs:'Scheduled notifications',aiSub:'Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported',dragCards:'Drag cards to change status',taskTemplates:'Task templates that auto-generate on schedule',analyticsSub:'Task completion trends and team performance',
     // Login
@@ -1267,7 +1339,7 @@ const I18N={
     // Dashboard cards
     totalTasks:'Total Tasks',completed:'Completed',completionRate:'Completion Rate',
     // Dashboard widgets
-    teamProgress:'Team Progress',calendarWidget:'📅 Calendar',recentTasks:'Recent Tasks',upcomingDeadlines:'⏰ Upcoming Deadlines',overdueAlert:'⚠️ Overdue',
+    teamProgress:'Team Progress',calendarWidget:'Calendar',recentTasks:'Recent Tasks',upcomingDeadlines:'Upcoming Deadlines',overdueAlert:'Overdue',
     // Buttons
     newTask:'+ New Task',save:'Save',cancel:'Cancel','delete':'Delete',create:'Create',update:'Update',addBtn:'Add',moveBtn:'Move',setReminder:'Set Reminder',createEvent:'Create Event',updateEvent:'Update Event',invite:'Invite',addMember:'Add Member',
     // Export
@@ -1304,11 +1376,13 @@ const I18N={
     // Invite
     inviteByTelegram:'📨 Invite by Telegram',assignRole:'Assign Role',
     // Task detail
-    actions:'☑ Actions',noActionsYet:'No actions yet. Add one below to start tracking progress.',addAction:'Add an action...',edit:'✏️ Edit',
+    actions:'Actions',noActionsYet:'No actions yet. Add one below to start tracking progress.',addAction:'Add an action...',edit:'Edit',
     // Search
     search:'Search tasks, events, messages...',typeToSearch:'Type to search tasks, events, and messages',typeSearch:'Type to search...',noResults:'No results for',
     // Analytics chart titles
     statusDist:'Task Status Distribution',priorityBreak:'Priority Breakdown',tasksByCategory:'Tasks by Category',teamWorkload:'Team Workload',completionTrend:'Completion Rate (Last 7 Days)',
+    // AI Insights
+    aiInsights:'AI Insights & Recommendations',loadingInsights:'Analyzing your data...',generateInsights:'Generate AI Insights',
     // Empty states
     noData:'No data',noTasks:'No tasks',noReminders:'No reminders',noRecurring:'No recurring tasks yet',noGroups:'No groups yet. Create your first group above.',noRoles:'No roles yet. Add one above.',noMembers:'No team members yet. Click "+ Add Member" to get started.',noDeadlines:'No upcoming deadlines',selectGroup:'Select a group',failed:'Failed',
     // Misc
@@ -1318,13 +1392,13 @@ const I18N={
   },
   kh:{
     home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',analyticsNav:'វិភាគ',
-    dashboard:'ផ្ទាំងគ្រប់គ្រង',taskBoard:'ក្តារភារកិច្ច',tasksPage:'ភារកិច្ច',teamMembers:'សមាជិកក្រុម',messagesPage:'សារ',remindersPage:'ការរំលឹក',aiAssistant:'✨ AI ជំនួយការ',calendarPage:'ប្រតិទិន',recurringTasks:'🔁 ភារកិច្ចដដែលៗ',analyticsPage:'📊 វិភាគ',
+    dashboard:'ផ្ទាំងគ្រប់គ្រង',taskBoard:'ក្តារភារកិច្ច',tasksPage:'ភារកិច្ច',teamMembers:'សមាជិកក្រុម',messagesPage:'សារ',remindersPage:'ការរំលឹក',aiAssistant:'AI ជំនួយការ',calendarPage:'ប្រតិទិន',recurringTasks:'ភារកិច្ចដដែលៗ',analyticsPage:'វិភាគ',
     telegramMsgs:'សារក្រុម Telegram',scheduledNotifs:'ការជូនដំណឹងដែលបានកំណត់',aiSub:'ជជែកជាមួយ Claude Opus 4.6 · English & ខ្មែរ · អាចផ្ទុកឯកសារ',dragCards:'អូសកាតដើម្បីប្តូរស្ថានភាព',taskTemplates:'គំរូភារកិច្ចដែលបង្កើតដោយស្វ័យប្រវត្តិតាមកាលវិភាគ',analyticsSub:'និន្នាការបញ្ចប់ភារកិច្ច និងសមត្ថភាពក្រុម',
     loginTitle:'AI ជំនួយការផ្ទាល់ខ្លួន',loginSub:'ចូលដោយប្រើគណនី Google របស់អ្នកដើម្បីចូលផ្ទាំងគ្រប់គ្រង។',
     welcome:'សូមស្វាគមន៍',
     todo:'ត្រូវធ្វើ',inProgress:'កំពុងធ្វើ',active:'កំពុងធ្វើ',review:'ពិនិត្យ',done:'រួចរាល់',overdue:'ហួសកាលកំណត់',
     totalTasks:'ភារកិច្ចសរុប',completed:'បានបញ្ចប់',completionRate:'អត្រាបញ្ចប់',
-    teamProgress:'វឌ្ឍនភាពក្រុម',calendarWidget:'📅 ប្រតិទិន',recentTasks:'ភារកិច្ចថ្មីៗ',upcomingDeadlines:'⏰ ផុតកំណត់ឆាប់ៗ',overdueAlert:'⚠️ ហួសកាលកំណត់',
+    teamProgress:'វឌ្ឍនភាពក្រុម',calendarWidget:'ប្រតិទិន',recentTasks:'ភារកិច្ចថ្មីៗ',upcomingDeadlines:'ផុតកំណត់ឆាប់ៗ',overdueAlert:'ហួសកាលកំណត់',
     newTask:'+ បង្កើតថ្មី',save:'រក្សាទុក',cancel:'បោះបង់','delete':'លុប',create:'បង្កើត',update:'ធ្វើបច្ចុប្បន្នភាព',addBtn:'បន្ថែម',moveBtn:'ផ្លាស់ទី',setReminder:'កំណត់ការរំលឹក',createEvent:'បង្កើតព្រឹត្តិការណ៍',updateEvent:'កែប្រែព្រឹត្តិការណ៍',invite:'អញ្ជើញ',addMember:'បន្ថែមសមាជិក',
     csv:'📊 CSV',json:'📋 JSON',groups:'⚙️ ក្រុម',roles:'🏷️ តួនាទី',inviteBtn:'📨 អញ្ជើញ',
     all:'ទាំងអស់',allCategories:'ប្រភេទទាំងអស់',
@@ -1343,9 +1417,10 @@ const I18N={
     addSubGroup:'បន្ថែមក្រុមរង',subGroupName:'ឈ្មោះក្រុមរង...',
     manageRoles:'🏷️ គ្រប់គ្រងតួនាទី',roleName:'ឈ្មោះតួនាទី',addMemberTitle:'បន្ថែមសមាជិក',editMember:'កែសមាជិក',firstName:'នាមខ្លួន *',lastName:'នាមត្រកូល',telegramUsername:'Telegram ឈ្មោះ',telegramId:'Telegram ID',phone:'ទូរស័ព្ទ',email:'អ៊ីមែល',department:'ដេប៉ាតឺម៉ង់',jobTitle:'មុខតំណែង',role:'តួនាទី',admin:'អ្នកគ្រប់គ្រង',notes:'កំណត់ចំណាំ',noRole:'— គ្មានតួនាទី —',defaultRole:'— លំនាំដើម —',yes:'បាទ/ចាស',no:'ទេ',
     inviteByTelegram:'📨 អញ្ជើញតាម Telegram',assignRole:'កំណត់តួនាទី',
-    actions:'☑ សកម្មភាព',noActionsYet:'មិនទាន់មានសកម្មភាព។ បន្ថែមខាងក្រោមដើម្បីតាមដានវឌ្ឍនភាព។',addAction:'បន្ថែមសកម្មភាព...',edit:'✏️ កែ',
+    actions:'សកម្មភាព',noActionsYet:'មិនទាន់មានសកម្មភាព។ បន្ថែមខាងក្រោមដើម្បីតាមដានវឌ្ឍនភាព។',addAction:'បន្ថែមសកម្មភាព...',edit:'កែ',
     search:'ស្វែងរកភារកិច្ច ព្រឹត្តិការណ៍ សារ...',typeToSearch:'វាយដើម្បីស្វែងរកភារកិច្ច ព្រឹត្តិការណ៍ និងសារ',typeSearch:'វាយដើម្បីស្វែងរក...',noResults:'គ្មានលទ្ធផលសម្រាប់',
     statusDist:'ការចែកចាយស្ថានភាពភារកិច្ច',priorityBreak:'ការវិភាគអាទិភាព',tasksByCategory:'ភារកិច្ចតាមប្រភេទ',teamWorkload:'បន្ទុកការងារក្រុម',completionTrend:'អត្រាបញ្ចប់ (៧ ថ្ងៃចុងក្រោយ)',
+    aiInsights:'AI ការវិភាគ និងអនុសាសន៍',loadingInsights:'កំពុងវិភាគទិន្នន័យរបស់អ្នក...',generateInsights:'បង្កើតការវិភាគ AI',
     noData:'គ្មានទិន្នន័យ',noTasks:'គ្មានភារកិច្ច',noReminders:'គ្មានការរំលឹក',noRecurring:'មិនទាន់មានភារកិច្ចដដែលៗ',noGroups:'មិនទាន់មានក្រុម។ បង្កើតក្រុមដំបូងខាងលើ។',noRoles:'មិនទាន់មានតួនាទី។ បន្ថែមខាងលើ។',noMembers:'មិនទាន់មានសមាជិក។ ចុច "+ បន្ថែមសមាជិក" ដើម្បីចាប់ផ្តើម។',noDeadlines:'គ្មានកាលកំណត់ឆាប់ៗ',selectGroup:'ជ្រើសក្រុមមួយ',failed:'បរាជ័យ',
     exit:'ចាកចេញ',unassigned:'គ្មានអ្នកទទួល',uncategorized:'គ្មានប្រភេទ',tasksLabel:'ភារកិច្ច',doneLabel:'រួច',members:'សមាជិក',
     phTaskTitle:'ចំណងជើងភារកិច្ច...',phDescription:'ការពិពណ៌នា...',phName:'ឈ្មោះ...',phDueDate:'',phCategory:'ឧ. GDT',phSubcategory:'ឧ. ETL',phRemindMe:'រំលឹកខ្ញុំ...',phEventTitle:'ចំណងជើងព្រឹត្តិការណ៍...',phNotes:'កំណត់ចំណាំ...',phLocation:'ទីតាំង...',phRoleName:'ឈ្មោះតួនាទី',phGroupName:'ឈ្មោះក្រុម',phSubGroupName:'ឈ្មោះក្រុមរង...',phFirstName:'នាមខ្លួន',phLastName:'នាមត្រកូល',phUsername:'@ឈ្មោះ',phOptional:'ស្រេចចិត្ត',phPhone:'+855...',phEmail:'email@...',phDept:'ឧ org ការិយាល័យទិន្នន័យ',phJobTitle:'ឧ org អ្នកអភិវឌ្ឍ',phNotesField:'កំណត់ចំណាំ...',phAskAnything:'សួរអ្វីក៏បាន...',phNewSubGroup:'ក្រុមរងថ្មី...',phActionTitle:'បន្ថែមសកម្មភាព...'
