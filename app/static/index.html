@@ -114,7 +114,9 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .cal-mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
 .cal-mini-hdr{text-align:center;font-size:9px;font-weight:700;color:var(--mt);padding:4px 0}
-.cal-mini-day{text-align:center;padding:5px 2px;border-radius:6px;font-size:11px;cursor:pointer}.cal-mini-day:hover{background:var(--as)}.cal-mini-day.today{background:var(--as);color:var(--ac);font-weight:700}.cal-mini-day.other{opacity:.3}
+.cal-mini-day{text-align:center;padding:5px 2px;border-radius:6px;font-size:11px;cursor:pointer;position:relative}.cal-mini-day:hover{background:var(--as)}.cal-mini-day.today{background:var(--as);color:var(--ac);font-weight:700}.cal-mini-day.other{opacity:.3}
+.cal-mini-dot{display:flex;justify-content:center;gap:2px;margin-top:1px;min-height:5px}
+.cal-mini-dot span{width:4px;height:4px;border-radius:50%;display:inline-block}
 /* ── Task Group Tabs ── */
 .gtabs-wrap{margin-bottom:10px;overflow:hidden}
 .gtabs-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
@@ -435,8 +437,23 @@ loadDeadlines(d.recent_tasks||[]);$('od').innerHTML=(d.overdue_tasks||[]).length
 }catch{$('stats').innerHTML='<div class="empty" style="color:var(--rd)">Failed</div>'}}
 function sc(i,l,v,c,b){return`<div class="sc"><div><span class="sc-i" style="background:${b}">${i}</span><span class="sc-l">${l}</span></div><div class="sc-v" style="color:${c}">${v}</div></div>`}
 async function loadDeadlines(tasks){if(!tasks?.length){try{tasks=(await(await fetch(A+'/tasks?limit=100',{headers:hdr()})).json()).tasks||[]}catch{}}const up=tasks.filter(t=>t.due_date&&t.status!=='done').map(t=>{const d=new Date(t.due_date),n=new Date();n.setHours(0,0,0,0);d.setHours(0,0,0,0);return{...t,diff:Math.floor((d-n)/864e5)}}).filter(t=>t.diff<=7).sort((a,b)=>a.diff-b.diff).slice(0,6);$('deadlines').innerHTML=up.length?up.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px">${SI[t.status]||'•'}</span><div style="flex:1;font-size:11px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>${dueBadge(t)}</div>`).join(''):'<div class="empty">No upcoming deadlines</div>'}
-let miniDate=new Date();function initMiniCal(){miniDate=new Date();renderMiniCal()}function miniCalNav(d){miniDate.setMonth(miniDate.getMonth()+d);renderMiniCal()}
-function renderMiniCal(){const y=miniDate.getFullYear(),m=miniDate.getMonth();$('mini-cal-month').textContent=new Date(y,m).toLocaleDateString('en',{month:'short',year:'numeric'});const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate(),td=new Date();td.setHours(0,0,0,0);let h='';['S','M','T','W','T','F','S'].forEach(d=>{h+=`<div class="cal-mini-hdr">${d}</div>`});for(let i=first-1;i>=0;i--)h+=`<div class="cal-mini-day other">${prev-i}</div>`;for(let d=1;d<=days;d++){const isT=td.getFullYear()===y&&td.getMonth()===m&&td.getDate()===d;h+=`<div class="cal-mini-day${isT?' today':''}" onclick="nav('calendar')">${d}</div>`}const rem=(first+days)%7;if(rem)for(let i=1;i<=7-rem;i++)h+=`<div class="cal-mini-day other">${i}</div>`;$('mini-cal').innerHTML=h}
+let miniDate=new Date(),miniEvents=[];
+function initMiniCal(){miniDate=new Date();loadMiniEvents()}
+function miniCalNav(d){miniDate.setMonth(miniDate.getMonth()+d);loadMiniEvents()}
+async function loadMiniEvents(){
+  const y=miniDate.getFullYear(),m=miniDate.getMonth();
+  const s=new Date(y,m,1).toISOString().split('T')[0],e=new Date(y,m+1,0).toISOString().split('T')[0];
+  try{const r=await fetch(A+'/calendar/events?start='+s+'&end='+e,{headers:hdr()});const d=await r.json();miniEvents=d.events||[]}catch{miniEvents=[]}
+  renderMiniCal();
+}
+function renderMiniCal(){const y=miniDate.getFullYear(),m=miniDate.getMonth();$('mini-cal-month').textContent=new Date(y,m).toLocaleDateString('en',{month:'short',year:'numeric'});const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate(),prev=new Date(y,m,0).getDate(),td=new Date();td.setHours(0,0,0,0);
+  // Build event date map
+  const evMap={};miniEvents.forEach(ev=>{const d=ev.start_raw?.split('T')[0]||'';if(d){if(!evMap[d])evMap[d]=0;evMap[d]++}});
+  let h='';['S','M','T','W','T','F','S'].forEach(d=>{h+=`<div class="cal-mini-hdr">${d}</div>`});
+  for(let i=first-1;i>=0;i--)h+=`<div class="cal-mini-day other">${prev-i}<div class="cal-mini-dot"></div></div>`;
+  for(let d=1;d<=days;d++){const isT=td.getFullYear()===y&&td.getMonth()===m&&td.getDate()===d;const dt=fmt(y,m,d);const cnt=evMap[dt]||0;const dots=cnt>0?`<div class="cal-mini-dot">${Array(Math.min(cnt,3)).fill('<span style="background:#4285f4"></span>').join('')}</div>`:'<div class="cal-mini-dot"></div>';h+=`<div class="cal-mini-day${isT?' today':''}" onclick="nav('calendar')">${d}${dots}</div>`}
+  const rem=(first+days)%7;if(rem)for(let i=1;i<=7-rem;i++)h+=`<div class="cal-mini-day other">${i}<div class="cal-mini-dot"></div></div>`;
+  $('mini-cal').innerHTML=h}
 // ═══ CALENDAR PAGE ═══
 let calView='month',calCur=new Date(),calEvents=[],calTasksAll=[];
 function initCalPage(){loadCalEvents()}
