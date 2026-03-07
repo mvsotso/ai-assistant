@@ -7,9 +7,14 @@ build/
 venv/
 .venv/
 
-# Environment
+# Environment & Secrets
 .env
+config/.env
+*.env
 *.env.local
+
+# SSL certificates
+nginx/ssl/
 
 # IDE
 .vscode/
@@ -26,26 +31,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
-nginx/ssl/
-# Secrets & environment
-.env
-config/.env
-*.env
-
-# SSL certificates
-nginx/ssl/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-
-# Docker
-*.log
 
 # Backups
 backups/
-
-# IDE
-.vscode/
-.idea/
