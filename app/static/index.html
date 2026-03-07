@@ -732,8 +732,9 @@ function closeTD(){$('modal-td').classList.remove('v');tdTask=null;tdActions=[]}
 
 function editTaskFromTD(){
   if(!tdTask)return;
+  const t={...tdTask};
   closeTD();
-  openModal('task',tdTask);
+  openModal('task',t);
 }
 
 async function loadTDActions(taskId){
