@@ -11,7 +11,9 @@ from app.core.config import get_settings
 from app.core.database import init_db, close_db, engine
 from app.api.router import router
 from app.api.calendar_api import calendar_router
+from app.api.recurring_api import recurring_router
 from app.api.auth import auth_router
+from app.models.recurring_task import RecurringTask  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -93,6 +95,7 @@ app.add_middleware(
 # Register routes
 app.include_router(router)
 app.include_router(calendar_router)
+app.include_router(recurring_router)
 app.include_router(auth_router)
 
 
