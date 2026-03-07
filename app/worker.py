@@ -1,9 +1,10 @@
 """
-Celery Worker — Background task processing for reminders, briefings, and reports.
+Celery Worker — Background task processing for reminders, briefings, reports,
+and recurring task generation.
 """
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from celery import Celery
 from celery.schedules import crontab
 
@@ -29,25 +30,26 @@ celery_app.conf.update(
 
 # ─── Scheduled Tasks ───
 celery_app.conf.beat_schedule = {
-    # Check for pending reminders every minute
     "check-reminders": {
         "task": "app.worker.check_reminders",
-        "schedule": 60.0,  # every 60 seconds
+        "schedule": 60.0,
     },
-    # Send daily morning briefing at 8:00 AM Phnom Penh time (1:00 AM UTC)
     "morning-briefing": {
         "task": "app.worker.send_morning_briefing",
-        "schedule": crontab(hour=1, minute=0),  # 8:00 AM ICT = 1:00 AM UTC
+        "schedule": crontab(hour=1, minute=0),  # 8:00 AM ICT
     },
-    # Send daily end-of-day summary at 5:30 PM Phnom Penh time (10:30 AM UTC)
     "daily-summary": {
         "task": "app.worker.send_daily_summary",
-        "schedule": crontab(hour=10, minute=30),
+        "schedule": crontab(hour=10, minute=30),  # 5:30 PM ICT
     },
-    # Check for upcoming meetings and send 5-min reminders
     "meeting-reminders": {
         "task": "app.worker.check_meeting_reminders",
-        "schedule": 120.0,  # every 2 minutes
+        "schedule": 120.0,
+    },
+    # Generate recurring tasks every day at 1:00 AM ICT (6:00 PM UTC prev day)
+    "generate-recurring-tasks": {
+        "task": "app.worker.generate_recurring_tasks",
+        "schedule": crontab(hour=18, minute=0),  # 1:00 AM ICT = 6:00 PM UTC
     },
 }
 
@@ -111,19 +113,16 @@ def send_morning_briefing():
             if not admin_id:
                 return
 
-            # Gather task data
             tasks = await task_service.get_tasks(db, limit=50)
             pending = [
                 {"title": t.title, "status": t.status.value, "assignee": t.assignee_name or "Unassigned"}
                 for t in tasks if t.status != TaskStatus.DONE
             ]
 
-            # Generate briefing via AI (calendar events would be added in production)
-            events = []  # TODO: Pull from Google Calendar when connected
-            unread_count = 0  # TODO: Pull unread message count
+            events = []
+            unread_count = 0
 
             briefing = await ai_engine.generate_daily_summary(pending, events, unread_count)
-
             await telegram_service.send_message(admin_id, f"☀️ *Morning Briefing*\n\n{briefing}")
             logger.info("Morning briefing sent")
 
@@ -132,7 +131,7 @@ def send_morning_briefing():
 
 @celery_app.task(name="app.worker.send_daily_summary")
 def send_daily_summary():
-    """Send end-of-day task summary to team groups."""
+    """Send end-of-day task summary."""
     from app.core.database import async_session
     from app.services.ai_engine import ai_engine
     from app.services.telegram import telegram_service
@@ -165,7 +164,101 @@ def send_daily_summary():
 
 @celery_app.task(name="app.worker.check_meeting_reminders")
 def check_meeting_reminders():
-    """Check for upcoming meetings and send pre-meeting reminders via Telegram."""
-    # This requires Google Calendar credentials — will be active after Phase 2 OAuth setup
+    """Check for upcoming meetings and send pre-meeting reminders."""
     logger.debug("Meeting reminder check (requires calendar connection)")
     pass
+
+
+@celery_app.task(name="app.worker.generate_recurring_tasks")
+def generate_recurring_tasks():
+    """
+    Generate tasks from active recurring task templates.
+    Runs daily — checks each template and creates a task if due today or overdue.
+    """
+    from app.core.database import async_session
+    from app.models.recurring_task import RecurringTask
+    from app.models.task import Task, TaskStatus, TaskPriority
+    from sqlalchemy import select
+
+    async def _generate():
+        async with async_session() as db:
+            now = datetime.now(timezone.utc)
+            today = now.date()
+
+            # Get all active recurring tasks
+            result = await db.execute(
+                select(RecurringTask).where(RecurringTask.is_active == True)
+            )
+            templates = result.scalars().all()
+            generated = 0
+
+            for tmpl in templates:
+                try:
+                    should_generate = False
+
+                    if tmpl.next_due and tmpl.next_due.date() <= today:
+                        should_generate = True
+                    elif not tmpl.last_generated:
+                        should_generate = True
+
+                    if not should_generate:
+                        continue
+
+                    # Check if we already generated today (avoid duplicates)
+                    if tmpl.last_generated and tmpl.last_generated.date() == today:
+                        continue
+
+                    # Parse due time
+                    hour, minute = 9, 0
+                    if tmpl.time_of_day:
+                        try:
+                            parts = tmpl.time_of_day.split(":")
+                            hour, minute = int(parts[0]), int(parts[1])
+                        except (ValueError, IndexError):
+                            pass
+
+                    due_dt = datetime(today.year, today.month, today.day, hour, minute, tzinfo=timezone.utc)
+
+                    # Map priority string to enum
+                    try:
+                        priority = TaskPriority(tmpl.priority)
+                    except (ValueError, KeyError):
+                        priority = TaskPriority.MEDIUM
+
+                    # Create the task
+                    task = Task(
+                        title=tmpl.title,
+                        description=tmpl.description or f"[Auto-generated from recurring template #{tmpl.id}]",
+                        status=TaskStatus.TODO,
+                        priority=priority,
+                        category=tmpl.category,
+                        subcategory=tmpl.subcategory,
+                        assignee_name=tmpl.assignee_name,
+                        creator_id=tmpl.creator_id or 0,
+                        creator_name=tmpl.creator_name or "System",
+                        due_date=due_dt,
+                    )
+                    db.add(task)
+
+                    # Update template
+                    tmpl.last_generated = now
+                    tmpl.next_due = _calc_next(tmpl)
+
+                    generated += 1
+                    logger.info(f"Generated recurring task: '{tmpl.title}' (template #{tmpl.id})")
+
+                except Exception as e:
+                    logger.error(f"Failed to generate recurring task #{tmpl.id}: {e}")
+
+            await db.commit()
+            logger.info(f"Recurring task generation complete: {generated} task(s) created")
+
+    def _calc_next(tmpl):
+        """Calculate next due date after generation."""
+        from app.api.recurring_api import _calc_next_due
+        return _calc_next_due(
+            tmpl.recurrence.value, tmpl.day_of_week, tmpl.day_of_month,
+            tmpl.month_of_year, tmpl.quarter_months, tmpl.semi_months,
+        )
+
+    run_async(_generate())

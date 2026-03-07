@@ -138,6 +138,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   <button class="nb" data-p="remind" onclick="nav('remind')"><span>⏰</span><span class="l">Remind</span></button>
   <button class="nb" data-p="chat" onclick="nav('chat')"><span>✨</span><span class="l">AI Chat</span></button>
   <button class="nb" data-p="calendar" onclick="nav('calendar')"><span>📅</span><span class="l">Calendar</span></button>
+  <button class="nb" data-p="recurring" onclick="nav('recurring')"><span>🔁</span><span class="l">Recurring</span></button>
   <img class="av" id="av" src="" alt="" /><button class="lo" onclick="logout()">Exit</button>
 </div>
 <div class="mn">
@@ -156,8 +157,16 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
     <div class="right"><button class="btn p" onclick="openEventModal()" style="margin-right:8px">+ Event</button><button class="cal-view-btn a" id="cv-month" onclick="setCalView('month')">Month</button><button class="cal-view-btn" id="cv-week" onclick="setCalView('week')">Week</button><button class="cal-view-btn" id="cv-day" onclick="setCalView('day')">Day</button></div></div>
     <div id="cal-container"></div>
   </div>
+  <!-- Recurring Tasks Page -->
+  <div id="pg-recurring" class="pg">
+    <h2>🔁 Recurring Tasks</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div class="st" style="margin:0">Task templates that auto-generate on schedule</div>
+      <button class="btn p" onclick="openRecModal()">+ New Recurring Task</button>
+    </div>
+    <div id="rec-list"></div>
+  </div>
 </div></div>
-<!-- Task Modal -->
 <div class="modal-overlay" id="modal-task"><div class="modal"><h3 id="modal-task-title">New Task</h3>
 <div class="fg"><label>Title</label><input class="inp" id="mt-title" placeholder="Task title..."></div>
 <div class="fg"><label>Description</label><textarea class="inp" id="mt-desc" rows="3" placeholder="Description..." style="resize:vertical"></textarea></div>
@@ -195,10 +204,33 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div id="me-link" style="display:none;margin-bottom:12px"><a id="me-gcal-link" href="#" target="_blank" style="font-size:11px;color:var(--ac)">Open in Google Calendar ↗</a></div>
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeEventModal()">Cancel</button><button class="btn d" id="me-del" onclick="deleteEvent()" style="display:none">Delete</button><button class="btn p" id="me-save" onclick="saveEvent()">Create Event</button></div></div></div>
 
+<!-- Recurring Task Modal -->
+<div class="modal-overlay" id="modal-rec"><div class="modal"><h3 id="modal-rec-title">New Recurring Task</h3>
+<div class="fg"><label>Title</label><input class="inp" id="rc-title" placeholder="Task title..."></div>
+<div class="fg"><label>Description</label><textarea class="inp" id="rc-desc" rows="2" placeholder="Description..." style="resize:vertical"></textarea></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="fg"><label>Priority</label><select class="inp" id="rc-prio"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
+<div class="fg"><label>Assignee</label><input class="inp" id="rc-assign" placeholder="Name..."></div>
+<div class="fg"><label>Category</label><input class="inp" id="rc-cat" placeholder="e.g. GDT"></div>
+<div class="fg"><label>Subcategory</label><input class="inp" id="rc-sub" placeholder="e.g. ETL"></div>
+</div>
+<div class="fg"><label>Recurrence</label><select class="inp" id="rc-recurrence" onchange="onRecTypeChange()">
+<option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option>
+<option value="quarterly">Quarterly</option><option value="semi_annually">Semi-Annually</option><option value="yearly">Yearly</option>
+</select></div>
+<div id="rc-opts">
+<div class="fg" id="rc-dow-wrap" style="display:none"><label>Day of Week</label><select class="inp" id="rc-dow"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></div>
+<div class="fg" id="rc-dom-wrap"><label>Day of Month</label><input class="inp" id="rc-dom" type="number" min="1" max="28" value="1"></div>
+<div class="fg" id="rc-mom-wrap" style="display:none"><label>Month</label><select class="inp" id="rc-mom"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+<div class="fg" id="rc-time-wrap"><label>Due Time</label><input class="inp" id="rc-time" type="time" value="09:00"></div>
+</div>
+<input type="hidden" id="rc-id" value="">
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeRecModal()">Cancel</button><button class="btn d" id="rc-del" onclick="deleteRec()" style="display:none">Delete</button><button class="btn p" id="rc-save" onclick="saveRec()">Create</button></div></div></div>
+
 <script>
 const A=window.location.origin+'/api/v1',PC={urgent:'#ef4444',high:'#f97316',medium:'#eab308',low:'#22c55e'},PB={urgent:'rgba(239,68,68,.1)',high:'rgba(249,115,22,.1)',medium:'rgba(234,179,8,.1)',low:'rgba(34,197,94,.1)'},SI={todo:'📋',in_progress:'🔄',review:'👀',done:'✅'};
 let tok=null,usr=null,allT=[],curF='all',curCat='all';const $=id=>document.getElementById(id);
-const PT={dash:'Dashboard',board:'Task Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Reminders',chat:'AI Chat',calendar:'Calendar'};
+const PT={dash:'Dashboard',board:'Task Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Reminders',chat:'AI Chat',calendar:'Calendar',recurring:'Recurring Tasks'};
 function toggleSidebar(){$('sidebar').classList.toggle('open');$('sb-overlay').classList.toggle('open')}
 function closeSidebar(){$('sidebar').classList.remove('open');$('sb-overlay').classList.remove('open')}
 function stored(){try{return JSON.parse(localStorage.getItem('ai_s'))}catch{return null}}
@@ -211,7 +243,7 @@ function showApp(){$('login').style.display='none';$('app').classList.add('v');i
 window.onload=async()=>{if(await checkSession()){showApp();return}try{const r=await fetch(A+'/auth/client-id');const d=await r.json();if(d.client_id){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'})}}catch{$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks')loadTasks();if(p==='team')loadTeam();if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage()}
+function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks')loadTasks();if(p==='team')loadTeam();if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring()}
 function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?'Edit Task #'+data.id:'New Task';$('mt-del').style.display=data?.id?'block':'none'}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let cats=[];async function loadCats(){try{const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();cats=d.categories||[];$('cats').innerHTML=cats.map(c=>`<option value="${c}">`).join('')}catch{}}
@@ -295,6 +327,18 @@ async function delRemind(id){await fetch(A+'/reminders/'+id,{method:'DELETE',hea
 let chL=false,chFile=null;function onFileSelect(){const f=$('chf').files[0];if(f){chFile=f;$('chfn').style.display='block';$('chfn').innerHTML=`📎 ${f.name} <button onclick="clearFile()" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:11px">✕</button>`}}
 function clearFile(){chFile=null;$('chf').value='';$('chfn').style.display='none'}
 async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl" style="color:var(--mt)">${chFile?'Processing...':'Thinking...'}</div>`;c.scrollTop=c.scrollHeight;chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m})})).json();$('chl').remove();c.innerHTML+=`<div class="ch-b ch-a">${esc(d.response||'No response')}</div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">Error: ${e.message||'Failed'}</div>`}chL=false;c.scrollTop=c.scrollHeight}
+// ═══ RECURRING TASKS ═══
+const RECUR_LABELS={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',semi_annually:'Semi-Annual',yearly:'Yearly'};
+const RECUR_COLORS={daily:'#3b82f6',weekly:'#22c55e',monthly:'#a855f7',quarterly:'#f97316',semi_annually:'#ec4899',yearly:'#eab308'};
+let allRec=[];
+async function loadRecurring(){try{const d=await(await fetch(A+'/recurring',{headers:hdr()})).json();allRec=d.recurring_tasks||[];renderRecList()}catch{$('rec-list').innerHTML='<div class="empty">Failed to load</div>'}}
+function renderRecList(){$('rec-list').innerHTML=allRec.length?allRec.map(r=>{const c=RECUR_COLORS[r.recurrence]||'#6b7094';return`<div class="tr" onclick="openRecModal(${JSON.stringify(r).replace(/"/g,'&quot;')})"><div class="pb" style="background:${c}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${r.is_active?'':'opacity:.5;text-decoration:line-through'}">${r.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${r.schedule_display||r.recurrence} · ${r.assignee||'Unassigned'}${r.category?' · '+r.category:''}${r.next_due?' · Next: '+new Date(r.next_due).toLocaleDateString():''}</div></div><span class="badge" style="background:${c}1a;color:${c}">${RECUR_LABELS[r.recurrence]||r.recurrence}</span><span class="badge" style="background:${r.is_active?'var(--gs)':'var(--rs)'};color:${r.is_active?'var(--gn)':'var(--rd)'}">${r.is_active?'Active':'Paused'}</span><button class="btn" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();toggleRec(${r.id})">${r.is_active?'Pause':'Resume'}</button></div>`}).join(''):'<div class="empty">No recurring tasks yet</div>'}
+function onRecTypeChange(){const v=$('rc-recurrence').value;$('rc-dow-wrap').style.display=v==='weekly'?'block':'none';$('rc-dom-wrap').style.display=['monthly','quarterly','semi_annually','yearly'].includes(v)?'block':'none';$('rc-mom-wrap').style.display=v==='yearly'?'block':'none'}
+function openRecModal(data){$('modal-rec').classList.add('v');$('rc-id').value=data?.id||'';$('rc-title').value=data?.title||'';$('rc-desc').value=data?.description||'';$('rc-prio').value=data?.priority||'medium';$('rc-assign').value=data?.assignee||'';$('rc-cat').value=data?.category||'';$('rc-sub').value=data?.subcategory||'';$('rc-recurrence').value=data?.recurrence||'monthly';$('rc-dow').value=data?.day_of_week??0;$('rc-dom').value=data?.day_of_month||1;$('rc-mom').value=data?.month_of_year||1;$('rc-time').value=data?.time_of_day||'09:00';$('modal-rec-title').textContent=data?.id?'Edit Recurring Task':'New Recurring Task';$('rc-del').style.display=data?.id?'block':'none';$('rc-save').textContent=data?.id?'Update':'Create';onRecTypeChange()}
+function closeRecModal(){$('modal-rec').classList.remove('v')}
+async function saveRec(){const id=$('rc-id').value,title=$('rc-title').value.trim();if(!title){alert('Title required');return}const body={title,description:$('rc-desc').value||null,priority:$('rc-prio').value,assignee_name:$('rc-assign').value||null,category:$('rc-cat').value||null,subcategory:$('rc-sub').value||null,recurrence:$('rc-recurrence').value,day_of_week:parseInt($('rc-dow').value),day_of_month:parseInt($('rc-dom').value)||1,month_of_year:parseInt($('rc-mom').value)||1,time_of_day:$('rc-time').value||'09:00'};$('rc-save').disabled=true;try{if(id)await fetch(A+'/recurring/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/recurring',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeRecModal();loadRecurring()}catch(e){alert('Failed: '+e.message)}$('rc-save').disabled=false}
+async function deleteRec(){const id=$('rc-id').value;if(!id||!confirm('Delete this recurring task?'))return;try{await fetch(A+'/recurring/'+id,{method:'DELETE',headers:hdr()});closeRecModal();loadRecurring()}catch{alert('Delete failed')}}
+async function toggleRec(id){try{await fetch(A+'/recurring/'+id+'/toggle',{method:'POST',headers:hdr()});loadRecurring()}catch{}}
 </script>
 </body>
 </html>
