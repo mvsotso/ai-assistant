@@ -4,13 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Personal Assistant</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{--bg:#0b0c10;--sf:#13141c;--cd:#181a25;--bd:#252838;--tx:#e8eaf0;--mt:#6b7094;--ac:#3b82f6;--as:rgba(59,130,246,.1);--gn:#22c55e;--gs:rgba(34,197,94,.1);--or:#f97316;--os:rgba(249,115,22,.1);--rd:#ef4444;--rs:rgba(239,68,68,.1);--pp:#a855f7;--ps:rgba(168,85,247,.1);--yw:#eab308;--ys:rgba(234,179,8,.1);--pk:#ec4899;--pks:rgba(236,72,153,.1);--sb-w:64px}
+html[lang="kh"] body{font-family:'Noto Sans Khmer','DM Sans',sans-serif}
+html[lang="kh"] h2,html[lang="kh"] h3,html[lang="kh"] .login-title,html[lang="kh"] .cal-title,html[lang="kh"] .sc-v,html[lang="kh"] .td-title,html[lang="kh"] .modal h3{font-family:'Noto Sans Khmer','Outfit',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--tx);min-height:100vh;overflow-x:hidden}
+body{background:var(--bg);font-family:'DM Sans','Noto Sans Khmer',sans-serif;color:var(--tx);min-height:100vh;overflow-x:hidden}
 .login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .login-card{background:var(--cd);border:1px solid var(--bd);border-radius:20px;padding:48px 40px;text-align:center;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .login-logo{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--ac),var(--pp));display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;font-weight:800;margin:0 auto 20px}
@@ -268,11 +270,10 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <body>
 <div class="login" id="login"><div class="login-card"><div class="login-logo">AI</div><div class="login-title" data-i18n="loginTitle">AI Personal Assistant</div><div class="login-sub" data-i18n="loginSub">Sign in with your Google account to access your dashboard.</div><div id="g-btn"></div><div class="login-err" id="login-err"></div></div></div>
 <div class="app" id="app">
-<div class="mobile-hdr" id="mobile-hdr"><button class="hamburger" onclick="toggleSidebar()">☰</button><div class="sb-logo">AI</div><div class="title" id="mobile-title">Dashboard</div><button class="hamburger" onclick="openSearch()" title="Search (Ctrl+K)">🔍</button><img class="av" id="av-m" src="" alt="" style="width:28px;height:28px" /></div>
+<div class="mobile-hdr" id="mobile-hdr"><button class="hamburger" onclick="toggleSidebar()">☰</button><div class="sb-logo" onclick="nav('dash')" style="cursor:pointer">AI</div><div class="title" id="mobile-title">Dashboard</div><button class="hamburger" onclick="openSearch()" title="Search (Ctrl+K)">🔍</button><img class="av" id="av-m" src="" alt="" style="width:28px;height:28px" /></div>
 <div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
 <div class="sb" id="sidebar">
-  <div class="sb-logo">AI</div>
-  <button class="nb a" data-p="dash" onclick="nav('dash')"><span>⊞</span><span class="l" data-i18n="home">Home</span></button>
+  <div class="sb-logo" onclick="nav('dash')" style="cursor:pointer" title="Dashboard">AI</div>
   <button class="nb" data-p="board" onclick="nav('board')"><span>🗂</span><span class="l" data-i18n="board">Board</span></button>
   <button class="nb" data-p="tasks" onclick="nav('tasks')"><span>☑</span><span class="l" data-i18n="tasks">Tasks</span></button>
   <button class="nb" data-p="team" onclick="nav('team')"><span>👥</span><span class="l" data-i18n="team">Team</span></button>
@@ -1358,6 +1359,8 @@ function toggleLang(){
 }
 function applyLang(){
   const tr=I18N[curLang]||I18N.en;
+  // Set html lang for CSS font switching
+  document.documentElement.lang=curLang==='kh'?'kh':'en';
   // Static text elements
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key=el.dataset.i18n;
