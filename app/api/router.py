@@ -33,6 +33,50 @@ async def health_check():
     return {"status": "healthy", "service": "AI Personal Assistant", "timestamp": datetime.utcnow().isoformat()}
 
 
+# ─── One-time DB cleanup (REMOVE AFTER USE) ───
+@router.post("/admin/reset-data")
+async def reset_data(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """Wipe all test data, keep only the admin user (Sot So). REMOVE THIS ENDPOINT AFTER USE."""
+    from sqlalchemy import text
+    from app.core.config import get_settings
+    admin_tg_id = get_settings().admin_telegram_id
+
+    # Delete in correct order (respect foreign keys)
+    await db.execute(text("DELETE FROM notifications"))
+    await db.execute(text("DELETE FROM task_actions"))
+    await db.execute(text("DELETE FROM task_dependencies"))
+    await db.execute(text("DELETE FROM task_comments"))
+    await db.execute(text("DELETE FROM reminders"))
+    await db.execute(text("DELETE FROM messages"))
+    await db.execute(text("DELETE FROM tasks"))
+    await db.execute(text("DELETE FROM recurring_tasks"))
+    await db.execute(text("DELETE FROM task_subgroups"))
+    await db.execute(text("DELETE FROM task_groups"))
+    await db.execute(text("DELETE FROM team_roles"))
+    # Delete all users except admin
+    if admin_tg_id:
+        await db.execute(text("DELETE FROM users WHERE telegram_id != :tid"), {"tid": int(admin_tg_id)})
+    else:
+        await db.execute(text("DELETE FROM users WHERE is_admin = FALSE"))
+    # Reset sequences so IDs start from 1
+    for tbl in ["tasks", "notifications", "task_actions", "task_dependencies",
+                 "task_comments", "reminders", "messages", "recurring_tasks",
+                 "task_subgroups", "task_groups", "team_roles"]:
+        await db.execute(text(f"ALTER SEQUENCE IF EXISTS {tbl}_id_seq RESTART WITH 1"))
+    await db.commit()
+
+    # Re-seed default roles
+    await db.execute(text("""
+        INSERT INTO team_roles (name, description, color, permissions, is_default, sort_order) VALUES
+        ('Admin', 'Full access to all features', '#ef4444', '["view","edit","admin","delete"]', FALSE, 1),
+        ('Editor', 'Can view and edit tasks and content', '#3b82f6', '["view","edit"]', TRUE, 2),
+        ('Viewer', 'Read-only access', '#22c55e', '["view"]', FALSE, 3)
+    """))
+    await db.commit()
+
+    return {"ok": True, "message": "All test data wiped. Only admin account and default roles remain."}
+
+
 # ─── Telegram Webhook ───
 @router.post("/webhook/telegram")
 async def telegram_webhook(request: Request, db: AsyncSession = Depends(get_db)):
