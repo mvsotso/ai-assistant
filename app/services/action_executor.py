@@ -42,7 +42,7 @@ async def _create_event(action: dict, db) -> dict:
     from app.core.config import get_settings
 
     settings = get_settings()
-    telegram_id = settings.admin_telegram_id
+    telegram_id = int(settings.admin_telegram_id)
     creds = await token_store.load_token(db, telegram_id)
 
     if not creds:
