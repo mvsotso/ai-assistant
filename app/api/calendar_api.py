@@ -135,6 +135,11 @@ async def list_events_web(request: Request, start: str = None, end: str = None, 
             time_max = datetime.fromisoformat(end + "T23:59:59+00:00")
     else:
         time_max = time_min.replace(month=time_min.month + 1) if time_min.month < 12 else time_min.replace(year=time_min.year + 1, month=1)
+    # Ensure timezone-aware for Google API
+    if time_min.tzinfo is None:
+        time_min = time_min.replace(tzinfo=tz_mod.utc)
+    if time_max.tzinfo is None:
+        time_max = time_max.replace(tzinfo=tz_mod.utc)
     service = calendar_service._build_service(creds)
     events_result = service.events().list(
         calendarId="primary", timeMin=time_min.isoformat(), timeMax=time_max.isoformat(),
