@@ -33,7 +33,7 @@ class BotHandlers:
             return
 
         chat_id = message["chat"]["id"]
-        text = message.get("text", "")
+        text = message.get("text", "") or message.get("caption", "") or ""
         user = message.get("from", {})
         user_id = user.get("id")
         user_name = user.get("first_name", "Unknown")
@@ -47,8 +47,21 @@ class BotHandlers:
 
         if text.startswith("/"):
             await self._handle_command(db, chat_id, user_id, user_name, text, message)
-        else:
-            if message["chat"]["type"] == "private":
+        elif message["chat"]["type"] == "private":
+            # Check for file attachments
+            file_id = None
+            file_name = "file"
+            if message.get("document"):
+                file_id = message["document"]["file_id"]
+                file_name = message["document"].get("file_name", "document")
+            elif message.get("photo"):
+                # Get highest resolution photo
+                file_id = message["photo"][-1]["file_id"]
+                file_name = "photo.jpg"
+
+            if file_id:
+                await self._handle_file_chat(db, chat_id, user_id, user_name, text, file_id, file_name)
+            elif text:
                 await self._handle_ai_chat(db, chat_id, user_id, user_name, text)
 
     async def _store_message(self, db: AsyncSession, message: dict):
@@ -642,6 +655,43 @@ Just send me any message in private chat!""")
         await telegram_service.send_message(chat_id, response)
         for r in action_results:
             await telegram_service.send_message(chat_id, r)
+
+    async def _handle_file_chat(self, db, chat_id, user_id, user_name, caption, file_id, file_name):
+        """Handle file uploads in private chat — download, process, and analyze with AI."""
+        await telegram_service.send_message(chat_id, f"\U0001F4C4 Processing *{file_name}*...")
+        try:
+            from app.services.file_processor import extract_text_from_file
+            from app.core.config import get_settings
+            import httpx
+
+            settings = get_settings()
+            bot_token = settings.telegram_bot_token
+
+            # Get file path from Telegram
+            async with httpx.AsyncClient() as client:
+                file_info = await client.get(f"https://api.telegram.org/bot{bot_token}/getFile?file_id={file_id}")
+                file_path = file_info.json().get("result", {}).get("file_path")
+                if not file_path:
+                    await telegram_service.send_message(chat_id, "\u274C Could not download the file.")
+                    return
+
+                # Download file
+                file_resp = await client.get(f"https://api.telegram.org/file/bot{bot_token}/{file_path}")
+                file_bytes = file_resp.content
+
+            # Extract content
+            file_data = await extract_text_from_file(file_bytes, file_name)
+
+            # Build message
+            user_msg = caption or f"Analyze this file: {file_name}"
+
+            # Call AI with file
+            response = await ai_engine.chat_with_file(user_msg, file_data)
+            await telegram_service.send_message(chat_id, f"\U0001F4C4 *{file_data['summary']}*\n\n{response}")
+
+        except Exception as e:
+            logger.error(f"File processing error: {e}")
+            await telegram_service.send_message(chat_id, f"\u274C Error processing file: {str(e)}")
 
     async def _execute_action(self, db, action, user_id, user_name, chat_id):
         try:

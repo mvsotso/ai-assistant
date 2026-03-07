@@ -369,3 +369,27 @@ class ChatRequest(BaseModel):
 async def ai_chat(body: ChatRequest):
     response = await ai_engine.chat(body.message, context=body.context or "")
     return {"response": response}
+
+
+# ─── AI Chat with File Upload ───
+from fastapi import UploadFile, File, Form
+
+@router.post("/ai/chat-with-file")
+async def ai_chat_with_file(
+    message: str = Form("Analyze this file"),
+    file: UploadFile = File(...),
+):
+    """Chat with AI and attach a file for analysis."""
+    from app.services.file_processor import extract_text_from_file
+
+    # Read file
+    file_bytes = await file.read()
+    if len(file_bytes) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(status_code=413, detail="File too large. Maximum 10MB.")
+
+    # Extract content
+    file_data = await extract_text_from_file(file_bytes, file.filename)
+
+    # Call AI with file
+    response = await ai_engine.chat_with_file(message, file_data)
+    return {"response": response, "file_summary": file_data["summary"]}

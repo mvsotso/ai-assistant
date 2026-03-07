@@ -143,6 +143,45 @@ class AIEngine:
             logger.error(f"Claude API error: {e}")
             return f"Sorry, I encountered an error: {str(e)}"
 
+    async def _call_claude_multimodal(self, system: str, text: str, file_data: dict = None, max_tokens: int = None) -> str:
+        """Claude API call with optional image/file support."""
+        try:
+            content = []
+            # Add image if present
+            if file_data and file_data.get("type") == "image":
+                content.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": file_data.get("media_type", "image/png"),
+                        "data": file_data["content"],
+                    },
+                })
+            # Add text with optional file content
+            if file_data and file_data.get("type") == "text":
+                text = f"{text}\n\n--- File: {file_data['filename']} ---\n{file_data['content']}"
+            content.append({"type": "text", "text": text})
+
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens or self.max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": content}],
+            )
+            return response.content[0].text
+        except Exception as e:
+            logger.error(f"Claude multimodal error: {e}")
+            return f"Sorry, I couldn't process that file: {str(e)}"
+
+    async def chat_with_file(self, user_message: str, file_data: dict = None, context: str = "") -> str:
+        """Process a message with optional file attachment."""
+        system = self._get_system_prompt()
+        if context:
+            system += f"\n\nCurrent context:\n{context}"
+        if file_data:
+            return await self._call_claude_multimodal(system, user_message, file_data)
+        return await self._call_claude(system, user_message)
+
     # ─── INTENT CLASSIFICATION ───
 
     async def classify_intent(self, message: str) -> str:

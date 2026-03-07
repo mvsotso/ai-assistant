@@ -104,7 +104,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   <!-- Reminders -->
   <div id="pg-remind" class="pg"><h2>Reminders</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="st" style="margin:0">Scheduled notifications</div><button class="btn p" onclick="openModal('remind')">+ New Reminder</button></div><div id="rl"></div></div>
   <!-- AI Chat -->
-  <div id="pg-chat" class="pg"><h2>✨ AI Assistant</h2><div class="st">Chat with Claude Opus 4.6 · English & ខ្មែរ</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything about your tasks, calendar, or team.</div></div><div class="ch-r"><input class="ch-i" id="chi" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div></div></div>
+  <div id="pg-chat" class="pg"><h2>✨ AI Assistant</h2><div class="st">Chat with Claude Opus 4.6 · English & ខ្មែរ · Supports file uploads (PDF, images, Excel, Word, SQL)</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything about your tasks, calendar, or team. You can also upload files (PDF, images, Excel, Word, SQL) for me to analyze.</div></div><div class="ch-r"><input type="file" id="chf" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.csv,.docx,.doc,.sql,.py,.js,.json,.txt,.md,.xml,.yaml,.html" onchange="onFileSelect()"><button onclick="$('chf').click()" style="width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--mt);font-size:14px;cursor:pointer" title="Upload file">📎</button><input class="ch-i" id="chi" placeholder="Ask anything or upload a file..." onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div><div id="chfn" style="display:none;padding:6px 0;font-size:11px;color:var(--ac)"></div></div></div>
 </div>
 </div>
 
@@ -232,11 +232,15 @@ await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/j
 async function delRemind(id){await fetch(A+'/reminders/'+id,{method:'DELETE',headers:hdr()});loadRemind()}
 
 // AI Chat
-let chL=false;
-async function sendAI(){const i=$('chi');const m=i.value.trim();if(!m||chL)return;i.value='';const c=$('chm');
-c.innerHTML+=`<div class="ch-b ch-u">${esc(m)}</div><div class="ch-b ch-a" id="chl" style="color:var(--mt)">Thinking...</div>`;c.scrollTop=c.scrollHeight;chL=true;
-try{const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m})});const d=await r.json();$('chl').remove();c.innerHTML+=`<div class="ch-b ch-a">${esc(d.response||'No response')}</div>`}
-catch{$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">Error</div>`}
+let chL=false,chFile=null;
+function onFileSelect(){const f=$('chf').files[0];if(f){chFile=f;$('chfn').style.display='block';$('chfn').innerHTML=`📎 ${f.name} (${(f.size/1024).toFixed(1)}KB) <button onclick="clearFile()" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:11px">✕ Remove</button>`}};
+function clearFile(){chFile=null;$('chf').value='';$('chfn').style.display='none';$('chfn').innerHTML=''}
+async function sendAI(){const i=$('chi');const m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm');
+const dispMsg=m||(chFile?`Analyze: ${chFile.name}`:'');
+c.innerHTML+=`<div class="ch-b ch-u">${esc(dispMsg)}${chFile?' 📎':''}  </div><div class="ch-b ch-a" id="chl" style="color:var(--mt)">${chFile?'Processing file...':'Thinking...'}</div>`;c.scrollTop=c.scrollHeight;chL=true;
+try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');const r=await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd});d=await r.json();clearFile()}else{const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m})});d=await r.json()}
+$('chl').remove();c.innerHTML+=`<div class="ch-b ch-a">${esc(d.response||'No response')}</div>`}
+catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">Error: ${e.message||'Connection failed'}</div>`}
 chL=false;c.scrollTop=c.scrollHeight}
 </script>
 </body>
