@@ -1,0 +1,104 @@
+# AI Personal Assistant — Claude Code Context
+
+## Project Overview
+Personal AI assistant platform for Sot So (Chief of Data Management Bureau, GDT Cambodia).
+Deployed at https://aia.rikreay24.com (primary) and https://sotso-assistant.duckdns.org (legacy).
+Telegram bot @sotso_assistant_bot.
+
+## Tech Stack
+- **Backend:** Python 3.11, FastAPI, SQLAlchemy (async), asyncpg
+- **Database:** PostgreSQL 16
+- **Cache/Queue:** Redis 7, Celery
+- **AI:** Claude Opus 4.6 via Anthropic API
+- **Frontend:** Single-file vanilla HTML/CSS/JS at `app/static/index.html` (~1700 lines)
+- **Calendar:** Google Calendar + Drive API with OAuth2
+- **Bot:** Telegram Bot API via httpx (webhook mode)
+- **Deploy:** Docker Compose on GCP VM (asia-southeast1-b), CI/CD via GitHub Actions
+- **SSL:** Let's Encrypt via Certbot, Nginx reverse proxy
+- **DNS:** Cloudflare DNS (rikreay24.com), DuckDNS (legacy)
+
+## Project Structure
+```
+app/
+├── main.py                  # FastAPI entry + auto-migrations
+├── core/config.py           # Pydantic settings from .env
+├── core/database.py         # Async SQLAlchemy engine
+├── models/                  # SQLAlchemy models
+│   ├── task.py              # Task (status, priority, group_id, subgroup_id)
+│   ├── task_dependency.py   # TaskDependency (blocks/blocked-by)
+│   ├── task_action.py       # TaskAction (checklist items)
+│   ├── task_group.py        # TaskGroup + TaskSubGroup
+│   ├── team_role.py         # TeamRole
+│   ├── user.py, message.py, reminder.py, comment.py, recurring_task.py
+├── api/
+│   ├── router.py            # Main API: tasks, board, dashboard, messages, reminders, AI chat
+│   ├── calendar_api.py      # Google Calendar CRUD
+│   ├── dependency_api.py    # Task dependencies with circular detection
+│   ├── task_action_api.py   # Task actions/checklist
+│   ├── task_group_api.py    # Task groups & subgroups
+│   ├── team_api.py          # Team management
+│   ├── recurring_api.py     # Recurring tasks
+│   └── auth.py              # Google OAuth + HMAC sessions
+├── services/
+│   ├── ai_engine.py         # Claude integration with action extraction
+│   ├── action_executor.py   # Executes AI actions (events, tasks, reminders)
+│   ├── calendar_svc.py      # Google Calendar + Drive
+│   ├── task_svc.py          # Task CRUD, board, stats
+│   └── file_processor.py    # PDF, Excel, Word, CSV, image extraction
+├── bot/handlers.py          # Telegram bot commands
+├── static/index.html        # Full web dashboard (single file)
+└── worker.py                # Celery workers
+```
+
+## Key Architecture Decisions
+- **Single HTML file** for dashboard — all CSS, HTML, JS in `app/static/index.html`
+- **Auto-migrations** in `main.py` lifespan — CREATE TABLE IF NOT EXISTS + ALTER TABLE for new columns
+- **i18n** — 140+ keys in `I18N` object (EN/KH), `data-i18n` attributes, `t('key')` helper function
+- **Noto Sans Khmer** Google Font for Khmer language support
+- **Chart.js** with Cloudflare CDN fallback for analytics
+- **AI-embedded actions** in Task Detail Modal and Event Modal
+
+## Database
+PostgreSQL with tables: users, messages, tasks, reminders, task_comments, recurring_tasks, task_groups, task_subgroups, team_roles, task_actions, task_dependencies
+
+## Deployment
+```bash
+git push  # CI/CD auto-deploys via GitHub Actions SSH
+```
+Manual: `docker compose -f docker-compose.prod.yml up -d --build`
+
+GCP VM: instance-20260306-035055, IP: 34.124.208.176 (ephemeral)
+Domain: aia.rikreay24.com (Cloudflare DNS, rikreay24.com)
+DuckDNS (legacy): sotso-assistant.duckdns.org
+
+
+## Coding Preferences
+- Always edit original files directly (not patch files)
+- Comprehensive solutions over minimal examples
+- Add auto-migration SQL in main.py for new tables/columns
+- Add i18n keys (both EN and KH) for any new UI text
+- Keep emojis outside `data-i18n` spans to prevent double-emoji on language toggle
+- Use `I18N[curLang].key` for JS-rendered text, `data-i18n="key"` for static HTML
+- Test by pushing to git (CI/CD deploys automatically)
+
+## Current Features (Phases 1-14)
+Telegram bot, Google Calendar/Drive, AI chat with file upload, task management with groups/subgroups, team management with roles, task actions/checklist, task dependencies (blocks/blocked-by), recurring tasks, analytics with 6 Chart.js charts + AI insights, global search (Ctrl+K), full EN/KH i18n, AI-embedded actions in tasks (follow up, progress check, summary, delegate) and events (key notes, agenda, prep brief, follow up, auto-keynotes from attachments), smart event creation from messages with field validation, fully interactive dashboard with clickable everything.
+
+## Infrastructure Notes
+- **Docker MTU:** Must be 1460 to match GCP network MTU (configured in `docker-compose.prod.yml` networks section)
+- **Service Worker:** `app/static/sw.js` uses cache-first strategy; bump `CACHE_VERSION` when updating `index.html`
+- **Google Login:** Dual approach — GIS library (primary) + OAuth redirect fallback (`/api/v1/auth/google/callback`)
+- **Google OAuth Redirect URI:** `https://aia.rikreay24.com/api/v1/auth/google/callback` (also keeps duckdns as fallback)
+- **IP changes:** If VM IP changes (ephemeral), update DuckDNS, Telegram webhook, and Google OAuth redirect URI
+- **Workplace WiFi:** May block the site — use mobile data or different network
+
+## What To Work On Next
+1. Notification Center — web push notifications
+2. Dashboard date range picker for analytics
+3. Flutter mobile app
+4. API rate limiting
+5. Gantt chart / dependency graph view
+6. AI attachment content analysis (fetch Drive file content)
+7. Offline support with service worker
+8. Fix CI/CD pipeline (GitHub Actions SSH deploy failing)
+9. Reserve static IP in GCP to avoid IP changes on VM restart
