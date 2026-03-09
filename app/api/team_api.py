@@ -498,7 +498,12 @@ async def bulk_import_members(
         if role_name:
             matched_role = roles_by_name.get(role_name.lower())
             if not matched_role:
-                row_errors.append(f"role '{role_name}' not found (available: {role_names_display})")
+                # Auto-create the role
+                new_role = TeamRole(name=role_name, description="Auto-created from import", color="#6366f1")
+                db.add(new_role)
+                await db.flush()
+                roles_by_name[role_name.lower()] = new_role
+                role_id = new_role.id
             else:
                 role_id = matched_role.id
 
