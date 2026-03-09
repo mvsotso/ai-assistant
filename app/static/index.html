@@ -21,6 +21,8 @@ body{background:var(--bg);font-family:'DM Sans','Noto Sans Khmer',sans-serif;col
 .login-sub{font-size:13px;color:var(--mt);margin-bottom:32px;line-height:1.5}
 .login-err{background:var(--rs);color:var(--rd);padding:10px;border-radius:10px;font-size:12px;margin-top:16px;display:none}
 #g-btn{display:flex;justify-content:center}
+.g-fallback-btn{display:flex;align-items:center;justify-content:center;width:280px;margin:16px auto 0;padding:12px 24px;background:#fff;color:#333;border:1px solid #ddd;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;transition:box-shadow .2s,background .2s}
+.g-fallback-btn:hover{background:#f7f7f7;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .app{display:none;min-height:100vh}.app.v{display:flex}
 .sb{width:var(--sb-w);background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;padding-top:16px;gap:4px;position:fixed;height:100vh;z-index:50;transition:transform .3s ease}
 .sb-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--pp));display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:800;margin-bottom:20px;flex-shrink:0}
@@ -334,7 +336,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </head>
 <body>
 <div class="offline-bar" id="offline-bar">⚠️ <span data-i18n="offlineMode">You are offline — changes will sync when reconnected</span><span id="offline-queue-count"></span></div>
-<div class="login" id="login"><div class="login-card"><div class="login-logo">AI</div><div class="login-title" data-i18n="loginTitle">AI Personal Assistant</div><div class="login-sub" data-i18n="loginSub">Sign in with your Google account to access your dashboard.</div><div id="g-btn"></div><div class="login-err" id="login-err"></div></div></div>
+<div class="login" id="login"><div class="login-card"><div class="login-logo">AI</div><div class="login-title" data-i18n="loginTitle">AI Personal Assistant</div><div class="login-sub" data-i18n="loginSub">Sign in with your Google account to access your dashboard.</div><div id="g-btn"></div><button id="g-btn-fallback" class="g-fallback-btn" style="display:none" onclick="googleRedirectLogin()"><svg viewBox="0 0 24 24" width="20" height="20" style="margin-right:10px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg><span data-i18n="signInGoogle">Sign in with Google</span></button><div class="login-err" id="login-err"></div></div></div>
 <div class="app" id="app">
 <div class="mobile-hdr" id="mobile-hdr"><button class="hamburger" onclick="toggleSidebar()">☰</button><div class="sb-logo" onclick="nav('dash')" style="cursor:pointer">AI</div><div class="title" id="mobile-title">Dashboard</div><button class="hamburger" onclick="openSearch()" title="Search (Ctrl+K)">🔍</button><button class="hamburger" onclick="toggleNotifPanel()" style="position:relative">🔔<span class="notif-badge" id="notif-badge-m" style="display:none;top:2px;right:2px">0</span></button><button class="hamburger" onclick="toggleLang()" style="font-size:11px;font-weight:700" id="lang-btn-m">EN</button><img class="av" id="av-m" src="" alt="" style="width:28px;height:28px" /></div>
 <div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
@@ -733,7 +735,12 @@ async function checkSession(){const s=stored();if(!s?.token)return false;if(s.ex
 async function gSign(r){const e=$('login-err');e.style.display='none';try{const res=await fetch(A+'/auth/google/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:r.credential})});const d=await res.json();if(res.ok){tok=d.token;usr={email:d.email,name:d.name,picture:d.picture};store(d);showApp()}else{e.textContent=d.detail||'Denied';e.style.display='block'}}catch{e.textContent='Server error';e.style.display='block'}}
 function logout(){clear();$('app').classList.remove('v');$('login').style.display='flex'}
 function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCats();initMiniCal();loadNotifCount()}
-window.onload=async()=>{if(await checkSession()){showApp();return}try{const r=await fetch(A+'/auth/client-id');const d=await r.json();if(d.client_id){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'})}}catch{$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
+let _gClientId='';
+async function googleRedirectLogin(){if(!_gClientId){const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d.client_id}const redir=location.origin+'/api/v1/auth/google/callback';const u='https://accounts.google.com/o/oauth2/v2/auth?client_id='+encodeURIComponent(_gClientId)+'&redirect_uri='+encodeURIComponent(redir)+'&response_type=code&scope=openid%20email%20profile&prompt=select_account';location.href=u}
+window.onload=async()=>{if(await checkSession()){showApp();return}
+/* Check for OAuth callback token in URL hash */
+const hp=new URLSearchParams(location.search);if(hp.get('session_token')){try{const d=JSON.parse(decodeURIComponent(hp.get('session_token')));tok=d.token;usr={email:d.email,name:d.name,picture:d.picture};store(d);history.replaceState(null,'','/');showApp();return}catch{}}
+try{const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d.client_id;if(d.client_id&&typeof google!=='undefined'&&google.accounts){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'});setTimeout(()=>{if(!$('g-btn').querySelector('iframe')&&!$('g-btn').querySelector('div[role]')){$('g-btn-fallback').style.display='flex'}},2000)}else{$('g-btn-fallback').style.display='flex'}}catch{$('g-btn-fallback').style.display='flex';$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
 function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt()}
@@ -1888,7 +1895,7 @@ const I18N={
     // Subtitles / descriptions
     telegramMsgs:'Telegram group messages',scheduledNotifs:'Scheduled notifications',aiSub:'Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported',dragCards:'Drag cards to change status',taskTemplates:'Task templates that auto-generate on schedule',analyticsSub:'Task completion trends and team performance',
     // Login
-    loginTitle:'AI Personal Assistant',loginSub:'Sign in with your Google account to access your dashboard.',
+    loginTitle:'AI Personal Assistant',loginSub:'Sign in with your Google account to access your dashboard.',signInGoogle:'Sign in with Google',
     // Welcome
     welcome:'Welcome',
     // Status labels
@@ -1967,7 +1974,7 @@ const I18N={
     home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',analyticsNav:'វិភាគ',
     dashboard:'ផ្ទាំងគ្រប់គ្រង',taskBoard:'ក្តារភារកិច្ច',tasksPage:'ភារកិច្ច',teamMembers:'សមាជិកក្រុម',messagesPage:'សារ',remindersPage:'ការរំលឹក',aiAssistant:'AI ជំនួយការ',calendarPage:'ប្រតិទិន',recurringTasks:'ភារកិច្ចដដែលៗ',analyticsPage:'វិភាគ',
     telegramMsgs:'សារក្រុម Telegram',scheduledNotifs:'ការជូនដំណឹងដែលបានកំណត់',aiSub:'ជជែកជាមួយ Claude Opus 4.6 · English & ខ្មែរ · អាចផ្ទុកឯកសារ',dragCards:'អូសកាតដើម្បីប្តូរស្ថានភាព',taskTemplates:'គំរូភារកិច្ចដែលបង្កើតដោយស្វ័យប្រវត្តិតាមកាលវិភាគ',analyticsSub:'និន្នាការបញ្ចប់ភារកិច្ច និងសមត្ថភាពក្រុម',
-    loginTitle:'AI ជំនួយការផ្ទាល់ខ្លួន',loginSub:'ចូលដោយប្រើគណនី Google របស់អ្នកដើម្បីចូលផ្ទាំងគ្រប់គ្រង។',
+    loginTitle:'AI ជំនួយការផ្ទាល់ខ្លួន',loginSub:'ចូលដោយប្រើគណនី Google របស់អ្នកដើម្បីចូលផ្ទាំងគ្រប់គ្រង។',signInGoogle:'ចូលដោយ Google',
     welcome:'សូមស្វាគមន៍',
     todo:'ត្រូវធ្វើ',inProgress:'កំពុងធ្វើ',active:'កំពុងធ្វើ',review:'ពិនិត្យ',done:'រួចរាល់',overdue:'ហួសកាលកំណត់',
     totalTasks:'ភារកិច្ចសរុប',completed:'បានបញ្ចប់',completionRate:'អត្រាបញ្ចប់',

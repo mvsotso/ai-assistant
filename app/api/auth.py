@@ -132,3 +132,74 @@ async def get_google_client_id():
     if not settings.google_client_id:
         raise HTTPException(status_code=500, detail="Google Client ID not configured")
     return {"client_id": settings.google_client_id}
+
+
+@auth_router.get("/google/callback")
+async def google_oauth_callback(code: str, request: Request):
+    """
+    Handle Google OAuth2 redirect callback.
+    Exchanges authorization code for tokens, verifies email, and redirects to dashboard.
+    """
+    from fastapi.responses import RedirectResponse
+    from urllib.parse import urlencode, quote
+
+    redirect_uri = str(request.url_for("google_oauth_callback"))
+    # Force HTTPS in production
+    if redirect_uri.startswith("http://") and settings.is_production:
+        redirect_uri = redirect_uri.replace("http://", "https://", 1)
+
+    # Exchange code for tokens
+    try:
+        async with httpx.AsyncClient() as client:
+            token_resp = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": settings.google_client_id,
+                    "client_secret": settings.google_client_secret,
+                    "redirect_uri": redirect_uri,
+                    "grant_type": "authorization_code",
+                },
+            )
+            if token_resp.status_code != 200:
+                logger.error(f"Google token exchange failed: {token_resp.text}")
+                return RedirectResponse(url="/?login_error=token_exchange_failed")
+            tokens = token_resp.json()
+
+            # Get user info
+            userinfo_resp = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {tokens['access_token']}"},
+            )
+            if userinfo_resp.status_code != 200:
+                return RedirectResponse(url="/?login_error=userinfo_failed")
+            userinfo = userinfo_resp.json()
+    except httpx.RequestError as e:
+        logger.error(f"Google OAuth callback error: {e}")
+        return RedirectResponse(url="/?login_error=network_error")
+
+    email = userinfo.get("email", "")
+    name = userinfo.get("name", email.split("@")[0])
+    picture = userinfo.get("picture", "")
+    verified = userinfo.get("verified_email", False)
+
+    if not verified:
+        return RedirectResponse(url="/?login_error=email_not_verified")
+
+    # Check allowed emails
+    allowed = [e.strip().lower() for e in settings.dashboard_allowed_emails.split(",")]
+    if email.lower() not in allowed:
+        logger.warning(f"Dashboard access denied for: {email}")
+        return RedirectResponse(url="/?login_error=access_denied")
+
+    # Create session and redirect with token data
+    session = _create_session_token(email, name, picture)
+    session_data = json.dumps({
+        "token": session.token,
+        "email": session.email,
+        "name": session.name,
+        "picture": session.picture,
+        "expires_at": session.expires_at,
+    })
+    logger.info(f"Dashboard login (OAuth redirect): {email}")
+    return RedirectResponse(url=f"/?session_token={quote(session_data)}")
