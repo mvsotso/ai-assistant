@@ -1636,7 +1636,7 @@ async function uploadBulkImport(){
     const d=await r.json();
     if(!r.ok)throw new Error(d.detail||'Import failed');
     renderBulkResults(d);
-    if(d.imported>0)await loadTeamFull();
+    if(d.imported>0){await loadTeamFull();if(d.failed===0)setTimeout(()=>closeBulkImport(),1500)}
   }catch(e){
     $('bulk-import-results').style.display='block';
     $('bulk-import-results').innerHTML='<div style="color:var(--rd);font-size:12px;padding:10px;background:var(--rs);border-radius:8px">❌ '+esc(e.message)+'</div>';
