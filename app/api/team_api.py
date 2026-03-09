@@ -221,24 +221,6 @@ async def list_members(db: AsyncSession = Depends(get_db)):
     return {"members": members}
 
 
-@router.get("/members/{member_id}")
-async def get_member(member_id: int, db: AsyncSession = Depends(get_db)):
-    """Get single member profile."""
-    result = await db.execute(select(User).where(User.id == member_id))
-    u = result.scalar_one_or_none()
-    if not u:
-        raise HTTPException(status_code=404, detail="Member not found")
-
-    role = None
-    if u.role_id:
-        rr = await db.execute(select(TeamRole).where(TeamRole.id == u.role_id))
-        role = rr.scalar_one_or_none()
-
-    name = u.first_name or u.telegram_username or "Unknown"
-    stats = await _get_task_stats(db, name)
-    return _user_to_dict(u, role, stats)
-
-
 @router.post("/members")
 async def create_member(data: MemberCreate, db: AsyncSession = Depends(get_db)):
     """Manually add a new team member."""
@@ -581,6 +563,24 @@ async def bulk_import_members(
         "errors": errors,
         "imported_members": imported_members,
     }
+
+
+@router.get("/members/{member_id}")
+async def get_member(member_id: int, db: AsyncSession = Depends(get_db)):
+    """Get single member profile."""
+    result = await db.execute(select(User).where(User.id == member_id))
+    u = result.scalar_one_or_none()
+    if not u:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    role = None
+    if u.role_id:
+        rr = await db.execute(select(TeamRole).where(TeamRole.id == u.role_id))
+        role = rr.scalar_one_or_none()
+
+    name = u.first_name or u.telegram_username or "Unknown"
+    stats = await _get_task_stats(db, name)
+    return _user_to_dict(u, role, stats)
 
 
 @router.patch("/members/{member_id}")
