@@ -22,6 +22,22 @@ jobs:
             git stash
             git pull origin main
 
+            echo "=== Checking SSL cert for aia.rikreay24.com ==="
+            if [ ! -d "./nginx/ssl/live/aia.rikreay24.com" ]; then
+              echo "SSL cert not found, attempting to issue..."
+              # Start only nginx for ACME challenge
+              docker compose -f docker-compose.prod.yml up -d nginx 2>/dev/null || true
+              sleep 3
+              docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+                --webroot -w /var/www/certbot \
+                -d aia.rikreay24.com \
+                --email mvsotso@gmail.com --agree-tos --no-eff-email \
+                && echo " ✓ SSL cert issued for aia.rikreay24.com" \
+                || echo " ⚠ SSL cert failed (DNS may not be ready yet, duckdns will still work)"
+            else
+              echo " ✓ SSL cert already exists for aia.rikreay24.com"
+            fi
+
             echo "=== Building and deploying ==="
             docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d --build
