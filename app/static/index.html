@@ -525,13 +525,13 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 <div class="fg"><label data-i18n="priority">Priority</label><select class="inp" id="mt-prio"><option value="low" data-i18n="low">Low</option><option value="medium" selected data-i18n="medium">Medium</option><option value="high" data-i18n="high">High</option><option value="urgent" data-i18n="urgent">Urgent</option></select></div>
 <div class="fg"><label data-i18n="status">Status</label><select class="inp" id="mt-status"><option value="todo" data-i18n="todo">To Do</option><option value="in_progress" data-i18n="inProgress">In Progress</option><option value="review" data-i18n="review">Review</option><option value="done" data-i18n="done">Done</option></select></div>
-<div class="fg"><label data-i18n="assignee">Assignee</label><input class="inp" id="mt-assign" placeholder="Name..." data-i18n-ph="phName"></div>
+<div class="fg"><label data-i18n="assignee">Assignee</label><input class="inp" id="mt-assign" placeholder="Name..." data-i18n-ph="phName" list="team-dl"></div>
 <div class="fg"><label data-i18n="dueDate">Due Date</label><input class="inp" id="mt-due" type="date"></div>
 <div class="fg"><label data-i18n="category">Category</label><input class="inp" id="mt-cat" placeholder="e.g. GDT" data-i18n-ph="phCategory" list="cats"></div>
 <div class="fg"><label data-i18n="subcategory">Subcategory</label><input class="inp" id="mt-sub" placeholder="e.g. ETL" data-i18n-ph="phSubcategory" list="subs"></div>
 <div class="fg"><label data-i18n="group">Group</label><select class="inp" id="mt-group" onchange="onMtGroupChange()"><option value="" data-i18n="noneOption">— None —</option></select></div>
 <div class="fg"><label data-i18n="subGroup">Sub-Group</label><select class="inp" id="mt-subgroup"><option value="" data-i18n="noneOption">— None —</option></select></div>
-</div><datalist id="cats"></datalist><datalist id="subs"></datalist><input type="hidden" id="mt-id" value="">
+</div><datalist id="cats"></datalist><datalist id="subs"></datalist><datalist id="team-dl"></datalist><input type="hidden" id="mt-id" value="">
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeModal('task')" data-i18n="cancel">Cancel</button><button class="btn d" id="mt-del" onclick="deleteTask()" style="display:none" data-i18n="delete">Delete</button><button class="btn p" onclick="saveTask()" data-i18n="save">Save</button></div></div></div>
 <!-- Reminder Modal -->
 <div class="modal-overlay" id="modal-remind"><div class="modal"><h3 data-i18n="newReminder">New Reminder</h3>
@@ -768,7 +768,7 @@ try{const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
 function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt()}
-function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data)}}
+function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let cats=[];async function loadCats(){try{const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();cats=d.categories||[];$('cats').innerHTML=cats.map(c=>`<option value="${c}">`).join('')}catch{}}
 function getDueStatus(d){if(!d)return null;const n=new Date();n.setHours(0,0,0,0);const u=new Date(d);u.setHours(0,0,0,0);const df=Math.floor((u-n)/864e5);if(df<0)return{cls:'due-overdue',text:'Overdue '+Math.abs(df)+'d',type:'overdue'};if(df===0)return{cls:'due-today',text:'Due Today',type:'today'};if(df<=3)return{cls:'due-soon',text:'Due in '+df+'d',type:'soon'};return null}
@@ -1701,8 +1701,9 @@ function renderGroupBtns(){document.querySelectorAll('#gfl .fb').forEach(b=>{con
 let msgCache=[];
 async function loadMsgList(){try{const d=await(await fetch(A+'/messages?chat_id='+curG+'&limit=30',{headers:hdr()})).json();
 msgCache=d.messages||[];
-$('ml').innerHTML=msgCache.length?msgCache.map((m,i)=>`<div style="padding:8px 0;border-bottom:1px solid var(--bd);display:flex;gap:10px"><div style="width:28px;height:28px;border-radius:7px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.sender||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">${m.sender||'?'} <span style="font-weight:400;color:var(--mt)">${m.created_at?new Date(m.created_at).toLocaleTimeString():''}</span></div><div style="font-size:12px;margin-top:2px;word-break:break-word">${esc(m.text||'')}</div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap"><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'event')">📅 Create Event</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'task')">📋 Create Task</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'notes')">📝 Prepare Notes</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'reply')">✍️ Draft Reply</button></div></div>${m.has_task_keyword?'<span class="badge" style="background:var(--os);color:var(--or);flex-shrink:0">ACTION</span>':''}</div>`).join(''):'<div class="empty">'+I18N[curLang].noData+'</div>'}catch{}}
+$('ml').innerHTML=msgCache.length?msgCache.map((m,i)=>`<div style="padding:8px 0;border-bottom:1px solid var(--bd);display:flex;gap:10px"><div style="width:28px;height:28px;border-radius:7px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.sender||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">${m.sender||'?'} <span style="font-weight:400;color:var(--mt)">${m.created_at?new Date(m.created_at).toLocaleTimeString():''}</span></div><div style="font-size:12px;margin-top:2px;word-break:break-word">${esc(m.text||'')}</div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap"><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'event')">📅 Create Event</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'task')">📋 Create Task</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'notes')">📝 Prepare Notes</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'reply')">✍️ Draft Reply</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'reminder')">⏰ Set Reminder</button></div></div>${m.has_task_keyword?'<span class="badge" style="background:var(--os);color:var(--or);flex-shrink:0">ACTION</span>':''}</div>`).join(''):'<div class="empty">'+I18N[curLang].noData+'</div>'}catch{}}
 function msgAction(idx,type){const m=msgCache[idx];if(!m)return;const txt=(m.text||'').substring(0,300);
+  if(type==='reminder'){smartCreateReminder(txt,m.sender);return;}
   if(type==='event'){
     // Smart event creation: AI extracts details → pre-fill modal → user reviews
     smartCreateEvent(txt,m.sender);return;
@@ -1774,6 +1775,21 @@ function highlightMissingEventFields(){
       el.removeEventListener('input',handler);
     },{once:true});
   });
+}
+async function smartCreateReminder(text,sender){
+  const prompt='Extract a reminder from this message. Respond ONLY in valid JSON: {"message":"short reminder text","minutes":suggested_minutes_from_now}. Message from '+sender+': "'+text+'". Respond with JSON only, no markdown.';
+  try{
+    const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:prompt})});
+    const d=await r.json();let extracted={};
+    try{let raw=(d.response||'').trim();raw=raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();extracted=JSON.parse(raw)}catch{}
+    openModal('remind');
+    $('mr-msg').value=extracted.message||('From '+sender+': '+text);
+    $('mr-min').value=extracted.minutes||30;
+  }catch{
+    openModal('remind');
+    $('mr-msg').value='From '+sender+': '+text;
+    $('mr-min').value=30;
+  }
 }
 async function loadRemind(){try{const d=await(await fetch(A+'/reminders',{headers:hdr()})).json();$('rl').innerHTML=(d.reminders||[]).map(rm=>`<div class="tr"><span style="font-size:16px">⏰</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${rm.message}</div><div style="font-size:10px;color:var(--mt)">${rm.remind_at?new Date(rm.remind_at).toLocaleString():''}</div></div><button class="btn d" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();delRemind(${rm.id})">✕</button></div>`).join('')||'<div class="empty">'+I18N[curLang].noReminders+'</div>'}catch{$('rl').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
 async function saveReminder(){const msg=$('mr-msg').value,min=$('mr-min').value;if(!msg){alert('Message required');return}await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:msg,minutes:parseInt(min)||30})});closeModal('remind');loadRemind()}
