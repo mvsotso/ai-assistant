@@ -15,24 +15,19 @@ jobs:
           host: ${{ secrets.GCP_HOST }}
           username: ${{ secrets.GCP_USER }}
           key: ${{ secrets.GCP_SSH_KEY }}
+          command_timeout: 15m
           script: |
             cd ~/ai-assistant
             echo "=== Pulling latest code ==="
             git stash
             git pull origin main
-            
-            echo "=== Fixing nginx domain ==="
-            sed -i 's/YOUR_DOMAIN.com/sotso-assistant.duckdns.org/g' nginx/nginx.conf
-            sed -i 's/YOUR_DOMAIN/sotso-assistant.duckdns.org/g' nginx/nginx.conf
-            
+
             echo "=== Building and deploying ==="
+            docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d --build
-            
-            echo "=== Restarting nginx ==="
-            docker compose -f docker-compose.prod.yml restart nginx
-            
-            echo "=== Health check ==="
-            sleep 10
-            curl -sf https://sotso-assistant.duckdns.org/api/v1/health && echo " ✓ Health check passed" || echo " ✗ Health check failed"
-            
+
+            echo "=== Health check (waiting 30s for startup) ==="
+            sleep 30
+            curl -sf http://localhost:8000/api/v1/health && echo " ✓ Health check passed" || echo " ✗ Health check failed"
+
             echo "=== Deploy complete ==="
