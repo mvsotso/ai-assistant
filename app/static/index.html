@@ -404,6 +404,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn gm" onclick="openRoleMgr()" data-i18n="roles">🏷️ Roles</button>
         <button class="btn" onclick="openInviteModal()" data-i18n="inviteBtn">📨 Invite</button>
+        <button class="btn" onclick="openBulkImportModal()" data-i18n="bulkImport">📥 Import</button>
         <button class="btn p" onclick="openMemberModal()" data-i18n="addMember">+ Add Member</button>
       </div>
     </div>
@@ -711,6 +712,29 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <button class="btn" onclick="closeInviteModal()" data-i18n="cancel">Cancel</button>
 <button class="btn p" onclick="sendInvite()" data-i18n="invite">Invite</button>
 </div></div></div>
+
+<!-- Bulk Import Modal -->
+<div class="modal-overlay" id="modal-bulk-import" onclick="if(event.target===this)closeBulkImport()"><div class="modal" style="max-width:540px">
+<h3 data-i18n="bulkImportTitle">📥 Bulk Import Members</h3>
+<div style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px">
+  <div style="font-size:12px;font-weight:600;margin-bottom:6px" data-i18n="step1Template">Step 1: Download Template</div>
+  <div style="font-size:11px;color:var(--mt);margin-bottom:10px" data-i18n="templateDesc">Download the Excel template, fill in your team members, then upload it below.</div>
+  <button class="btn" onclick="downloadBulkTemplate()" data-i18n="downloadTemplate">📄 Download Template (.xlsx)</button>
+</div>
+<div style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px">
+  <div style="font-size:12px;font-weight:600;margin-bottom:6px" data-i18n="step2Upload">Step 2: Upload Filled File</div>
+  <input type="file" id="bulk-file" style="display:none" accept=".xlsx,.xls,.csv" onchange="onBulkFileSelect()">
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn" onclick="$('bulk-file').click()" data-i18n="chooseFile">📎 Choose File</button>
+    <span id="bulk-file-name" style="font-size:11px;color:var(--mt)" data-i18n="noFileSelected">No file selected</span>
+  </div>
+</div>
+<div id="bulk-import-results" style="display:none"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+  <button class="btn" onclick="closeBulkImport()" data-i18n="cancel">Cancel</button>
+  <button class="btn p" id="bulk-import-btn" onclick="uploadBulkImport()" disabled data-i18n="importMembers">Import Members</button>
+</div>
+</div></div>
 
 <!-- Role Manager Modal -->
 <div class="modal-overlay" id="modal-roles" onclick="if(event.target===this)closeRoleMgr()"><div class="modal gm-panel"><h3 data-i18n="manageRoles">🏷️ Manage Roles</h3>
@@ -1585,6 +1609,57 @@ async function sendInvite(){
   }catch(e){alert('Failed: '+e.message)}
 }
 
+// ── Bulk Import ──
+function openBulkImportModal(){$('modal-bulk-import').classList.add('v');$('bulk-file').value='';$('bulk-file-name').textContent=t('noFileSelected');$('bulk-import-btn').disabled=true;$('bulk-import-results').style.display='none';$('bulk-import-results').innerHTML=''}
+function closeBulkImport(){$('modal-bulk-import').classList.remove('v')}
+async function downloadBulkTemplate(){
+  try{
+    const r=await fetch(TA+'/members/template',{headers:hdr()});
+    if(!r.ok)throw new Error('Download failed');
+    const blob=await r.blob();const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='team_members_template.xlsx';a.click();URL.revokeObjectURL(url);
+  }catch(e){alert(t('failed')+': '+e.message)}
+}
+function onBulkFileSelect(){
+  const f=$('bulk-file').files[0];
+  if(f){$('bulk-file-name').textContent='📎 '+f.name;$('bulk-import-btn').disabled=false}
+  else{$('bulk-file-name').textContent=t('noFileSelected');$('bulk-import-btn').disabled=true}
+}
+async function uploadBulkImport(){
+  const f=$('bulk-file').files[0];if(!f)return;
+  $('bulk-import-btn').disabled=true;$('bulk-import-btn').textContent=t('importing')+'...';
+  $('bulk-import-results').style.display='none';
+  try{
+    const fd=new FormData();fd.append('file',f);
+    const h=hdr();delete h['Content-Type'];
+    const r=await fetch(TA+'/members/bulk-import',{method:'POST',headers:h,body:fd});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.detail||'Import failed');
+    renderBulkResults(d);
+    if(d.imported>0)await loadTeamFull();
+  }catch(e){
+    $('bulk-import-results').style.display='block';
+    $('bulk-import-results').innerHTML='<div style="color:var(--rd);font-size:12px;padding:10px;background:var(--rs);border-radius:8px">❌ '+esc(e.message)+'</div>';
+  }
+  $('bulk-import-btn').disabled=false;$('bulk-import-btn').textContent=t('importMembers');
+}
+function renderBulkResults(d){
+  const res=$('bulk-import-results');res.style.display='block';
+  let h='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+  h+='<span style="background:rgba(107,112,148,.15);color:var(--tx);padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600">'+t('totalRows')+': '+d.total_rows+'</span>';
+  h+='<span style="background:var(--gs);color:var(--gn);padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600">✅ '+t('importedCount')+': '+d.imported+'</span>';
+  if(d.skipped>0)h+='<span style="background:var(--ys);color:var(--yw);padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600">⏭️ '+t('skippedCount')+': '+d.skipped+'</span>';
+  if(d.failed>0)h+='<span style="background:var(--rs);color:var(--rd);padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600">❌ '+t('failedCount')+': '+d.failed+'</span>';
+  h+='</div>';
+  if(d.errors&&d.errors.length>0){
+    h+='<div style="background:var(--rs);border-radius:8px;padding:10px;max-height:160px;overflow-y:auto">';
+    d.errors.forEach(e=>{h+='<div style="font-size:11px;color:var(--rd);margin-bottom:4px">'+t('row')+' '+e.row+': '+esc(e.message)+'</div>'});
+    h+='</div>';
+  }
+  if(d.imported>0&&d.failed===0){h+='<div style="background:var(--gs);color:var(--gn);border-radius:8px;padding:10px;font-size:12px;margin-top:8px">✅ '+t('allImported')+'</div>'}
+  res.innerHTML=h;
+}
+
 // ── Role Manager ──
 function openRoleMgr(){$('modal-roles').classList.add('v');renderRoleList()}
 function closeRoleMgr(){$('modal-roles').classList.remove('v')}
@@ -1939,6 +2014,7 @@ const I18N={
     manageRoles:'🏷️ Manage Roles',roleName:'Role name',addMemberTitle:'Add Member',editMember:'Edit Member',firstName:'First Name *',lastName:'Last Name',telegramUsername:'Telegram Username',telegramId:'Telegram ID',phone:'Phone',email:'Email',department:'Department',jobTitle:'Job Title',role:'Role',admin:'Admin',notes:'Notes',noRole:'— No Role —',defaultRole:'— Default —',yes:'Yes',no:'No',
     // Invite
     inviteByTelegram:'📨 Invite by Telegram',assignRole:'Assign Role',
+    bulkImport:'📥 Import',bulkImportTitle:'📥 Bulk Import Members',step1Template:'Step 1: Download Template',templateDesc:'Download the Excel template, fill in your team members, then upload it below.',downloadTemplate:'📄 Download Template (.xlsx)',step2Upload:'Step 2: Upload Filled File',chooseFile:'📎 Choose File',noFileSelected:'No file selected',importMembers:'Import Members',importing:'Importing',totalRows:'Total Rows',importedCount:'Imported',skippedCount:'Skipped',failedCount:'Failed',row:'Row',allImported:'All members imported successfully!',
     // Task detail
     actions:'Actions',noActionsYet:'No actions yet. Add one below to start tracking progress.',addAction:'Add an action...',edit:'Edit',
     // AI Task Actions
@@ -1997,6 +2073,7 @@ const I18N={
     addSubGroup:'បន្ថែមក្រុមរង',subGroupName:'ឈ្មោះក្រុមរង...',
     manageRoles:'🏷️ គ្រប់គ្រងតួនាទី',roleName:'ឈ្មោះតួនាទី',addMemberTitle:'បន្ថែមសមាជិក',editMember:'កែសមាជិក',firstName:'នាមខ្លួន *',lastName:'នាមត្រកូល',telegramUsername:'Telegram ឈ្មោះ',telegramId:'Telegram ID',phone:'ទូរស័ព្ទ',email:'អ៊ីមែល',department:'ដេប៉ាតឺម៉ង់',jobTitle:'មុខតំណែង',role:'តួនាទី',admin:'អ្នកគ្រប់គ្រង',notes:'កំណត់ចំណាំ',noRole:'— គ្មានតួនាទី —',defaultRole:'— លំនាំដើម —',yes:'បាទ/ចាស',no:'ទេ',
     inviteByTelegram:'📨 អញ្ជើញតាម Telegram',assignRole:'កំណត់តួនាទី',
+    bulkImport:'📥 នាំចូល',bulkImportTitle:'📥 នាំចូលសមាជិកជាច្រើន',step1Template:'ជំហាន ១: ទាញយកគំរូ',templateDesc:'ទាញយកគំរូ Excel បំពេញសមាជិកក្រុមរបស់អ្នក បន្ទាប់មកផ្ទុកវាខាងក្រោម។',downloadTemplate:'📄 ទាញយកគំរូ (.xlsx)',step2Upload:'ជំហាន ២: ផ្ទុកឯកសារ',chooseFile:'📎 ជ្រើសរើសឯកសារ',noFileSelected:'មិនទាន់ជ្រើសរើសឯកសារ',importMembers:'នាំចូលសមាជិក',importing:'កំពុងនាំចូល',totalRows:'ជួរដេកសរុប',importedCount:'បាននាំចូល',skippedCount:'បានរំលង',failedCount:'បរាជ័យ',row:'ជួរដេក',allImported:'សមាជិកទាំងអស់ត្រូវបាននាំចូលដោយជោគជ័យ!',
     actions:'សកម្មភាព',noActionsYet:'មិនទាន់មានសកម្មភាព។ បន្ថែមខាងក្រោមដើម្បីតាមដានវឌ្ឍនភាព។',addAction:'បន្ថែមសកម្មភាព...',edit:'កែ',
     aiActions:'AI សកម្មភាព',aiFollowUp:'តាមដាន',aiCheckProgress:'ពិនិត្យវឌ្ឍនភាព',aiSummary:'សង្ខេប',aiDelegate:'ប៉ុន្តែ',aiCopyMsg:'ចំលង',aiSendChat:'ផ្ញើទៅ Chat',
     aiKeyNotes:'ចំណុចសំខាន់',aiAgenda:'វារៈរបៀបវារៈ',aiPrep:'សង្ខេបដំណើរ',aiMeetingFollowUp:'តាមដាន',aiPasteToDesc:'បន្ថែមទៅកំណត់ចំណាំ',aiAutoKeynotes:'កំពុងវិភាគឯកសារភ្ជាប់ និងរៀបចំណុចសំខាន់...',
