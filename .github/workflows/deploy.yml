@@ -42,8 +42,16 @@ jobs:
             docker compose -f docker-compose.prod.yml down
             docker compose -f docker-compose.prod.yml up -d --build
 
-            echo "=== Health check (waiting 30s for startup) ==="
+            echo "=== Waiting 30s for startup ==="
             sleep 30
-            curl -sf http://localhost:8000/api/v1/health && echo " ✓ Health check passed" || echo " ✗ Health check failed"
+
+            echo "=== Container status ==="
+            docker ps -a --filter "name=ai-assistant" --format "table {{.Names}}	{{.Status}}" || true
+
+            echo "=== App container logs (last 100 lines) ==="
+            docker logs ai-assistant --tail 100 2>&1 || true
+
+            echo "=== Health check ==="
+            curl -sf http://localhost:8000/api/v1/health && echo " Health check passed" || echo " Health check failed"
 
             echo "=== Deploy complete ==="
