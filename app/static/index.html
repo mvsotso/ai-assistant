@@ -527,11 +527,11 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="fg"><label data-i18n="status">Status</label><select class="inp" id="mt-status"><option value="todo" data-i18n="todo">To Do</option><option value="in_progress" data-i18n="inProgress">In Progress</option><option value="review" data-i18n="review">Review</option><option value="done" data-i18n="done">Done</option></select></div>
 <div class="fg"><label data-i18n="assignee">Assignee</label><input class="inp" id="mt-assign" placeholder="Name..." data-i18n-ph="phName" list="team-dl"></div>
 <div class="fg"><label data-i18n="dueDate">Due Date</label><input class="inp" id="mt-due" type="date"></div>
-<div class="fg"><label data-i18n="category">Category</label><input class="inp" id="mt-cat" placeholder="e.g. GDT" data-i18n-ph="phCategory" list="cats"></div>
-<div class="fg"><label data-i18n="subcategory">Subcategory</label><input class="inp" id="mt-sub" placeholder="e.g. ETL" data-i18n-ph="phSubcategory" list="subs"></div>
+<div class="fg"><label data-i18n="category">Category</label><select class="inp" id="mt-cat" onchange="onMtCatChange()"><option value="">— Select —</option></select></div>
+<div class="fg"><label data-i18n="subcategory">Subcategory</label><select class="inp" id="mt-sub"><option value="">— Select —</option></select></div>
 <div class="fg"><label data-i18n="group">Group</label><select class="inp" id="mt-group" onchange="onMtGroupChange()"><option value="" data-i18n="noneOption">— None —</option></select></div>
 <div class="fg"><label data-i18n="subGroup">Sub-Group</label><select class="inp" id="mt-subgroup"><option value="" data-i18n="noneOption">— None —</option></select></div>
-</div><datalist id="cats"></datalist><datalist id="subs"></datalist><datalist id="team-dl"></datalist><input type="hidden" id="mt-id" value="">
+</div><datalist id="team-dl"></datalist><input type="hidden" id="mt-id" value="">
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeModal('task')" data-i18n="cancel">Cancel</button><button class="btn d" id="mt-del" onclick="deleteTask()" style="display:none" data-i18n="delete">Delete</button><button class="btn p" onclick="saveTask()" data-i18n="save">Save</button></div></div></div>
 <!-- Reminder Modal -->
 <div class="modal-overlay" id="modal-remind"><div class="modal"><h3 data-i18n="newReminder">New Reminder</h3>
@@ -758,7 +758,7 @@ function clear(){localStorage.removeItem('ai_s');tok=null;usr=null}
 async function checkSession(){const s=stored();if(!s?.token)return false;if(s.expires_at<Date.now()/1000){clear();return false}try{const r=await fetch(A+'/auth/verify',{headers:{Authorization:'Bearer '+s.token}});if(r.ok){tok=s.token;usr={email:s.email,name:s.name,picture:s.picture};return true}}catch{}clear();return false}
 async function gSign(r){const e=$('login-err');e.style.display='none';try{const res=await fetch(A+'/auth/google/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:r.credential})});const d=await res.json();if(res.ok){tok=d.token;usr={email:d.email,name:d.name,picture:d.picture};store(d);showApp()}else{e.textContent=d.detail||'Denied';e.style.display='block'}}catch{e.textContent='Server error';e.style.display='block'}}
 function logout(){clear();$('app').classList.remove('v');$('login').style.display='flex'}
-function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCats();initMiniCal();loadNotifCount()}
+function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCats();loadTeamFull();initMiniCal();loadNotifCount()}
 let _gClientId='';
 async function googleRedirectLogin(){if(!_gClientId){const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d.client_id}const redir=location.origin+'/api/v1/auth/google/callback';const u='https://accounts.google.com/o/oauth2/v2/auth?client_id='+encodeURIComponent(_gClientId)+'&redirect_uri='+encodeURIComponent(redir)+'&response_type=code&scope=openid%20email%20profile&prompt=select_account';location.href=u}
 window.onload=async()=>{if(await checkSession()){showApp();return}
@@ -768,9 +768,40 @@ try{const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
 function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt()}
-function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('mt-cat').value=data?.category||'';$('mt-sub').value=data?.subcategory||'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
+function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
-let cats=[];async function loadCats(){try{const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();cats=d.categories||[];$('cats').innerHTML=cats.map(c=>`<option value="${c}">`).join('')}catch{}}
+const PREDEF_CATS={
+'Administration':['HR','Finance','Procurement','Legal','General Affairs'],
+'Data Management':['ETL','Data Quality','Database','Data Governance','Reporting'],
+'IT & Systems':['Infrastructure','Development','Security','Support','Networking'],
+'Tax Operations':['Audit','Compliance','Collection','Registration','Enforcement'],
+'Project Management':['Planning','Execution','Monitoring','Evaluation','Closure'],
+'Communication':['Internal','External','Media','Events','Training'],
+'Research':['Policy','Analysis','Statistics','Survey','Documentation']
+};
+let catSubMap={};
+async function loadCats(){
+  try{
+    const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();
+    const apiCats=d.categories||[];const apiSubs=d.subcategories||{};
+    catSubMap={...PREDEF_CATS};
+    apiCats.forEach(c=>{if(!catSubMap[c])catSubMap[c]=[]});
+    Object.entries(apiSubs).forEach(([c,subs])=>{
+      if(!catSubMap[c])catSubMap[c]=[];
+      subs.forEach(s=>{if(!catSubMap[c].includes(s))catSubMap[c].push(s)});
+    });
+  }catch{catSubMap={...PREDEF_CATS}}
+}
+function populateCatSelect(preselCat,preselSub){
+  const sel=$('mt-cat');
+  sel.innerHTML='<option value="">— Select —</option>'+Object.keys(catSubMap).sort().map(c=>`<option value="${c}"${c===preselCat?' selected':''}>${c}</option>`).join('');
+  onMtCatChange(preselSub);
+}
+function onMtCatChange(preselSub){
+  const cat=$('mt-cat').value;const sel=$('mt-sub');
+  sel.innerHTML='<option value="">— Select —</option>';
+  if(cat&&catSubMap[cat]){sel.innerHTML+=catSubMap[cat].map(s=>`<option value="${s}"${s===preselSub?' selected':''}>${s}</option>`).join('')}
+}
 function getDueStatus(d){if(!d)return null;const n=new Date();n.setHours(0,0,0,0);const u=new Date(d);u.setHours(0,0,0,0);const df=Math.floor((u-n)/864e5);if(df<0)return{cls:'due-overdue',text:'Overdue '+Math.abs(df)+'d',type:'overdue'};if(df===0)return{cls:'due-today',text:'Due Today',type:'today'};if(df<=3)return{cls:'due-soon',text:'Due in '+df+'d',type:'soon'};return null}
 function dueBadge(t){if(t.status==='done')return'';const s=getDueStatus(t.due_date);return s?`<span class="${s.cls}">${s.text}</span>`:''}
 async function loadDash(){try{const r=await fetch(A+'/dashboard',{headers:hdr()});const d=await r.json();const s=d.stats;$('stats').innerHTML=[

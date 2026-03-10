@@ -10,7 +10,7 @@ Telegram bot @sotso_assistant_bot.
 - **Database:** PostgreSQL 16
 - **Cache/Queue:** Redis 7, Celery
 - **AI:** Claude Opus 4.6 via Anthropic API
-- **Frontend:** Single-file vanilla HTML/CSS/JS at `app/static/index.html` (~1700 lines)
+- **Frontend:** Single-file vanilla HTML/CSS/JS at `app/static/index.html` (~1800 lines)
 - **Calendar:** Google Calendar + Drive API with OAuth2
 - **Bot:** Telegram Bot API via httpx (webhook mode)
 - **Deploy:** Docker Compose on GCP VM (asia-southeast1-b), CI/CD via GitHub Actions
@@ -81,8 +81,8 @@ DuckDNS (legacy): sotso-assistant.duckdns.org
 - Use `I18N[curLang].key` for JS-rendered text, `data-i18n="key"` for static HTML
 - Test by pushing to git (CI/CD deploys automatically)
 
-## Current Features (Phases 1-14)
-Telegram bot, Google Calendar/Drive, AI chat with file upload, task management with groups/subgroups, team management with roles, task actions/checklist, task dependencies (blocks/blocked-by), recurring tasks, analytics with 6 Chart.js charts + AI insights, global search (Ctrl+K), full EN/KH i18n, AI-embedded actions in tasks (follow up, progress check, summary, delegate) and events (key notes, agenda, prep brief, follow up, auto-keynotes from attachments), smart event creation from messages with field validation, fully interactive dashboard with clickable everything.
+## Current Features (Phases 1-15)
+Telegram bot, Google Calendar/Drive, AI chat with file upload, task management with groups/subgroups, team management with roles and Excel bulk import, task actions/checklist, task dependencies (blocks/blocked-by), recurring tasks, analytics with 6 Chart.js charts + AI insights, global search (Ctrl+K), full EN/KH i18n, AI-embedded actions in tasks (follow up, progress check, summary, delegate) and events (key notes, agenda, prep brief, follow up, auto-keynotes from attachments), smart event creation from messages with field validation, Set Reminder from messages with AI extraction, assignee dropdown with team member suggestions, fully interactive dashboard with clickable everything.
 
 ## Infrastructure Notes
 - **Docker MTU:** Must be 1460 to match GCP network MTU (configured in `docker-compose.prod.yml` networks section)
@@ -100,5 +100,4 @@ Telegram bot, Google Calendar/Drive, AI chat with file upload, task management w
 5. Gantt chart / dependency graph view
 6. AI attachment content analysis (fetch Drive file content)
 7. Offline support with service worker
-8. Fix CI/CD pipeline (GitHub Actions SSH deploy failing)
 9. Reserve static IP in GCP to avoid IP changes on VM restart
