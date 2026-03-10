@@ -520,10 +520,7 @@ async def mom_process(
     if not file_data.get("content"):
         raise HTTPException(status_code=422, detail="Could not extract text from file.")
 
-    prompt = MOM_EXTRACT_PROMPT + "
-
-Document content:
-" + file_data["content"][:40000]
+    prompt = MOM_EXTRACT_PROMPT + "\n\nDocument content:\n" + file_data["content"][:40000]
     result = await ai_engine._call_claude(
         "You extract structured action items from meeting minutes. Respond ONLY with valid JSON.",
         prompt,
@@ -533,9 +530,7 @@ Document content:
     try:
         clean = result.strip()
         if clean.startswith("```"):
-            clean = clean.split("
-", 1)[1] if "
-" in clean else clean[3:]
+            clean = clean.split("\n", 1)[1] if "\n" in clean else clean[3:]
             clean = clean.rsplit("```", 1)[0]
         parsed = json_mod.loads(clean)
     except (json_mod.JSONDecodeError, Exception):
