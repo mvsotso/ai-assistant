@@ -22,6 +22,11 @@ notification_router = APIRouter(
     dependencies=[Depends(require_auth)],
 )
 
+# Public router — no auth required (for service worker VAPID key access)
+notification_public_router = APIRouter(
+    prefix="/api/v1/notifications", tags=["Notifications"],
+)
+
 
 @notification_router.get("")
 async def list_notifications(
@@ -81,7 +86,7 @@ class PushUnsubscribeRequest(BaseModel):
 
 
 # ── VAPID Public Key (no auth required — needed before login for SW) ──
-@notification_router.get("/vapid-key")
+@notification_public_router.get("/vapid-key")
 async def get_vapid_key():
     """Return the VAPID public key for push subscription."""
     settings = get_settings()

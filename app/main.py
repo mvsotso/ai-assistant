@@ -385,7 +385,7 @@ app.add_middleware(
 )
 
 # Register routes
-from app.api.notification_api import notification_router  # noqa
+from app.api.notification_api import notification_router, notification_public_router  # noqa
 app.include_router(router)
 app.include_router(calendar_router)
 app.include_router(recurring_router)
@@ -396,6 +396,7 @@ app.include_router(task_action_router)
 app.include_router(dependency_router)
 app.include_router(auth_router)
 app.include_router(notification_router)
+app.include_router(notification_public_router)
 
 
 @app.get("/")
