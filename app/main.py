@@ -285,6 +285,24 @@ async def lifespan(app: FastAPI):
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_notif_user_read ON notifications(user_id, is_read)'))
             logger.info("🔧 Notifications migration checked")
 
+            # ── Reminder Enhancement migration (Phase 16) ──
+            reminder_migrations = [
+                ("reminders", "task_id", "ALTER TABLE reminders ADD COLUMN task_id INTEGER"),
+                ("reminders", "event_id", "ALTER TABLE reminders ADD COLUMN event_id VARCHAR(500)"),
+                ("reminders", "snooze_count", "ALTER TABLE reminders ADD COLUMN snooze_count INTEGER DEFAULT 0"),
+                ("reminders", "original_remind_at", "ALTER TABLE reminders ADD COLUMN original_remind_at TIMESTAMPTZ"),
+                ("reminders", "telegram_message_id", "ALTER TABLE reminders ADD COLUMN telegram_message_id BIGINT"),
+            ]
+            for table, col, sql in reminder_migrations:
+                result = await conn.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name=:tbl AND column_name=:col"
+                ).bindparams(tbl=table, col=col))
+                if not result.fetchall():
+                    await conn.execute(text(sql))
+                    logger.info(f"🔧 Added {col} column to {table} table")
+            logger.info("🔧 Reminder enhancement migration checked")
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 

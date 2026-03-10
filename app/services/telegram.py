@@ -58,5 +58,53 @@ class TelegramService:
             return response.json()
 
 
+    async def send_message_with_inline_keyboard(
+        self, chat_id: int, text: str, inline_keyboard: list,
+        parse_mode: str = "Markdown"
+    ) -> dict:
+        """Send a message with inline keyboard buttons (e.g., snooze buttons)."""
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.api_base}/sendMessage",
+                json={
+                    "chat_id": chat_id,
+                    "text": text,
+                    "parse_mode": parse_mode,
+                    "reply_markup": {"inline_keyboard": inline_keyboard},
+                },
+            )
+            return response.json()
+
+    async def edit_message_reply_markup(
+        self, chat_id: int, message_id: int, inline_keyboard: list = None
+    ) -> dict:
+        """Edit inline keyboard of an existing message (remove or update buttons)."""
+        payload = {"chat_id": chat_id, "message_id": message_id}
+        if inline_keyboard:
+            payload["reply_markup"] = {"inline_keyboard": inline_keyboard}
+        else:
+            payload["reply_markup"] = {"inline_keyboard": []}
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.api_base}/editMessageReplyMarkup",
+                json=payload,
+            )
+            return response.json()
+
+    async def answer_callback_query(
+        self, callback_query_id: str, text: str = None
+    ) -> dict:
+        """Acknowledge an inline keyboard button press."""
+        payload = {"callback_query_id": callback_query_id}
+        if text:
+            payload["text"] = text
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.api_base}/answerCallbackQuery",
+                json=payload,
+            )
+            return response.json()
+
+
 # Singleton
 telegram_service = TelegramService()

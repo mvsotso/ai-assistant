@@ -65,9 +65,10 @@ def run_async(coro):
 
 @celery_app.task(name="app.worker.check_reminders")
 def check_reminders():
-    """Check for pending reminders and send them via Telegram."""
+    """Check for pending reminders and send them via Telegram with snooze buttons."""
     from app.core.database import async_session
     from app.models.reminder import Reminder
+    from app.models.task import Task
     from app.services.telegram import telegram_service
     from sqlalchemy import select
 
@@ -84,12 +85,37 @@ def check_reminders():
 
             for r in reminders:
                 try:
-                    await telegram_service.send_message(
-                        r.chat_id,
-                        f"⏰ *Reminder!*\n\n{r.message}"
+                    # Build message text
+                    msg = f"\u23f0 *Reminder!*\n\n{r.message}"
+
+                    # Add linked task info if available
+                    if r.task_id:
+                        t_result = await db.execute(select(Task).where(Task.id == r.task_id))
+                        linked_task = t_result.scalar_one_or_none()
+                        if linked_task:
+                            msg += f"\n\n\U0001f4cb *Task #{linked_task.id}:* {linked_task.title}"
+
+                    # Add snooze count if snoozed before
+                    if r.snooze_count and r.snooze_count > 0:
+                        msg += f"\n\n\U0001f504 _Snoozed {r.snooze_count} time(s)_"
+
+                    # Inline keyboard with snooze buttons
+                    inline_keyboard = [[
+                        {"text": "\u23f0 15m", "callback_data": f"snooze_15_{r.id}"},
+                        {"text": "\u23f0 1h", "callback_data": f"snooze_60_{r.id}"},
+                        {"text": "\U0001f305 Tomorrow", "callback_data": f"snooze_1440_{r.id}"},
+                    ]]
+
+                    result_msg = await telegram_service.send_message_with_inline_keyboard(
+                        r.chat_id, msg, inline_keyboard
                     )
+
                     r.is_sent = True
-                    logger.info(f"Sent reminder {r.id} to chat {r.chat_id}")
+                    # Store telegram message_id for later keyboard editing
+                    if result_msg.get("ok") and result_msg.get("result"):
+                        r.telegram_message_id = result_msg["result"].get("message_id")
+
+                    logger.info(f"Sent reminder {r.id} to chat {r.chat_id} with snooze buttons")
                 except Exception as e:
                     logger.error(f"Failed to send reminder {r.id}: {e}")
 

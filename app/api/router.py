@@ -363,44 +363,68 @@ async def summarize_messages(chat_id: int, db: AsyncSession = Depends(get_db), _
 
 # ─── Reminders ───
 class ReminderCreate(BaseModel):
-    minutes: int
     message: str
+    minutes: Optional[int] = None      # relative: minutes from now (backward compat)
+    remind_at: Optional[str] = None    # absolute: ISO datetime string
+    task_id: Optional[int] = None      # optional link to a task
+    event_id: Optional[str] = None     # optional link to a calendar event
+
+
+class SnoozeRequest(BaseModel):
+    minutes: int  # snooze duration in minutes (15, 60, 1440)
 
 
 @router.get("/reminders")
 async def get_reminders(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
-    """Get all pending reminders."""
+    """Get all pending reminders with linked task info."""
     result = await db.execute(
         select(Reminder).where(Reminder.is_sent == False).order_by(Reminder.remind_at.asc())
     )
     reminders = list(result.scalars().all())
-    return {
-        "reminders": [
-            {
-                "id": r.id, "message": r.message, "is_sent": r.is_sent,
-                "remind_at": r.remind_at.isoformat() if r.remind_at else None,
-                "created_at": r.created_at.isoformat() if r.created_at else None,
-            }
-            for r in reminders
-        ]
-    }
+    items = []
+    for r in reminders:
+        item = {
+            "id": r.id, "message": r.message, "is_sent": r.is_sent,
+            "remind_at": r.remind_at.isoformat() if r.remind_at else None,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "task_id": r.task_id, "event_id": r.event_id,
+            "snooze_count": r.snooze_count or 0,
+        }
+        # Include linked task title if available
+        if r.task_id:
+            t_result = await db.execute(select(Task).where(Task.id == r.task_id))
+            linked_task = t_result.scalar_one_or_none()
+            item["task_title"] = linked_task.title if linked_task else None
+        items.append(item)
+    return {"reminders": items}
 
 
 @router.post("/reminders")
 async def create_reminder(body: ReminderCreate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
-    """Create a reminder from the web dashboard."""
+    """Create a reminder from the web dashboard. Accepts absolute datetime or relative minutes."""
     from app.core.config import get_settings
     settings = get_settings()
     admin_id = int(settings.admin_telegram_id) if settings.admin_telegram_id else 0
-    remind_at = datetime.now(timezone.utc) + timedelta(minutes=body.minutes)
+    # Determine remind_at: absolute takes priority over relative
+    if body.remind_at:
+        try:
+            remind_at = datetime.fromisoformat(body.remind_at.replace('Z', '+00:00'))
+            if remind_at.tzinfo is None:
+                remind_at = remind_at.replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid remind_at format. Use ISO datetime.")
+    else:
+        minutes = body.minutes if body.minutes and body.minutes > 0 else 30
+        remind_at = datetime.now(timezone.utc) + timedelta(minutes=minutes)
     reminder = Reminder(
         user_id=admin_id, chat_id=admin_id,
         message=body.message, remind_at=remind_at,
+        task_id=body.task_id, event_id=body.event_id,
     )
     db.add(reminder)
     await db.flush()
     await db.refresh(reminder)
-    return {"id": reminder.id, "message": reminder.message, "remind_at": remind_at.isoformat()}
+    return {"id": reminder.id, "message": reminder.message, "remind_at": remind_at.isoformat(), "task_id": reminder.task_id}
 
 
 @router.delete("/reminders/{reminder_id}")
@@ -411,6 +435,23 @@ async def delete_reminder(reminder_id: int, db: AsyncSession = Depends(get_db), 
         raise HTTPException(status_code=404, detail="Reminder not found")
     await db.delete(reminder)
     return {"deleted": True}
+
+
+@router.patch("/reminders/{reminder_id}/snooze")
+async def snooze_reminder(reminder_id: int, body: SnoozeRequest, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """Snooze a reminder by X minutes. Resets is_sent so it fires again."""
+    result = await db.execute(select(Reminder).where(Reminder.id == reminder_id))
+    reminder = result.scalar_one_or_none()
+    if not reminder:
+        raise HTTPException(status_code=404, detail="Reminder not found")
+    # Store original time on first snooze
+    if not reminder.original_remind_at:
+        reminder.original_remind_at = reminder.remind_at
+    reminder.remind_at = datetime.now(timezone.utc) + timedelta(minutes=body.minutes)
+    reminder.is_sent = False
+    reminder.snooze_count = (reminder.snooze_count or 0) + 1
+    await db.flush()
+    return {"id": reminder.id, "remind_at": reminder.remind_at.isoformat(), "snooze_count": reminder.snooze_count}
 
 
 # ─── AI Chat ───

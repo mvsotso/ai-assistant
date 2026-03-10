@@ -28,6 +28,12 @@ class BotHandlers:
     """Processes Telegram updates and routes to appropriate handlers."""
 
     async def handle_update(self, update: dict, db: AsyncSession):
+        # Handle callback queries (inline keyboard button presses)
+        callback_query = update.get("callback_query")
+        if callback_query:
+            await self._handle_callback_query(callback_query, db)
+            return
+
         message = update.get("message")
         if not message:
             return
@@ -542,6 +548,22 @@ Just send me any message in private chat!""")
         await telegram_service.send_message(chat_id, f"\U0001F4CB *Message Summary*\n\n{summary}")
 
     async def _cmd_remind(self, db, chat_id, user_id, user_name, args, message):
+        if not args:
+            await telegram_service.send_message(chat_id, "Usage:\n`/remind <minutes> <message>`\n`/remind 2026-03-10T14:00 <message>`\n\nExample: `/remind 30 Check deployment status`")
+            return
+        # Try absolute datetime first: /remind 2026-03-10T14:00 message
+        dt_match = re.match(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})\s+(.+)", args)
+        if dt_match:
+            try:
+                remind_at = datetime.fromisoformat(dt_match.group(1)).replace(tzinfo=timezone.utc)
+                reminder_text = dt_match.group(2)
+                reminder = Reminder(user_id=user_id, chat_id=chat_id, message=reminder_text, remind_at=remind_at)
+                db.add(reminder)
+                await telegram_service.send_message(chat_id, f"\u23f0 Reminder set for *{remind_at.strftime('%b %d, %Y %H:%M')} UTC*:\n_{reminder_text}_")
+                return
+            except ValueError:
+                pass
+        # Fallback: relative minutes
         match = re.match(r"(\d+)\s+(.+)", args)
         if not match:
             await telegram_service.send_message(chat_id, "Usage: `/remind <minutes> <message>`\nExample: `/remind 30 Check deployment status`")
@@ -551,7 +573,8 @@ Just send me any message in private chat!""")
         remind_at = datetime.now(timezone.utc) + timedelta(minutes=minutes)
         reminder = Reminder(user_id=user_id, chat_id=chat_id, message=reminder_text, remind_at=remind_at)
         db.add(reminder)
-        await telegram_service.send_message(chat_id, f"\u23F0 Reminder set for *{minutes} minutes* from now:\n_{reminder_text}_")
+        await telegram_service.send_message(chat_id, f"\u23f0 Reminder set for *{minutes} minutes* from now:\n_{reminder_text}_")
+
 
     async def _cmd_send(self, db, chat_id, user_id, user_name, args, message):
         if not is_admin(user_id):
@@ -738,6 +761,73 @@ Just send me any message in private chat!""")
         handler = cal_cmds.get(command)
         if handler:
             await handler(db, chat_id, user_id, user_name, args, message)
+
+
+    async def _handle_callback_query(self, callback_query: dict, db: AsyncSession):
+        """Handle inline keyboard button presses (snooze reminders)."""
+        query_id = callback_query.get("id")
+        data = callback_query.get("data", "")
+        chat_id = callback_query.get("message", {}).get("chat", {}).get("id")
+        message_id = callback_query.get("message", {}).get("message_id")
+        user_id = callback_query.get("from", {}).get("id")
+
+        # Only admin can use snooze buttons
+        if not is_admin(user_id):
+            await telegram_service.answer_callback_query(query_id, "Not authorized")
+            return
+
+        # Parse snooze callback: snooze_{minutes}_{reminder_id}
+        import re as _re
+        match = _re.match(r"snooze_(\d+)_(\d+)", data)
+        if not match:
+            await telegram_service.answer_callback_query(query_id, "Unknown action")
+            return
+
+        minutes = int(match.group(1))
+        reminder_id = int(match.group(2))
+
+        try:
+            result = await db.execute(select(Reminder).where(Reminder.id == reminder_id))
+            reminder = result.scalar_one_or_none()
+            if not reminder:
+                await telegram_service.answer_callback_query(query_id, "Reminder not found")
+                return
+
+            # Store original time on first snooze
+            if not reminder.original_remind_at:
+                reminder.original_remind_at = reminder.remind_at
+
+            # Snooze: reset for re-delivery
+            new_time = datetime.now(timezone.utc) + timedelta(minutes=minutes)
+            reminder.remind_at = new_time
+            reminder.is_sent = False
+            reminder.snooze_count = (reminder.snooze_count or 0) + 1
+            await db.commit()
+
+            # Determine label
+            if minutes >= 1440:
+                label = "tomorrow"
+            elif minutes >= 60:
+                label = f"{minutes // 60}h"
+            else:
+                label = f"{minutes}m"
+
+            # Acknowledge and update the message
+            await telegram_service.answer_callback_query(
+                query_id, f"\u23f0 Snoozed for {label}! Will remind at {new_time.strftime('%H:%M UTC')}"
+            )
+
+            # Remove inline keyboard from the original message
+            if chat_id and message_id:
+                try:
+                    await telegram_service.edit_message_reply_markup(chat_id, message_id)
+                except Exception:
+                    pass  # Message may be too old to edit
+
+            logger.info(f"Snoozed reminder {reminder_id} for {minutes}m (count: {reminder.snooze_count})")
+        except Exception as e:
+            logger.error(f"Snooze callback error: {e}")
+            await telegram_service.answer_callback_query(query_id, "Error processing snooze")
 
 
 bot_handlers = BotHandlers()
