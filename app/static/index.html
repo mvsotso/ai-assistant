@@ -540,7 +540,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 <div class="fg"><label data-i18n="priority">Priority</label><select class="inp" id="mt-prio"><option value="low" data-i18n="low">Low</option><option value="medium" selected data-i18n="medium">Medium</option><option value="high" data-i18n="high">High</option><option value="urgent" data-i18n="urgent">Urgent</option></select></div>
 <div class="fg"><label data-i18n="status">Status</label><select class="inp" id="mt-status"><option value="todo" data-i18n="todo">To Do</option><option value="in_progress" data-i18n="inProgress">In Progress</option><option value="review" data-i18n="review">Review</option><option value="done" data-i18n="done">Done</option></select></div>
 <div class="fg"><label data-i18n="assignee">Assignee</label><input class="inp" id="mt-assign" placeholder="Name..." data-i18n-ph="phName" list="team-dl"></div>
-<div class="fg"><label data-i18n="dueDate">Due Date</label><input class="inp" id="mt-due" type="date"></div>
+<div class="fg"><label data-i18n="dueDate">Due Date</label><input class="inp" id="mt-due" type="datetime-local"></div>
 <div class="fg"><label data-i18n="category">Category</label><select class="inp" id="mt-cat" onchange="onMtCatChange()"><option value="">— Select —</option></select></div>
 <div class="fg"><label data-i18n="subcategory">Subcategory</label><select class="inp" id="mt-sub"><option value="">— Select —</option></select></div>
 <div class="fg"><label data-i18n="group">Group</label><select class="inp" id="mt-group" onchange="onMtGroupChange()"><option value="" data-i18n="noneOption">— None —</option></select></div>
@@ -815,7 +815,7 @@ try{const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
 function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt()}
-function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.split('T')[0]:'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
+function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 const PREDEF_CATS={
 'Administration':['HR','Finance','Procurement','Legal','General Affairs'],
@@ -1077,7 +1077,7 @@ async function openTD(taskId){
   meta+=`<span class="td-meta-item" style="border-color:${PC[t.priority]};color:${PC[t.priority]}">${t.priority}</span>`;
   if(t.assignee)meta+=`<span class="td-meta-item">👤 ${t.assignee}</span>`;
   if(t.category)meta+=`<span class="td-meta-item">📁 ${t.category}</span>`;
-  if(t.due_date)meta+=`<span class="td-meta-item">📅 ${new Date(t.due_date).toLocaleDateString()}</span>`;
+  if(t.due_date){const _dd=new Date(t.due_date);const _ds=_dd.toLocaleDateString()+(_dd.getHours()||_dd.getMinutes()?' '+_dd.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'');meta+=`<span class="td-meta-item">📅 ${_ds}</span>`};
   $('td-meta').innerHTML=meta;
 
   $('modal-td').classList.add('v');
@@ -1204,7 +1204,7 @@ function editAction(actionId){
       <div class="act-edit-row">
         <input type="text" id="ea-desc" placeholder="Notes..." value="${esc(a.description||'').replace(/"/g,'&quot;')}">
         <input type="text" id="ea-assign" placeholder="Assignee..." value="${esc(a.assignee_name||'').replace(/"/g,'&quot;')}">
-        <input type="date" id="ea-due" value="${a.due_date?a.due_date.split('T')[0]:''}">
+        <input type="datetime-local" id="ea-due" value="${a.due_date?a.due_date.split('T')[0]:''}">
         <div style="display:flex;gap:4px;align-items:center">
           <button class="btn p" style="padding:4px 10px;font-size:10px" onclick="saveEditAction()">Save</button>
           <button class="btn" style="padding:4px 10px;font-size:10px" onclick="loadTDActions(${tdTask.id})">Cancel</button>
@@ -2210,7 +2210,7 @@ function toggleNotifPanel(){
   const p=$('notif-panel');
   notifPanelOpen=!notifPanelOpen;
   p.style.display=notifPanelOpen?'flex':'none';
-  if(notifPanelOpen)loadNotifications();
+  if(notifPanelOpen){loadNotifications();loadNotifCount();}
 }
 async function loadNotifCount(){
   try{
@@ -2240,14 +2240,21 @@ async function loadNotifications(){
   }catch(e){console.error('loadNotifications:',e)}
 }
 async function markNotifRead(id,entityId,entityType){
+  // Immediately update UI
+  document.querySelectorAll('.notif-item.unread').forEach(el=>{
+    if(el.onclick&&el.onclick.toString().includes(id))el.classList.remove('unread');
+  });
   try{await fetch(A+'/notifications/'+id+'/read',{method:'POST',headers:hdr()})}catch{}
-  loadNotifCount();
+  await loadNotifCount();
   if(entityType==='task'&&entityId){toggleNotifPanel();nav('tasks');setTimeout(()=>openTD(entityId),300)}
-  else{loadNotifications()}
+  else{await loadNotifications()}
 }
 async function markAllNotifRead(){
   try{await fetch(A+'/notifications/read-all',{method:'POST',headers:hdr()})}catch{}
-  loadNotifCount();loadNotifications();
+  // Immediately clear badge
+  ['notif-badge','notif-badge-m'].forEach(id=>{const b=$(id);if(b){b.style.display='none';b.textContent='0'}});
+  document.querySelectorAll('.notif-item.unread').forEach(el=>el.classList.remove('unread'));
+  await loadNotifCount();await loadNotifications();
 }
 function timeAgo(iso){
   if(!iso)return'';
