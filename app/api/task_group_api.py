@@ -16,6 +16,12 @@ from typing import Optional
 
 router = APIRouter(prefix="/api/v1/task-groups", tags=["task-groups"], dependencies=[Depends(require_auth)])
 
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 
 # ── Pydantic Schemas ──
 
@@ -54,6 +60,7 @@ class ReorderRequest(BaseModel):
 
 # ── Group CRUD ──
 
+@_limiter.limit("60/minute")
 @router.get("")
 async def list_groups(db: AsyncSession = Depends(get_db)):
     """List all task groups with their subgroups and task counts"""
@@ -94,6 +101,7 @@ async def list_groups(db: AsyncSession = Depends(get_db)):
     }
 
 
+@_limiter.limit("30/minute")
 @router.post("")
 async def create_group(data: GroupCreate, db: AsyncSession = Depends(get_db)):
     """Create a new task group"""
@@ -114,6 +122,7 @@ async def create_group(data: GroupCreate, db: AsyncSession = Depends(get_db)):
     return group.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.patch("/{group_id}")
 async def update_group(group_id: int, data: GroupUpdate, db: AsyncSession = Depends(get_db)):
     """Update a task group"""
@@ -132,6 +141,7 @@ async def update_group(group_id: int, data: GroupUpdate, db: AsyncSession = Depe
     return group.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.delete("/{group_id}")
 async def delete_group(group_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a task group. Tasks in this group become ungrouped."""
@@ -150,6 +160,7 @@ async def delete_group(group_id: int, db: AsyncSession = Depends(get_db)):
     return {"ok": True, "message": f"Group '{group.name}' deleted. Tasks moved to Ungrouped."}
 
 
+@_limiter.limit("30/minute")
 @router.post("/reorder")
 async def reorder_groups(data: ReorderRequest, db: AsyncSession = Depends(get_db)):
     """Reorder groups by providing ordered list of IDs"""
@@ -163,6 +174,7 @@ async def reorder_groups(data: ReorderRequest, db: AsyncSession = Depends(get_db
 
 # ── SubGroup CRUD ──
 
+@_limiter.limit("30/minute")
 @router.post("/subgroups")
 async def create_subgroup(data: SubGroupCreate, db: AsyncSession = Depends(get_db)):
     """Create a subgroup under a group"""
@@ -188,6 +200,7 @@ async def create_subgroup(data: SubGroupCreate, db: AsyncSession = Depends(get_d
     return sg.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.patch("/subgroups/{subgroup_id}")
 async def update_subgroup(subgroup_id: int, data: SubGroupUpdate, db: AsyncSession = Depends(get_db)):
     """Update a subgroup"""
@@ -204,6 +217,7 @@ async def update_subgroup(subgroup_id: int, data: SubGroupUpdate, db: AsyncSessi
     return sg.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.delete("/subgroups/{subgroup_id}")
 async def delete_subgroup(subgroup_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a subgroup. Tasks keep their group but lose subgroup."""
@@ -222,6 +236,7 @@ async def delete_subgroup(subgroup_id: int, db: AsyncSession = Depends(get_db)):
     return {"ok": True, "message": f"Subgroup '{sg.name}' deleted."}
 
 
+@_limiter.limit("30/minute")
 @router.post("/subgroups/reorder")
 async def reorder_subgroups(data: ReorderRequest, db: AsyncSession = Depends(get_db)):
     """Reorder subgroups"""
@@ -235,6 +250,7 @@ async def reorder_subgroups(data: ReorderRequest, db: AsyncSession = Depends(get
 
 # ── Task Assignment ──
 
+@_limiter.limit("30/minute")
 @router.patch("/tasks/{task_id}/assign")
 async def assign_task_group(task_id: int, data: TaskGroupAssign, db: AsyncSession = Depends(get_db)):
     """Assign or change a task's group and subgroup"""
@@ -271,6 +287,7 @@ class BulkAssign(BaseModel):
     group_id: Optional[int] = None
     subgroup_id: Optional[int] = None
 
+@_limiter.limit("30/minute")
 @router.post("/tasks/bulk-assign")
 async def bulk_assign_tasks(data: BulkAssign, db: AsyncSession = Depends(get_db)):
     """Assign multiple tasks to a group/subgroup at once"""

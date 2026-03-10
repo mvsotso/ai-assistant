@@ -16,6 +16,12 @@ from app.api.auth import verify_session_token, require_auth
 settings = get_settings()
 recurring_router = APIRouter(prefix="/api/v1/recurring", dependencies=[Depends(require_auth)])
 
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
@@ -96,6 +102,7 @@ class RecurringTaskUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
+@_limiter.limit("60/minute")
 @recurring_router.get("")
 async def list_recurring_tasks(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
@@ -105,6 +112,7 @@ async def list_recurring_tasks(db: AsyncSession = Depends(get_db)):
     return {"recurring_tasks": [_rt_to_dict(t) for t in tasks]}
 
 
+@_limiter.limit("60/minute")
 @recurring_router.get("/{task_id}")
 async def get_recurring_task(task_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RecurringTask).where(RecurringTask.id == task_id))
@@ -114,6 +122,7 @@ async def get_recurring_task(task_id: int, db: AsyncSession = Depends(get_db)):
     return {"recurring_task": _rt_to_dict(task)}
 
 
+@_limiter.limit("30/minute")
 @recurring_router.post("")
 async def create_recurring_task(body: RecurringTaskCreate, db: AsyncSession = Depends(get_db)):
     # Set defaults based on recurrence type
@@ -150,6 +159,7 @@ async def create_recurring_task(body: RecurringTaskCreate, db: AsyncSession = De
     return {"recurring_task": _rt_to_dict(rt)}
 
 
+@_limiter.limit("30/minute")
 @recurring_router.patch("/{task_id}")
 async def update_recurring_task(task_id: int, body: RecurringTaskUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RecurringTask).where(RecurringTask.id == task_id))
@@ -173,6 +183,7 @@ async def update_recurring_task(task_id: int, body: RecurringTaskUpdate, db: Asy
     return {"recurring_task": _rt_to_dict(task)}
 
 
+@_limiter.limit("30/minute")
 @recurring_router.delete("/{task_id}")
 async def delete_recurring_task(task_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RecurringTask).where(RecurringTask.id == task_id))
@@ -184,6 +195,7 @@ async def delete_recurring_task(task_id: int, db: AsyncSession = Depends(get_db)
     return {"deleted": True, "id": task_id}
 
 
+@_limiter.limit("30/minute")
 @recurring_router.post("/{task_id}/toggle")
 async def toggle_recurring_task(task_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RecurringTask).where(RecurringTask.id == task_id))

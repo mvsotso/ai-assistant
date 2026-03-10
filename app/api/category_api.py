@@ -16,6 +16,12 @@ from typing import Optional
 
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"], dependencies=[Depends(require_auth)])
 
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 
 # ── Pydantic Schemas ──
 
@@ -47,6 +53,7 @@ class SubcategoryUpdate(BaseModel):
 
 # ── Category CRUD ──
 
+@_limiter.limit("60/minute")
 @router.get("")
 async def list_categories(db: AsyncSession = Depends(get_db)):
     """List all categories with subcategories and task counts."""
@@ -89,6 +96,7 @@ async def list_categories(db: AsyncSession = Depends(get_db)):
     }
 
 
+@_limiter.limit("30/minute")
 @router.post("")
 async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_db)):
     """Create a new category."""
@@ -112,6 +120,7 @@ async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_d
     return cat.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.patch("/{cat_id}")
 async def update_category(cat_id: int, data: CategoryUpdate, db: AsyncSession = Depends(get_db)):
     """Update a category."""
@@ -137,6 +146,7 @@ async def update_category(cat_id: int, data: CategoryUpdate, db: AsyncSession = 
     return cat.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.delete("/{cat_id}")
 async def delete_category(cat_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a category. Tasks lose their category."""
@@ -157,6 +167,7 @@ async def delete_category(cat_id: int, db: AsyncSession = Depends(get_db)):
 
 # ── Subcategory CRUD ──
 
+@_limiter.limit("30/minute")
 @router.post("/subcategories")
 async def create_subcategory(data: SubcategoryCreate, db: AsyncSession = Depends(get_db)):
     """Create a subcategory under a category."""
@@ -181,6 +192,7 @@ async def create_subcategory(data: SubcategoryCreate, db: AsyncSession = Depends
     return sc.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.patch("/subcategories/{sc_id}")
 async def update_subcategory(sc_id: int, data: SubcategoryUpdate, db: AsyncSession = Depends(get_db)):
     """Update a subcategory."""
@@ -208,6 +220,7 @@ async def update_subcategory(sc_id: int, data: SubcategoryUpdate, db: AsyncSessi
     return sc.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.delete("/subcategories/{sc_id}")
 async def delete_subcategory(sc_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a subcategory. Tasks keep category but lose subcategory."""

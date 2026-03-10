@@ -156,6 +156,14 @@ def check_reminders():
                     except Exception as push_err:
                         logger.debug(f"Push notification skipped: {push_err}")
 
+                    # Send email notification too
+                    try:
+                        from app.services.email_svc import send_reminder_email
+                        admin_email = settings.dashboard_allowed_emails.split(",")[0].strip()
+                        await send_reminder_email(db, admin_email, r.message)
+                    except Exception as email_err:
+                        logger.debug(f"Email notification skipped: {email_err}")
+
                     logger.info(f"Sent reminder {r.id} to chat {r.chat_id} with snooze buttons")
                 except Exception as e:
                     logger.error(f"Failed to send reminder {r.id}: {e}")

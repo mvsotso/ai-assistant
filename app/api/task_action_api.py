@@ -14,6 +14,12 @@ from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["task-actions"], dependencies=[Depends(require_auth)])
 
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 
 # ── Schemas ──
 
@@ -36,6 +42,7 @@ class ActionReorder(BaseModel):
 
 # ── Get actions for a task ──
 
+@_limiter.limit("60/minute")
 @router.get("/{task_id}/actions")
 async def list_actions(task_id: int, db: AsyncSession = Depends(get_db)):
     """Get all actions for a task, ordered by sort_order."""
@@ -59,6 +66,7 @@ async def list_actions(task_id: int, db: AsyncSession = Depends(get_db)):
 
 # ── Create action ──
 
+@_limiter.limit("30/minute")
 @router.post("/{task_id}/actions")
 async def create_action(task_id: int, data: ActionCreate, db: AsyncSession = Depends(get_db)):
     """Add a new action to a task."""
@@ -96,6 +104,7 @@ async def create_action(task_id: int, data: ActionCreate, db: AsyncSession = Dep
 
 # ── Update action ──
 
+@_limiter.limit("30/minute")
 @router.patch("/{task_id}/actions/{action_id}")
 async def update_action(task_id: int, action_id: int, data: ActionUpdate, db: AsyncSession = Depends(get_db)):
     """Update an action."""
@@ -134,6 +143,7 @@ async def update_action(task_id: int, action_id: int, data: ActionUpdate, db: As
 
 # ── Toggle action done/undone ──
 
+@_limiter.limit("30/minute")
 @router.post("/{task_id}/actions/{action_id}/toggle")
 async def toggle_action(task_id: int, action_id: int, db: AsyncSession = Depends(get_db)):
     """Toggle an action's done status."""
@@ -158,6 +168,7 @@ async def toggle_action(task_id: int, action_id: int, db: AsyncSession = Depends
 
 # ── Delete action ──
 
+@_limiter.limit("30/minute")
 @router.delete("/{task_id}/actions/{action_id}")
 async def delete_action(task_id: int, action_id: int, db: AsyncSession = Depends(get_db)):
     """Delete an action."""
@@ -175,6 +186,7 @@ async def delete_action(task_id: int, action_id: int, db: AsyncSession = Depends
 
 # ── Reorder actions ──
 
+@_limiter.limit("30/minute")
 @router.post("/{task_id}/actions/reorder")
 async def reorder_actions(task_id: int, data: ActionReorder, db: AsyncSession = Depends(get_db)):
     """Reorder actions by providing ordered list of IDs."""
@@ -190,6 +202,7 @@ async def reorder_actions(task_id: int, data: ActionReorder, db: AsyncSession = 
 
 # ── Get action stats for multiple tasks (used by task list) ──
 
+@_limiter.limit("60/minute")
 @router.get("/action-stats")
 async def get_all_action_stats(db: AsyncSession = Depends(get_db)):
     """Get action progress stats for all tasks that have actions."""

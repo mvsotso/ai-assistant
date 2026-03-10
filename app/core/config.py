@@ -44,6 +44,15 @@ class Settings(BaseSettings):
     vapid_private_key: str = ""
     vapid_email: str = "mailto:mvsotso@gmail.com"
 
+    # Email (SMTP)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "AI Assistant"
+    smtp_use_tls: bool = True
+
     # Celery
     celery_broker_url: str = "redis://localhost:6379/1"
     celery_result_backend: str = "redis://localhost:6379/2"

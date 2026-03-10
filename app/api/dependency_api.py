@@ -14,6 +14,12 @@ from app.api.auth import require_auth
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["Task Dependencies"], dependencies=[Depends(require_auth)])
 
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 
 class DependencyCreate(BaseModel):
     depends_on_id: int  # The task that must be done first
@@ -37,6 +43,7 @@ def _dep_task_dict(t: Task) -> dict:
     }
 
 
+@_limiter.limit("60/minute")
 @router.get("/{task_id}/dependencies")
 async def get_task_dependencies(task_id: int, db: AsyncSession = Depends(get_db)):
     """
@@ -86,6 +93,7 @@ async def get_task_dependencies(task_id: int, db: AsyncSession = Depends(get_db)
     }
 
 
+@_limiter.limit("30/minute")
 @router.post("/{task_id}/dependencies")
 async def add_dependency(task_id: int, body: DependencyCreate, db: AsyncSession = Depends(get_db)):
     """
@@ -149,6 +157,7 @@ async def add_dependency(task_id: int, body: DependencyCreate, db: AsyncSession 
     return {"id": dep.id, "task_id": task_id, "depends_on_id": body.depends_on_id, "dep_type": dep.dep_type}
 
 
+@_limiter.limit("30/minute")
 @router.delete("/{task_id}/dependencies/{dep_id}")
 async def remove_dependency(task_id: int, dep_id: int, db: AsyncSession = Depends(get_db)):
     """Remove a dependency link."""
@@ -166,6 +175,7 @@ async def remove_dependency(task_id: int, dep_id: int, db: AsyncSession = Depend
     return {"deleted": True}
 
 
+@_limiter.limit("60/minute")
 @router.get("/dependency-map")
 async def get_dependency_map(db: AsyncSession = Depends(get_db)):
     """

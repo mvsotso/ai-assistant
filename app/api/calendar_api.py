@@ -19,6 +19,12 @@ from app.api.auth import verify_session_token
 settings = get_settings()
 calendar_router = APIRouter(prefix="/api/v1/calendar")
 
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 
 # ─── Helper: Get credentials from web session ───
 
@@ -38,6 +44,7 @@ async def get_web_credentials(request: Request, db: AsyncSession):
 
 # ─── OAuth2 Callback ───
 
+@_limiter.limit("60/minute")
 @calendar_router.get("/auth/callback")
 async def google_auth_callback(code: str, state: str = "", db: AsyncSession = Depends(get_db)):
     try:
@@ -56,6 +63,7 @@ async def google_auth_callback(code: str, state: str = "", db: AsyncSession = De
 
 # ─── Telegram Bot Endpoints ───
 
+@_limiter.limit("60/minute")
 @calendar_router.get("/today/{telegram_id}")
 async def get_today(telegram_id: int, db: AsyncSession = Depends(get_db)):
     creds = await token_store.load_token(db, telegram_id)
@@ -63,6 +71,7 @@ async def get_today(telegram_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Google Calendar not connected")
     return {"events": await calendar_service.get_today_events(creds)}
 
+@_limiter.limit("60/minute")
 @calendar_router.get("/week/{telegram_id}")
 async def get_week(telegram_id: int, db: AsyncSession = Depends(get_db)):
     creds = await token_store.load_token(db, telegram_id)
@@ -70,6 +79,7 @@ async def get_week(telegram_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Google Calendar not connected")
     return {"events": await calendar_service.get_week_events(creds)}
 
+@_limiter.limit("60/minute")
 @calendar_router.get("/free/{telegram_id}")
 async def get_free_slots(telegram_id: int, db: AsyncSession = Depends(get_db)):
     creds = await token_store.load_token(db, telegram_id)
@@ -84,6 +94,7 @@ class EventCreate(BaseModel):
     description: Optional[str] = None
     location: Optional[str] = None
 
+@_limiter.limit("30/minute")
 @calendar_router.post("/events/{telegram_id}")
 async def create_event_bot(telegram_id: int, body: EventCreate, db: AsyncSession = Depends(get_db)):
     creds = await token_store.load_token(db, telegram_id)
@@ -116,6 +127,7 @@ class WebEventUpdate(BaseModel):
     location: Optional[str] = None
 
 
+@_limiter.limit("60/minute")
 @calendar_router.get("/events")
 async def list_events_web(request: Request, start: str = None, end: str = None, db: AsyncSession = Depends(get_db)):
     creds = await get_web_credentials(request, db)
@@ -149,6 +161,7 @@ async def list_events_web(request: Request, start: str = None, end: str = None, 
     return {"events": formatted, "count": len(formatted)}
 
 
+@_limiter.limit("30/minute")
 @calendar_router.post("/events")
 async def create_event_web(body: WebEventCreate, request: Request, db: AsyncSession = Depends(get_db)):
     creds = await get_web_credentials(request, db)
@@ -161,6 +174,7 @@ async def create_event_web(body: WebEventCreate, request: Request, db: AsyncSess
     return {"event": event}
 
 
+@_limiter.limit("30/minute")
 @calendar_router.put("/events/{event_id}")
 async def update_event_web(event_id: str, body: WebEventUpdate, request: Request, db: AsyncSession = Depends(get_db)):
     creds = await get_web_credentials(request, db)
@@ -182,6 +196,7 @@ async def update_event_web(event_id: str, body: WebEventUpdate, request: Request
     return {"event": calendar_service._format_event(updated, "Asia/Phnom_Penh")}
 
 
+@_limiter.limit("30/minute")
 @calendar_router.delete("/events/{event_id}")
 async def delete_event_web(event_id: str, request: Request, db: AsyncSession = Depends(get_db)):
     creds = await get_web_credentials(request, db)
@@ -193,6 +208,7 @@ async def delete_event_web(event_id: str, request: Request, db: AsyncSession = D
 
 # ─── File Upload to Drive + Attach to Event ───
 
+@_limiter.limit("30/minute")
 @calendar_router.post("/events/{event_id}/attach")
 async def attach_file_to_event(
     event_id: str,
@@ -242,6 +258,7 @@ async def attach_file_to_event(
         os.unlink(tmp_path)
 
 
+@_limiter.limit("30/minute")
 @calendar_router.post("/events/create-with-file")
 async def create_event_with_file(
     request: Request,
@@ -291,6 +308,7 @@ class AnalyzeRequest(BaseModel):
     filename: str = "attachment"
 
 
+@_limiter.limit("30/minute")
 @calendar_router.post("/events/analyze-attachment")
 async def analyze_attachment(
     body: AnalyzeRequest,

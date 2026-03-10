@@ -17,6 +17,12 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 auth_router = APIRouter(prefix="/api/v1/auth")
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 
 
 class GoogleTokenRequest(BaseModel):
@@ -119,6 +125,7 @@ def require_permission(permission: str):
     return _check_permission
 
 
+@_limiter.limit("5/minute")
 @auth_router.post("/google/verify")
 async def verify_google_token(body: GoogleTokenRequest):
     """
@@ -159,6 +166,7 @@ async def verify_google_token(body: GoogleTokenRequest):
     return session
 
 
+@_limiter.limit("30/minute")
 @auth_router.get("/verify")
 async def verify_session(request: Request):
     """Verify an existing session token from the Authorization header."""
@@ -174,6 +182,7 @@ async def verify_session(request: Request):
     return {"valid": True, "email": payload.get("email"), "name": payload.get("name")}
 
 
+@_limiter.limit("30/minute")
 @auth_router.get("/client-id")
 async def get_google_client_id():
     """Return the Google Client ID for the frontend Sign-In button."""
@@ -182,6 +191,7 @@ async def get_google_client_id():
     return {"client_id": settings.google_client_id}
 
 
+@_limiter.limit("10/minute")
 @auth_router.get("/google/callback")
 async def google_oauth_callback(code: str, request: Request):
     """

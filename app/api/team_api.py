@@ -21,6 +21,12 @@ import re
 
 router = APIRouter(prefix="/api/v1/team-mgmt", tags=["team-management"], dependencies=[Depends(require_auth)])
 
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 
 # ── Pydantic Schemas ──
 
@@ -118,6 +124,7 @@ async def _get_task_stats(db: AsyncSession, user_name: str):
 # ROLES CRUD
 # ═══════════════════════════════════════════
 
+@_limiter.limit("60/minute")
 @router.get("/roles")
 async def list_roles(db: AsyncSession = Depends(get_db)):
     """List all team roles with member counts."""
@@ -134,6 +141,7 @@ async def list_roles(db: AsyncSession = Depends(get_db)):
     return {"roles": roles_data}
 
 
+@_limiter.limit("30/minute")
 @router.post("/roles")
 async def create_role(data: RoleCreate, db: AsyncSession = Depends(get_db)):
     """Create a new role."""
@@ -158,6 +166,7 @@ async def create_role(data: RoleCreate, db: AsyncSession = Depends(get_db)):
     return role.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.patch("/roles/{role_id}")
 async def update_role(role_id: int, data: RoleUpdate, db: AsyncSession = Depends(get_db)):
     """Update a role."""
@@ -182,6 +191,7 @@ async def update_role(role_id: int, data: RoleUpdate, db: AsyncSession = Depends
     return role.to_dict()
 
 
+@_limiter.limit("30/minute")
 @router.delete("/roles/{role_id}")
 async def delete_role(role_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a role. Members lose their role."""
@@ -201,6 +211,7 @@ async def delete_role(role_id: int, db: AsyncSession = Depends(get_db)):
 # MEMBERS CRUD
 # ═══════════════════════════════════════════
 
+@_limiter.limit("60/minute")
 @router.get("/members")
 async def list_members(db: AsyncSession = Depends(get_db)):
     """List all team members with roles and task stats."""
@@ -221,6 +232,7 @@ async def list_members(db: AsyncSession = Depends(get_db)):
     return {"members": members}
 
 
+@_limiter.limit("30/minute")
 @router.post("/members")
 async def create_member(data: MemberCreate, db: AsyncSession = Depends(get_db)):
     """Manually add a new team member."""
@@ -266,6 +278,7 @@ async def create_member(data: MemberCreate, db: AsyncSession = Depends(get_db)):
 # BULK IMPORT
 # ═══════════════════════════════════════════
 
+@_limiter.limit("60/minute")
 @router.get("/members/template")
 async def download_member_template(db: AsyncSession = Depends(get_db)):
     """Download Excel template for bulk member import."""
@@ -403,6 +416,7 @@ def _parse_import_file(data: bytes, ext: str) -> list[dict]:
     return rows
 
 
+@_limiter.limit("30/minute")
 @router.post("/members/bulk-import")
 async def bulk_import_members(
     file: UploadFile = File(...),
@@ -570,6 +584,7 @@ async def bulk_import_members(
     }
 
 
+@_limiter.limit("60/minute")
 @router.get("/members/{member_id}")
 async def get_member(member_id: int, db: AsyncSession = Depends(get_db)):
     """Get single member profile."""
@@ -588,6 +603,7 @@ async def get_member(member_id: int, db: AsyncSession = Depends(get_db)):
     return _user_to_dict(u, role, stats)
 
 
+@_limiter.limit("30/minute")
 @router.patch("/members/{member_id}")
 async def update_member(member_id: int, data: MemberUpdate, db: AsyncSession = Depends(get_db)):
     """Update a team member's profile."""
@@ -610,6 +626,7 @@ async def update_member(member_id: int, data: MemberUpdate, db: AsyncSession = D
     return _user_to_dict(user, role)
 
 
+@_limiter.limit("30/minute")
 @router.delete("/members/{member_id}")
 async def delete_member(member_id: int, db: AsyncSession = Depends(get_db)):
     """Remove a team member."""
@@ -624,6 +641,7 @@ async def delete_member(member_id: int, db: AsyncSession = Depends(get_db)):
     return {"ok": True, "message": f"Member '{name}' removed."}
 
 
+@_limiter.limit("30/minute")
 @router.post("/invite")
 async def invite_member(data: InviteMember, db: AsyncSession = Depends(get_db)):
     """Invite a member by Telegram username (creates placeholder entry)."""

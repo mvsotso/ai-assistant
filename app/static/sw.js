@@ -2,7 +2,7 @@
  * Service Worker — Offline support for AI Personal Assistant
  * Cache-first for static assets, network-first for API with fallback.
  */
-const CACHE_VERSION = 'v22';
+const CACHE_VERSION = 'v23';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const API_CACHE = `api-${CACHE_VERSION}`;
 const QUEUE_STORE = 'offline-queue';

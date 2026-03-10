@@ -329,6 +329,13 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .push-toggle.active{border-color:var(--gn);color:var(--gn);background:rgba(16,185,129,.08)}
 .push-toggle .push-dot{width:6px;height:6px;border-radius:50%;background:var(--mt);transition:background .2s}
 .push-toggle.active .push-dot{background:var(--gn)}
+.email-prefs{padding:12px 16px;border-top:1px solid var(--bd)}
+.email-prefs h5{margin:0 0 8px;font-size:12px;color:var(--mt);font-weight:600;display:flex;align-items:center;gap:6px}
+.email-pref-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--tx)}
+.email-pref-row label{cursor:pointer;display:flex;align-items:center;gap:6px}
+.email-pref-row input[type=checkbox]{accent-color:var(--ac);width:14px;height:14px;cursor:pointer}
+.email-pref-save{background:var(--ac);color:#fff;border:none;border-radius:6px;padding:5px 14px;font-size:11px;cursor:pointer;margin-top:8px;width:100%;font-weight:600}
+.email-pref-save:hover{opacity:.85}
 /* ── Date Range Picker ── */
 .dr-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;padding:10px 14px;background:var(--cd);border:1px solid var(--bd);border-radius:10px}
 .dr-presets{display:flex;gap:4px;flex-wrap:wrap}
@@ -414,6 +421,17 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <div class="notif-panel" id="notif-panel" style="display:none">
   <div class="notif-hdr"><h4>🔔 <span data-i18n="notifications">Notifications</span></h4><button class="btn" style="padding:3px 10px;font-size:10px" onclick="markAllNotifRead()" data-i18n="markAllRead">Mark all read</button></div>
   <div class="notif-list" id="notif-list"><div class="empty" data-i18n="noNotifications">No notifications</div></div>
+<div class="email-prefs" id="email-prefs">
+  <h5>✉ <span data-i18n="emailPrefsTitle">Email Notifications</span></h5>
+  <div class="email-pref-row"><label><input type="checkbox" id="ep-enabled" onchange="toggleEmailMaster()"> <span data-i18n="emailNotifications">Email Notifications</span></label></div>
+  <div id="ep-options">
+    <div class="email-pref-row"><label><input type="checkbox" id="ep-assigned"> <span data-i18n="emailTaskAssigned">Task Assigned</span></label></div>
+    <div class="email-pref-row"><label><input type="checkbox" id="ep-status"> <span data-i18n="emailStatusChange">Status Changes</span></label></div>
+    <div class="email-pref-row"><label><input type="checkbox" id="ep-reminder"> <span data-i18n="emailReminder">Reminders</span></label></div>
+    <div class="email-pref-row"><label><input type="checkbox" id="ep-summary"> <span data-i18n="emailDailySummary">Daily Summary</span></label></div>
+  </div>
+  <button class="email-pref-save" onclick="saveEmailPrefs()" data-i18n="savePrefs">Save Preferences</button>
+</div>
 </div>
 <div class="mn">
   <!-- Top Bar: Notification + Language -->
@@ -901,7 +919,7 @@ function clear(){localStorage.removeItem('ai_s');tok=null;usr=null}
 async function checkSession(){const s=stored();if(!s?.token)return false;if(s.expires_at<Date.now()/1000){clear();return false}try{const r=await fetch(A+'/auth/verify',{headers:{Authorization:'Bearer '+s.token}});if(r.ok){tok=s.token;usr={email:s.email,name:s.name,picture:s.picture};return true}}catch{}clear();return false}
 async function gSign(r){const e=$('login-err');e.style.display='none';try{const res=await fetch(A+'/auth/google/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:r.credential})});const d=await res.json();if(res.ok){tok=d.token;usr={email:d.email,name:d.name,picture:d.picture};store(d);showApp()}else{e.textContent=d.detail||'Denied';e.style.display='block'}}catch{e.textContent='Server error';e.style.display='block'}}
 function logout(){clear();$('app').classList.remove('v');$('login').style.display='flex'}
-function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCatsAPI();loadTeamFull();initMiniCal();loadNotifCount();initPush()}
+function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCatsAPI();loadTeamFull();initMiniCal();loadNotifCount();initPush();loadEmailPrefs()}
 let _gClientId='';
 async function googleRedirectLogin(){if(!_gClientId){const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d.client_id}const redir=location.origin+'/api/v1/auth/google/callback';const u='https://accounts.google.com/o/oauth2/v2/auth?client_id='+encodeURIComponent(_gClientId)+'&redirect_uri='+encodeURIComponent(redir)+'&response_type=code&scope=openid%20email%20profile&prompt=select_account';location.href=u}
 window.onload=async()=>{if(await checkSession()){showApp();return}
@@ -2375,6 +2393,7 @@ const I18N={
     noPermission:'Insufficient permissions',
     // Push Notifications
     enablePush:'Enable Push',disablePush:'Disable Push',pushEnabled:'Push notifications enabled',pushDisabled:'Push notifications disabled',testPush:'Test Push',pushNotSupported:'Push notifications not supported in this browser',
+    emailPrefsTitle:'Email Notifications',emailNotifications:'Email Notifications',emailTaskAssigned:'Task Assigned',emailStatusChange:'Status Changes',emailReminder:'Reminders',emailDailySummary:'Daily Summary',savePrefs:'Save Preferences',emailPrefsSaved:'Email preferences saved',emailEnabled:'Email notifications enabled',emailDisabled:'Email notifications disabled',
     // Gantt Chart
     ganttChart:'Gantt Chart',ganttSub:'Visual timeline with task dependencies',ganttNav:'Gantt',
     // Offline
@@ -2423,6 +2442,7 @@ const I18N={
     days7:'៧ ថ្ងៃ',days30:'៣០ ថ្ងៃ',days90:'៩០ ថ្ងៃ',thisYear:'ឆ្នាំនេះ',allTime:'ទាំងអស់',apply:'អនុវត្ត',
     ganttChart:'គំនូសតាង Gantt',ganttSub:'ពេលវេលាភារកិច្ចដែលមានភាពពឹងផ្អែក',ganttNav:'Gantt',
     enablePush:'បើកការជូនដំណឹងភ្លេង',disablePush:'បិដការជូនដំណឹងភ្លេង',pushEnabled:'ការជូនដំណឹងភ្លេងត្រូវបានបើក',pushDisabled:'ការជូនដំណឹងភ្លេងត្រូវបានបិដ',testPush:'សាកល្បង Push',pushNotSupported:'ការជូនដំណឹងភ្លេងមិនអាចប្រើប្រាស់នៅត្រងនេះ',
+    emailPrefsTitle:'ការជូនដំណឹងអ៊ីមែល',emailNotifications:'ការជូនដំណឹងអ៊ីមែល',emailTaskAssigned:'ការងារត្រូវបានតែងតាំង',emailStatusChange:'ការផ្លាស់ប្តូរស្ថានភាព',emailReminder:'ការរំលឹក',emailDailySummary:'សង្ខេបប្រចាំថ្ងៃ',savePrefs:'រក្សាទុក',emailPrefsSaved:'បានរក្សាទុកការកំណត់អ៊ីមែល',emailEnabled:'បើកអ៊ីមែល',emailDisabled:'បិដអ៊ីមែល',
     offlineMode:'អ្នកនៅក្រៅបណ្ដាញ — ការផ្លាស់ប្ដូរនឹងធ្វើសមកាលកម្មពេលតភ្ជាប់ឡើងវិញ',
     analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ',momBtn:'📋 កំណត់ហេតុ',momTitle:'📋 កំណត់ហេតុប្រជុំ',momUploadStep:'ជំហាន ១: ផ្ទុកកំណត់ហេតុ',momUploadDesc:'ផ្ទុក PDF Word ឬ Excel។ AI នឹងស្រង់ចេញសកម្មភាពដោយស្វ័យប្រវត្តិ។',momProcess:'🤖 ដំណើរការជាមួយ AI',momAnalyzing:'កំពុងវិភាគកំណត់ហេតុ...',momAnalyzingDesc:'កំពុងស្រង់ចេញសកម្មភាព',momItemsFound:'រកឃើញ',momNoItems:'គ្មានសកម្មភាពរកឃើញ។',momSelectAll:'ជ្រើសទាំងអស់',momDeselectAll:'មិនជ្រើសទាំងអស់',momType:'ប្រភេទ',momTypeTask:'ភារកិច្ច',momTypeReminder:'ការរំលឹក',momTypeEvent:'ព្រឹត្តិការណ៍',unassigned:'មិនបានកំណត់',momNoneSelected:'សូមជ្រើសយ៉ាងហោចណាស់មួយ។',momCreating:'កំពុងបង្កើត',momCreateAll:'🚀 បង្កើតសកម្មភាព',momUploadAnother:'ផ្ទុកផ្សេងទៀត',momProcessAnother:'ដំណើរការផ្សេងទៀត',momViewTasks:'មើលភារកិច្ច',momComplete:'បានបង្កើតសកម្មភាពដោយជោគជ័យ!',momCreatedCount:'បានបង្កើត',newChat:'💭 ការសនតនាថ្មី',newChatStarted:'ការសនតនាថ្មីបានចាប់ផ្តើម។ តើខ្ញុំអាចជួយអ្វី?'
   }
@@ -2485,6 +2505,41 @@ async function togglePush(){
       updatePushBtn(true);
     }
   }catch(e){console.error('togglePush:',e)}
+}
+
+// ═══ EMAIL PREFERENCES ═══
+let emailPrefsLoaded=false;
+async function loadEmailPrefs(){
+  try{
+    const r=await fetch(A+'/notifications/email-preferences',{headers:hdr()});
+    if(!r.ok)return;
+    const d=await r.json();
+    $('ep-enabled').checked=d.email_enabled;
+    $('ep-assigned').checked=d.task_assigned;
+    $('ep-status').checked=d.task_status_change;
+    $('ep-reminder').checked=d.reminder_due;
+    $('ep-summary').checked=d.daily_summary;
+    toggleEmailMaster();
+    emailPrefsLoaded=true;
+  }catch(e){console.log('loadEmailPrefs:',e)}
+}
+function toggleEmailMaster(){
+  const on=$('ep-enabled').checked;
+  $('ep-options').style.opacity=on?'1':'0.4';
+  $('ep-options').style.pointerEvents=on?'auto':'none';
+}
+async function saveEmailPrefs(){
+  try{
+    const body={
+      email_enabled:$('ep-enabled').checked,
+      task_assigned:$('ep-assigned').checked,
+      task_status_change:$('ep-status').checked,
+      reminder_due:$('ep-reminder').checked,
+      daily_summary:$('ep-summary').checked
+    };
+    await fetch(A+'/notifications/email-preferences',{method:'PUT',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
+    showToast(t('emailPrefsSaved')||'Email preferences saved');
+  }catch(e){console.error('saveEmailPrefs:',e)}
 }
 
 async function loadNotifCount(){

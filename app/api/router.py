@@ -36,6 +36,7 @@ async def health_check():
 
 
 # ─── Telegram Webhook ───
+@limiter.limit("120/minute")
 @router.post("/webhook/telegram")
 async def telegram_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     try:
@@ -94,6 +95,7 @@ async def log_audit(db, task_id: int, user_email: str, action: str, field: str =
     db.add(entry)
 
 
+@limiter.limit("60/minute")
 @router.get("/tasks")
 async def list_tasks(
     status: Optional[str] = None,
@@ -115,6 +117,7 @@ async def list_tasks(
     return {"tasks": [_task_to_dict(t) for t in tasks]}
 
 
+@limiter.limit("30/minute")
 @router.post("/tasks")
 async def create_task(body: TaskCreate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     due = None
@@ -151,9 +154,20 @@ async def create_task(body: TaskCreate, db: AsyncSession = Depends(get_db), _aut
         title=f"New task: {task.title}", entity_id=task.id, entity_type="task")
     # Audit log: task created
     await log_audit(db, task.id, _auth.get("email", ""), "created")
+    # Email notification: task assigned (best-effort)
+    if task.assignee_name:
+        try:
+            from app.services.email_svc import send_task_assigned_email
+            assignee_user = await db.execute(select(User).where(User.first_name == task.assignee_name))
+            au = assignee_user.scalar_one_or_none()
+            if au and au.email:
+                await send_task_assigned_email(db, au.email, task.title, task.assignee_name, task.due_date)
+        except Exception:
+            pass
     return _task_to_dict(task)
 
 
+@limiter.limit("30/minute")
 @router.patch("/tasks/{task_id}")
 async def update_task(task_id: int, body: TaskUpdate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     task = await task_service.get_task_by_id(db, task_id)
@@ -201,9 +215,25 @@ async def update_task(task_id: int, body: TaskUpdate, db: AsyncSession = Depends
         from app.services.notification_svc import create_notification
         await create_notification(db, user_id=0, notif_type="task_status",
             title=f"Task '{task.title}' → {body.status}", entity_id=task.id, entity_type="task")
+    # Email notifications (best-effort)
+    try:
+        if task.assignee_name:
+            assignee_user = await db.execute(select(User).where(User.first_name == task.assignee_name))
+            au = assignee_user.scalar_one_or_none()
+            if au and au.email:
+                if body.status is not None:
+                    from app.services.email_svc import send_task_status_email
+                    old_st = body.status  # Already logged above with old value
+                    await send_task_status_email(db, au.email, task.title, '', body.status)
+                if body.assignee_name is not None:
+                    from app.services.email_svc import send_task_assigned_email
+                    await send_task_assigned_email(db, au.email, task.title, task.assignee_name, task.due_date)
+    except Exception:
+        pass
     return _task_to_dict(task)
 
 
+@limiter.limit("30/minute")
 @router.delete("/tasks/{task_id}")
 async def delete_task(task_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_permission("delete"))):
     # Audit log before deletion
@@ -217,6 +247,7 @@ async def delete_task(task_id: int, db: AsyncSession = Depends(get_db), _auth: d
 
 
 
+@limiter.limit("60/minute")
 @router.get("/tasks/{task_id}/audit")
 async def get_task_audit(task_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get audit trail for a specific task."""
@@ -240,6 +271,7 @@ async def get_task_audit(task_id: int, db: AsyncSession = Depends(get_db), _auth
 
 
 # ─── Board ───
+@limiter.limit("60/minute")
 @router.get("/board")
 async def task_board(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     board = await task_service.get_board(db)
@@ -250,6 +282,7 @@ async def task_board(db: AsyncSession = Depends(get_db), _auth: dict = Depends(r
 
 
 # ─── Dashboard ───
+@limiter.limit("60/minute")
 @router.get("/dashboard")
 async def dashboard_summary(
     start_date: Optional[str] = None,
@@ -389,6 +422,7 @@ async def dashboard_summary(
 
 
 # ─── Team ───
+@limiter.limit("60/minute")
 @router.get("/team")
 async def get_team(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get all registered team members."""
@@ -406,6 +440,7 @@ async def get_team(db: AsyncSession = Depends(get_db), _auth: dict = Depends(req
     }
 
 
+@limiter.limit("60/minute")
 @router.get("/team/stats")
 async def team_stats(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     stats = await task_service.get_team_stats(db)
@@ -413,6 +448,7 @@ async def team_stats(db: AsyncSession = Depends(get_db), _auth: dict = Depends(r
 
 
 # ─── Messages ───
+@limiter.limit("60/minute")
 @router.get("/messages")
 async def get_messages(
     chat_id: Optional[int] = None, limit: int = 50, db: AsyncSession = Depends(get_db),
@@ -437,6 +473,7 @@ async def get_messages(
     }
 
 
+@limiter.limit("60/minute")
 @router.get("/messages/groups")
 async def get_message_groups(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get list of chat groups with message counts."""
@@ -450,6 +487,7 @@ async def get_message_groups(db: AsyncSession = Depends(get_db), _auth: dict = D
     return {"groups": groups}
 
 
+@limiter.limit("30/minute")
 @router.post("/messages/summarize")
 async def summarize_messages(chat_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Summarize messages from a specific chat group."""
@@ -480,6 +518,7 @@ class SnoozeRequest(BaseModel):
     minutes: int  # snooze duration in minutes (15, 60, 1440)
 
 
+@limiter.limit("60/minute")
 @router.get("/reminders")
 async def get_reminders(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get all pending reminders with linked task info."""
@@ -507,6 +546,7 @@ async def get_reminders(db: AsyncSession = Depends(get_db), _auth: dict = Depend
     return {"reminders": items}
 
 
+@limiter.limit("30/minute")
 @router.post("/reminders")
 async def create_reminder(body: ReminderCreate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Create a reminder from the web dashboard. Accepts absolute datetime or relative minutes."""
@@ -537,6 +577,7 @@ async def create_reminder(body: ReminderCreate, db: AsyncSession = Depends(get_d
     return {"id": reminder.id, "message": reminder.message, "remind_at": remind_at.isoformat(), "task_id": reminder.task_id}
 
 
+@limiter.limit("30/minute")
 @router.delete("/reminders/{reminder_id}")
 async def delete_reminder(reminder_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     result = await db.execute(select(Reminder).where(Reminder.id == reminder_id))
@@ -547,6 +588,7 @@ async def delete_reminder(reminder_id: int, db: AsyncSession = Depends(get_db), 
     return {"deleted": True}
 
 
+@limiter.limit("30/minute")
 @router.patch("/reminders/{reminder_id}/snooze")
 async def snooze_reminder(reminder_id: int, body: SnoozeRequest, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Snooze a reminder by X minutes. Resets is_sent so it fires again."""
@@ -565,6 +607,7 @@ async def snooze_reminder(reminder_id: int, body: SnoozeRequest, db: AsyncSessio
 
 
 
+@limiter.limit("60/minute")
 @router.get("/reminders/history")
 async def get_reminder_history(limit: int = 50, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get sent/fired reminders history."""
@@ -592,6 +635,7 @@ async def get_reminder_history(limit: int = 50, db: AsyncSession = Depends(get_d
 
 
 # ─── AI Suggestions ───
+@limiter.limit("60/minute")
 @router.get("/ai/suggestions")
 async def get_ai_suggestions(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     """Get AI-suggested tasks based on current workload."""
@@ -603,6 +647,7 @@ async def get_ai_suggestions(db: AsyncSession = Depends(get_db), _auth: dict = D
     return {"suggestions": suggestions}
 
 
+@limiter.limit("30/minute")
 @router.post("/ai/suggest-time")
 async def suggest_reminder_time(body: dict, _auth: dict = Depends(require_auth)):
     """AI suggests optimal reminder time for a task."""
@@ -619,6 +664,7 @@ class ChatRequest(BaseModel):
     history: Optional[list] = None
 
 
+@limiter.limit("30/minute")
 @router.post("/ai/chat")
 @limiter.limit("10/minute")
 async def ai_chat(request: Request, body: ChatRequest, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
@@ -639,6 +685,7 @@ async def ai_chat(request: Request, body: ChatRequest, db: AsyncSession = Depend
 # ─── AI Chat with File Upload ───
 from fastapi import UploadFile, File, Form
 
+@limiter.limit("30/minute")
 @router.post("/ai/chat-with-file")
 @limiter.limit("10/minute")
 async def ai_chat_with_file(
@@ -680,6 +727,7 @@ Respond ONLY with valid JSON, no markdown:
 {"meeting_title": "...", "meeting_date": "YYYY-MM-DD or null", "items": [{"title": "...", "assignee": null, "deadline": null, "priority": "medium", "category": null, "type": "task", "event_date": null, "event_duration_minutes": 60, "notes": ""}]}"""
 
 
+@limiter.limit("30/minute")
 @router.post("/mom/process")
 @limiter.limit("5/minute")
 async def mom_process(
@@ -730,6 +778,7 @@ class MomExecuteRequest(BaseModel):
     items: list
 
 
+@limiter.limit("30/minute")
 @router.post("/mom/execute")
 async def mom_execute(
     body: MomExecuteRequest,

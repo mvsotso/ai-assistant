@@ -22,12 +22,19 @@ notification_router = APIRouter(
     dependencies=[Depends(require_auth)],
 )
 
+# Rate limiting
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.config import get_settings as _gs
+_limiter = Limiter(key_func=get_remote_address, storage_uri=_gs().redis_url)
+
 # Public router — no auth required (for service worker VAPID key access)
 notification_public_router = APIRouter(
     prefix="/api/v1/notifications", tags=["Notifications"],
 )
 
 
+@_limiter.limit("60/minute")
 @notification_router.get("")
 async def list_notifications(
     unread_only: bool = False,
@@ -39,6 +46,7 @@ async def list_notifications(
     return {"notifications": [n.to_dict() for n in notifs]}
 
 
+@_limiter.limit("60/minute")
 @notification_router.get("/count")
 async def notification_count(db: AsyncSession = Depends(get_db)):
     """Get unread notification count."""
@@ -46,6 +54,7 @@ async def notification_count(db: AsyncSession = Depends(get_db)):
     return {"count": count}
 
 
+@_limiter.limit("30/minute")
 @notification_router.post("/{notif_id}/read")
 async def read_notification(notif_id: int, db: AsyncSession = Depends(get_db)):
     """Mark a notification as read."""
@@ -55,6 +64,7 @@ async def read_notification(notif_id: int, db: AsyncSession = Depends(get_db)):
     return {"ok": True}
 
 
+@_limiter.limit("30/minute")
 @notification_router.post("/read-all")
 async def read_all_notifications(db: AsyncSession = Depends(get_db)):
     """Mark all notifications as read."""
@@ -62,6 +72,7 @@ async def read_all_notifications(db: AsyncSession = Depends(get_db)):
     return {"ok": True}
 
 
+@_limiter.limit("30/minute")
 @notification_router.delete("/{notif_id}")
 async def delete_notification(notif_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a notification."""
@@ -95,6 +106,7 @@ async def get_vapid_key():
     return {"public_key": settings.vapid_public_key}
 
 
+@_limiter.limit("30/minute")
 @notification_router.post("/subscribe")
 async def subscribe_push(
     body: PushSubscribeRequest,
@@ -123,6 +135,7 @@ async def subscribe_push(
     return {"ok": True, "message": "Subscribed for push notifications"}
 
 
+@_limiter.limit("30/minute")
 @notification_router.post("/unsubscribe")
 async def unsubscribe_push(
     body: PushUnsubscribeRequest,
@@ -142,6 +155,7 @@ async def unsubscribe_push(
     return {"ok": True, "message": "Unsubscribed"}
 
 
+@_limiter.limit("30/minute")
 @notification_router.post("/test-push")
 async def test_push(
     request: Request,
@@ -153,3 +167,69 @@ async def test_push(
     await send_push_notification(db, email, "Test Notification", "Push notifications are working!")
     await db.commit()
     return {"ok": True, "message": "Test push sent"}
+
+
+# ── Email Preferences ──
+class EmailPrefsRequest(BaseModel):
+    email_enabled: bool = True
+    task_assigned: bool = True
+    task_status_change: bool = True
+    reminder_due: bool = True
+    daily_summary: bool = True
+
+
+@_limiter.limit("60/minute")
+@notification_router.get("/email-preferences")
+async def get_email_preferences(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get current user email notification preferences."""
+    from app.models.email_preference import EmailPreference
+    payload = await require_auth(request)
+    email = payload.get("email", "")
+
+    result = await db.execute(
+        select(EmailPreference).where(EmailPreference.user_email == email)
+    )
+    prefs = result.scalar_one_or_none()
+
+    if not prefs:
+        # Create default preferences
+        prefs = EmailPreference(user_email=email)
+        db.add(prefs)
+        await db.commit()
+        await db.refresh(prefs)
+
+    return prefs.to_dict()
+
+
+@_limiter.limit("30/minute")
+@notification_router.put("/email-preferences")
+async def update_email_preferences(
+    body: EmailPrefsRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Update email notification preferences."""
+    from app.models.email_preference import EmailPreference
+    payload = await require_auth(request)
+    email = payload.get("email", "")
+
+    result = await db.execute(
+        select(EmailPreference).where(EmailPreference.user_email == email)
+    )
+    prefs = result.scalar_one_or_none()
+
+    if not prefs:
+        prefs = EmailPreference(user_email=email)
+        db.add(prefs)
+
+    prefs.email_enabled = body.email_enabled
+    prefs.task_assigned = body.task_assigned
+    prefs.task_status_change = body.task_status_change
+    prefs.reminder_due = body.reminder_due
+    prefs.daily_summary = body.daily_summary
+    await db.commit()
+
+    return {"ok": True, "preferences": prefs.to_dict()}

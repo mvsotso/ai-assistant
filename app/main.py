@@ -28,6 +28,7 @@ from app.models.team_role import TeamRole  # noqa: ensure table creation
 from app.models.task_action import TaskAction  # noqa: ensure table creation
 from app.models.task_dependency import TaskDependency  # noqa: ensure table creation
 from app.models.push_subscription import PushSubscription  # noqa: ensure table creation
+from app.models.email_preference import EmailPreference  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -333,6 +334,22 @@ async def lifespan(app: FastAPI):
             """))
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_push_subs_email ON push_subscriptions(user_email)'))
 
+            # -- Email Preferences migration (Phase 19) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS email_preferences (
+                    id SERIAL PRIMARY KEY,
+                    user_email VARCHAR(255) UNIQUE NOT NULL,
+                    email_enabled BOOLEAN DEFAULT TRUE,
+                    task_assigned BOOLEAN DEFAULT TRUE,
+                    task_status_change BOOLEAN DEFAULT TRUE,
+                    reminder_due BOOLEAN DEFAULT TRUE,
+                    daily_summary BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_email_prefs_email ON email_preferences(user_email)'))
+            logger.info('Email preferences migration checked')
 
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
