@@ -345,6 +345,12 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .mom-type-task{background:var(--as);color:var(--ac)}
 .mom-type-reminder{background:rgba(249,115,22,.12);color:#f97316}
 .mom-type-event{background:rgba(168,85,247,.12);color:#a855f7}
+
+/* ── Date/DateTime picker dark mode fix ── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;padding:4px;opacity:.7}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </style>
 </head>
 <body>
@@ -827,17 +833,9 @@ const PREDEF_CATS={
 'Research':['Policy','Analysis','Statistics','Survey','Documentation']
 };
 let catSubMap={};
-async function loadCats(){
-  try{
-    const r=await fetch(A+'/categories',{headers:hdr()});const d=await r.json();
-    const apiCats=d.categories||[];const apiSubs=d.subcategories||{};
-    catSubMap={...PREDEF_CATS};
-    apiCats.forEach(c=>{if(!catSubMap[c])catSubMap[c]=[]});
-    Object.entries(apiSubs).forEach(([c,subs])=>{
-      if(!catSubMap[c])catSubMap[c]=[];
-      subs.forEach(s=>{if(!catSubMap[c].includes(s))catSubMap[c].push(s)});
-    });
-  }catch{catSubMap={...PREDEF_CATS}}
+function loadCats(){
+  catSubMap={...PREDEF_CATS};
+  Object.keys(catSubMap).forEach(k=>{catSubMap[k]=[...catSubMap[k]]});
 }
 function populateCatSelect(preselCat,preselSub){
   const sel=$('mt-cat');
@@ -975,7 +973,7 @@ function renderSgChips(){
 
 async function loadTasks(){try{let url=A+'/tasks?limit=100';if(curCat!=='all')url+='&category='+curCat;const r=await fetch(url,{headers:hdr()});allT=(await r.json()).tasks||[];await loadActionStats();await loadDepMap();renderTF();renderCF();renderGTabs();renderTL()}catch{$('tl').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
 function renderTF(){const fs=[{i:'all',l:t('all')},{i:'todo',l:t('todo')},{i:'in_progress',l:t('active')},{i:'review',l:t('review')},{i:'done',l:t('done')}];$('tfl').innerHTML=fs.map(f=>`<button class="fb ${curF===f.i?'a':''}" onclick="curF='${f.i}';renderTL()">${f.l}</button>`).join('')}
-function renderCF(){const cs=['all',...new Set(allT.map(t=>t.category).filter(Boolean))];$('catfl').innerHTML=cs.map(c=>`<button class="fb ${curCat===c?'a':''}" onclick="curCat='${c}';loadTasks()">${c==='all'?t('allCategories'):c}</button>`).join('')}
+function renderCF(){const cs=['all',...Object.keys(PREDEF_CATS).sort()];$('catfl').innerHTML=cs.map(c=>`<button class="fb ${curCat===c?'a':''}" onclick="curCat='${c}';loadTasks()">${c==='all'?t('allCategories'):c}</button>`).join('')}
 
 let actionStats={};
 async function loadActionStats(){
