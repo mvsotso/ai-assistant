@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     # Dashboard Auth — comma-separated list of allowed Google emails
     dashboard_allowed_emails: str = "mvsotso@gmail.com"
 
+    # Web Push (VAPID)
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_email: str = "mailto:mvsotso@gmail.com"
+
     # Celery
     celery_broker_url: str = "redis://localhost:6379/1"
     celery_result_backend: str = "redis://localhost:6379/2"

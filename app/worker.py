@@ -63,6 +63,29 @@ def run_async(coro):
         loop.close()
 
 
+def _calc_next_reminder(current_at, rule):
+    """Calculate next reminder time based on recurrence rule."""
+    rule = (rule or "daily").lower().strip()
+    if rule == "daily":
+        return current_at + timedelta(days=1)
+    elif rule == "weekly":
+        return current_at + timedelta(weeks=1)
+    elif rule == "monthly":
+        return current_at + timedelta(days=30)
+    elif rule.startswith("custom:"):
+        # custom:3d, custom:2w, custom:12h
+        val = rule.split(":")[1] if ":" in rule else "1d"
+        num = int(''.join(c for c in val if c.isdigit()) or '1')
+        unit = val[-1] if val else 'd'
+        if unit == 'h':
+            return current_at + timedelta(hours=num)
+        elif unit == 'w':
+            return current_at + timedelta(weeks=num)
+        else:
+            return current_at + timedelta(days=num)
+    return current_at + timedelta(days=1)
+
+
 @celery_app.task(name="app.worker.check_reminders")
 def check_reminders():
     """Check for pending reminders and send them via Telegram with snooze buttons."""
@@ -124,6 +147,14 @@ def check_reminders():
                             r.snooze_count = 0
                             r.telegram_message_id = None
                             logger.info(f"Recurring reminder {r.id} rescheduled to {next_at}")
+
+                    # Send web push notification too
+                    try:
+                        from app.services.notification_svc import send_push_notification
+                        admin_email = settings.dashboard_allowed_emails.split(",")[0].strip()
+                        await send_push_notification(db, admin_email, "Reminder", r.message)
+                    except Exception as push_err:
+                        logger.debug(f"Push notification skipped: {push_err}")
 
                     logger.info(f"Sent reminder {r.id} to chat {r.chat_id} with snooze buttons")
                 except Exception as e:

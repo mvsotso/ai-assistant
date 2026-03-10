@@ -27,6 +27,7 @@ from app.models.task_group import TaskGroup, TaskSubGroup  # noqa: ensure table 
 from app.models.team_role import TeamRole  # noqa: ensure table creation
 from app.models.task_action import TaskAction  # noqa: ensure table creation
 from app.models.task_dependency import TaskDependency  # noqa: ensure table creation
+from app.models.push_subscription import PushSubscription  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -318,6 +319,20 @@ async def lifespan(app: FastAPI):
                     await conn.execute(text(sql))
                     logger.info(f"🔧 Added {col} column to {table} table")
             logger.info("🔧 Reminder enhancement migration checked")
+
+            # -- Push Subscriptions migration (Phase 18) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS push_subscriptions (
+                    id SERIAL PRIMARY KEY,
+                    user_email VARCHAR(255) NOT NULL,
+                    endpoint VARCHAR(2000) NOT NULL UNIQUE,
+                    p256dh VARCHAR(200) NOT NULL,
+                    auth VARCHAR(200) NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_push_subs_email ON push_subscriptions(user_email)'))
+
 
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")

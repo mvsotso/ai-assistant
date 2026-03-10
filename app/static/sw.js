@@ -2,7 +2,7 @@
  * Service Worker — Offline support for AI Personal Assistant
  * Cache-first for static assets, network-first for API with fallback.
  */
-const CACHE_VERSION = 'v20';
+const CACHE_VERSION = 'v21';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const API_CACHE = `api-${CACHE_VERSION}`;
 const QUEUE_STORE = 'offline-queue';
@@ -148,4 +148,43 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+// ─── Push Notification Handler ───
+self.addEventListener('push', (event) => {
+  let data = { title: 'AI Assistant', body: 'New notification', url: '/' };
+  try {
+    if (event.data) data = Object.assign(data, event.data.json());
+  } catch (e) {
+    // Use defaults if JSON parse fails
+    if (event.data) data.body = event.data.text();
+  }
+  const options = {
+    body: data.body,
+    icon: data.icon || '/favicon.ico',
+    badge: data.badge || '/favicon.ico',
+    data: { url: data.url || '/' },
+    tag: data.tag || 'aia-notification',
+    renotify: true,
+    requireInteraction: false,
+  };
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+// ─── Notification Click Handler ───
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Focus existing tab if found
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Open new window if no existing tab
+      return clients.openWindow(url);
+    })
+  );
 });
