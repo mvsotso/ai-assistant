@@ -557,7 +557,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <!-- Reminder Modal -->
 <div class="modal-overlay" id="modal-remind"><div class="modal"><h3 data-i18n="newReminder">New Reminder</h3>
 <div class="fg"><label data-i18n="reminderMsg">Message</label><input class="inp" id="mr-msg" placeholder="Remind me to..." data-i18n-ph="phRemindMe"></div>
-<div class="fg"><label data-i18n="remindAt">When</label><input class="inp" id="mr-at" type="datetime-local">
+<div class="fg"><label data-i18n="remindAt">When</label><input class="inp" id="mr-at" type="datetime-local" onchange="this.blur()">
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="setRmQuick(15)">15m</button><button class="btn" onclick="setRmQuick(30)">30m</button><button class="btn" onclick="setRmQuick(60)">1h</button><button class="btn" onclick="setRmQuick(120)">2h</button><button class="btn" onclick="setRmQuick(1440)">Tomorrow</button></div></div>
 <div class="fg"><label data-i18n="linkedTask">Linked Task (optional)</label><select class="inp" id="mr-task"><option value="">— None —</option></select></div>
 <input type="hidden" id="mr-event" value="">
