@@ -10,7 +10,7 @@ Telegram bot @sotso_assistant_bot.
 - **Database:** PostgreSQL 16
 - **Cache/Queue:** Redis 7, Celery
 - **AI:** Claude Opus 4.6 via Anthropic API
-- **Frontend:** Single-file vanilla HTML/CSS/JS at `app/static/index.html` (~1800 lines)
+- **Frontend:** Single-file vanilla HTML/CSS/JS at `app/static/index.html` (~2300 lines)
 - **Calendar:** Google Calendar + Drive API with OAuth2
 - **Bot:** Telegram Bot API via httpx (webhook mode)
 - **Deploy:** Docker Compose on GCP VM (asia-southeast1-b), CI/CD via GitHub Actions
@@ -29,7 +29,9 @@ app/
 │   ├── task_action.py       # TaskAction (checklist items)
 │   ├── task_group.py        # TaskGroup + TaskSubGroup
 │   ├── team_role.py         # TeamRole
-│   ├── user.py, message.py, reminder.py, comment.py, recurring_task.py
+│   ├── category.py          # Category + Subcategory (CRUD)
+│   ├── reminder.py          # Reminder (snooze, task linking, datetime)
+│   ├── user.py, message.py, comment.py, recurring_task.py
 ├── api/
 │   ├── router.py            # Main API: tasks, board, dashboard, messages, reminders, AI chat
 │   ├── calendar_api.py      # Google Calendar CRUD
@@ -38,6 +40,7 @@ app/
 │   ├── task_group_api.py    # Task groups & subgroups
 │   ├── team_api.py          # Team management
 │   ├── recurring_api.py     # Recurring tasks
+│   ├── category_api.py      # Category & subcategory CRUD
 │   └── auth.py              # Google OAuth + HMAC sessions
 ├── services/
 │   ├── ai_engine.py         # Claude integration with action extraction
@@ -45,7 +48,7 @@ app/
 │   ├── calendar_svc.py      # Google Calendar + Drive
 │   ├── task_svc.py          # Task CRUD, board, stats
 │   └── file_processor.py    # PDF, Excel, Word, CSV, image extraction
-├── bot/handlers.py          # Telegram bot commands
+├── bot/handlers.py          # Telegram bot commands + callback queries
 ├── static/index.html        # Full web dashboard (single file)
 └── worker.py                # Celery workers
 ```
@@ -53,13 +56,13 @@ app/
 ## Key Architecture Decisions
 - **Single HTML file** for dashboard — all CSS, HTML, JS in `app/static/index.html`
 - **Auto-migrations** in `main.py` lifespan — CREATE TABLE IF NOT EXISTS + ALTER TABLE for new columns
-- **i18n** — 140+ keys in `I18N` object (EN/KH), `data-i18n` attributes, `t('key')` helper function
+- **i18n** — 170+ keys in `I18N` object (EN/KH), `data-i18n` attributes, `t('key')` helper function
 - **Noto Sans Khmer** Google Font for Khmer language support
 - **Chart.js** with Cloudflare CDN fallback for analytics
 - **AI-embedded actions** in Task Detail Modal and Event Modal
 
 ## Database
-PostgreSQL with tables: users, messages, tasks, reminders, task_comments, recurring_tasks, task_groups, task_subgroups, team_roles, task_actions, task_dependencies
+PostgreSQL with tables: users, messages, tasks, reminders, task_comments, recurring_tasks, task_groups, task_subgroups, team_roles, task_actions, task_dependencies, notifications, categories, subcategories
 
 ## Deployment
 ```bash
@@ -81,8 +84,8 @@ DuckDNS (legacy): sotso-assistant.duckdns.org
 - Use `I18N[curLang].key` for JS-rendered text, `data-i18n="key"` for static HTML
 - Test by pushing to git (CI/CD deploys automatically)
 
-## Current Features (Phases 1-15)
-Telegram bot, Google Calendar/Drive, AI chat with file upload, task management with groups/subgroups, team management with roles and Excel bulk import, task actions/checklist, task dependencies (blocks/blocked-by), recurring tasks, analytics with 6 Chart.js charts + AI insights, global search (Ctrl+K), full EN/KH i18n, AI-embedded actions in tasks (follow up, progress check, summary, delegate) and events (key notes, agenda, prep brief, follow up, auto-keynotes from attachments), smart event creation from messages with field validation, Set Reminder from messages with AI extraction, assignee dropdown with team member suggestions, fully interactive dashboard with clickable everything.
+## Current Features (Phases 1-16)
+Telegram bot, Google Calendar/Drive, AI chat with file upload and conversation memory, task management with groups/subgroups, team management with roles and Excel bulk import, task actions/checklist, task dependencies (blocks/blocked-by), recurring tasks (matching normal task form), analytics with 6 Chart.js charts + AI insights, global search (Ctrl+K), full EN/KH i18n, AI-embedded actions in tasks (follow up, progress check, summary, delegate) and events (key notes, agenda, prep brief, follow up, auto-keynotes from attachments), smart event creation from messages with field validation, Set Reminder from messages with AI extraction, assignee dropdown with team member suggestions, fully interactive dashboard with clickable everything, category & subcategory CRUD management, enhanced reminders with datetime picker + snooze (web & Telegram inline buttons) + task linking, notification badge system, MoM processor.
 
 ## Infrastructure Notes
 - **Docker MTU:** Must be 1460 to match GCP network MTU (configured in `docker-compose.prod.yml` networks section)
@@ -90,14 +93,19 @@ Telegram bot, Google Calendar/Drive, AI chat with file upload, task management w
 - **Google Login:** Dual approach — GIS library (primary) + OAuth redirect fallback (`/api/v1/auth/google/callback`)
 - **Google OAuth Redirect URI:** `https://aia.rikreay24.com/api/v1/auth/google/callback` (also keeps duckdns as fallback)
 - **IP changes:** If VM IP changes (ephemeral), update DuckDNS, Telegram webhook, and Google OAuth redirect URI
-- **Workplace WiFi:** May block the site — use mobile data or different network
+- **Workplace WiFi:** May block the site — enable Cloudflare Proxy (orange cloud) + Chrome Secure DNS (Cloudflare 1.1.1.1)
+- **Cloudflare Proxy:** Enabled (orange cloud) on aia.rikreay24.com A record; SSL mode = Full
+- **Service Worker cache:** Currently at v15 — bump on every frontend change
+- **Edit/Write tool workaround:** EEXIST errors on Edit/Write tools — use Python scripts in `C:\Users\Dell\AppData\Local\Temp\` executed via Bash
 
 ## What To Work On Next
-1. Notification Center — web push notifications
+1. Notification Center — web push notifications (browser Push API)
 2. Dashboard date range picker for analytics
 3. Flutter mobile app
 4. API rate limiting
 5. Gantt chart / dependency graph view
 6. AI attachment content analysis (fetch Drive file content)
 7. Offline support with service worker
-9. Reserve static IP in GCP to avoid IP changes on VM restart
+8. Reserve static IP in GCP to avoid IP changes on VM restart
+9. Recurring reminders (wire up is_recurring/recurrence_rule)
+10. Reminder history / sent reminders view
