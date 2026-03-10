@@ -662,10 +662,15 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <div class="fg"><label data-i18n="description">Description</label><textarea class="inp" id="rc-desc" rows="2" placeholder="Description..." data-i18n-ph="phDescription" style="resize:vertical"></textarea></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 <div class="fg"><label data-i18n="priority">Priority</label><select class="inp" id="rc-prio"><option value="low" data-i18n="low">Low</option><option value="medium" selected data-i18n="medium">Medium</option><option value="high" data-i18n="high">High</option><option value="urgent" data-i18n="urgent">Urgent</option></select></div>
-<div class="fg"><label data-i18n="assignee">Assignee</label><input class="inp" id="rc-assign" placeholder="Name..." data-i18n-ph="phName"></div>
-<div class="fg"><label data-i18n="category">Category</label><input class="inp" id="rc-cat" placeholder="e.g. GDT" data-i18n-ph="phCategory"></div>
-<div class="fg"><label data-i18n="subcategory">Subcategory</label><input class="inp" id="rc-sub" placeholder="e.g. ETL" data-i18n-ph="phSubcategory"></div>
+<div class="fg"><label data-i18n="status">Status</label><select class="inp" id="rc-status"><option value="todo" data-i18n="todo">To Do</option><option value="in_progress" data-i18n="inProgress">In Progress</option><option value="review" data-i18n="review">Review</option><option value="done" data-i18n="done">Done</option></select></div>
+<div class="fg"><label data-i18n="assignee">Assignee</label><input class="inp" id="rc-assign" placeholder="Name..." data-i18n-ph="phName" list="rc-team-dl"></div>
+<div class="fg"><label data-i18n="dueDate">Due Date</label><input class="inp" id="rc-due" type="datetime-local"></div>
+<div class="fg"><label data-i18n="category">Category</label><select class="inp" id="rc-cat" onchange="onRcCatChange()"><option value="">— Select —</option></select></div>
+<div class="fg"><label data-i18n="subcategory">Subcategory</label><select class="inp" id="rc-sub"><option value="">— Select —</option></select></div>
+<div class="fg"><label data-i18n="group">Group</label><select class="inp" id="rc-group" onchange="onRcGroupChange()"><option value="" data-i18n="noneOption">— None —</option></select></div>
+<div class="fg"><label data-i18n="subGroup">Sub-Group</label><select class="inp" id="rc-subgroup"><option value="" data-i18n="noneOption">— None —</option></select></div>
 </div>
+<datalist id="rc-team-dl"></datalist>
 <div class="fg"><label data-i18n="recurrence">Recurrence</label><select class="inp" id="rc-recurrence" onchange="onRecTypeChange()">
 <option value="daily" data-i18n="daily">Daily</option><option value="weekly" data-i18n="weekly">Weekly</option><option value="monthly" selected data-i18n="monthly">Monthly</option>
 <option value="quarterly" data-i18n="quarterly">Quarterly</option><option value="semi_annually" data-i18n="semiAnnually">Semi-Annually</option><option value="yearly" data-i18n="yearly">Yearly</option>
@@ -1919,9 +1924,30 @@ let allRec=[];
 async function loadRecurring(){try{const d=await(await fetch(A+'/recurring',{headers:hdr()})).json();allRec=d.recurring_tasks||[];renderRecList()}catch{$('rec-list').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
 function renderRecList(){$('rec-list').innerHTML=allRec.length?allRec.map(r=>{const c=RECUR_COLORS[r.recurrence]||'#6b7094';const rid=parseInt(r.id)||0;return`<div class="tr" onclick="openRecModal(allRec.find(x=>x.id===${rid}))"><div class="pb" style="background:${c}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${r.is_active?'':'opacity:.5;text-decoration:line-through'}">${esc(r.title)}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${esc(r.schedule_display||r.recurrence)} · ${esc(r.assignee||'Unassigned')}${r.category?' · '+esc(r.category):''}${r.next_due?' · Next: '+new Date(r.next_due).toLocaleDateString():''}</div></div><span class="badge" style="background:${c}1a;color:${c}">${RECUR_LABELS[r.recurrence]||esc(r.recurrence)}</span><span class="badge" style="background:${r.is_active?'var(--gs)':'var(--rs)'};color:${r.is_active?'var(--gn)':'var(--rd)'}">${r.is_active?'Active':'Paused'}</span><button class="btn" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();toggleRec(${rid})">${r.is_active?'Pause':'Resume'}</button></div>`}).join(''):'<div class="empty">No recurring tasks yet</div>'}
 function onRecTypeChange(){const v=$('rc-recurrence').value;$('rc-dow-wrap').style.display=v==='weekly'?'block':'none';$('rc-dom-wrap').style.display=['monthly','quarterly','semi_annually','yearly'].includes(v)?'block':'none';$('rc-mom-wrap').style.display=v==='yearly'?'block':'none'}
-function openRecModal(data){$('modal-rec').classList.add('v');$('rc-id').value=data?.id||'';$('rc-title').value=data?.title||'';$('rc-desc').value=data?.description||'';$('rc-prio').value=data?.priority||'medium';$('rc-assign').value=data?.assignee||'';$('rc-cat').value=data?.category||'';$('rc-sub').value=data?.subcategory||'';$('rc-recurrence').value=data?.recurrence||'monthly';$('rc-dow').value=data?.day_of_week??0;$('rc-dom').value=data?.day_of_month||1;$('rc-mom').value=data?.month_of_year||1;$('rc-time').value=data?.time_of_day||'09:00';$('modal-rec-title').textContent=data?.id?t('editRecurring'):t('newRecurring');$('rc-del').style.display=data?.id?'block':'none';$('rc-save').textContent=data?.id?t('update'):t('create');onRecTypeChange()}
+function openRecModal(data){$('modal-rec').classList.add('v');$('rc-id').value=data?.id||'';$('rc-title').value=data?.title||'';$('rc-desc').value=data?.description||'';$('rc-prio').value=data?.priority||'medium';$('rc-status').value=data?.status||'todo';$('rc-assign').value=data?.assignee||'';$('rc-due').value=data?.due_date?data.due_date.slice(0,16):'';populateRcCatSelect(data?.category||'',data?.subcategory||'');populateRcGroups(data);$('rc-recurrence').value=data?.recurrence||'monthly';$('rc-dow').value=data?.day_of_week??0;$('rc-dom').value=data?.day_of_month||1;$('rc-mom').value=data?.month_of_year||1;$('rc-time').value=data?.time_of_day||'09:00';$('modal-rec-title').textContent=data?.id?t('editRecurring'):t('newRecurring');$('rc-del').style.display=data?.id?'block':'none';$('rc-save').textContent=data?.id?t('update'):t('create');onRecTypeChange();$('rc-team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}
 function closeRecModal(){$('modal-rec').classList.remove('v')}
-async function saveRec(){const id=$('rc-id').value,title=$('rc-title').value.trim();if(!title){alert('Title required');return}const body={title,description:$('rc-desc').value||null,priority:$('rc-prio').value,assignee_name:$('rc-assign').value||null,category:$('rc-cat').value||null,subcategory:$('rc-sub').value||null,recurrence:$('rc-recurrence').value,day_of_week:parseInt($('rc-dow').value),day_of_month:parseInt($('rc-dom').value)||1,month_of_year:parseInt($('rc-mom').value)||1,time_of_day:$('rc-time').value||'09:00'};$('rc-save').disabled=true;try{if(id)await fetch(A+'/recurring/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/recurring',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeRecModal();loadRecurring()}catch(e){alert('Failed: '+e.message)}$('rc-save').disabled=false}
+function populateRcCatSelect(preselCat,preselSub){
+  const sel=$('rc-cat');
+  sel.innerHTML='<option value="">— Select —</option>'+tCats.map(c=>`<option value="${c.name}"${c.name===preselCat?' selected':''}>${c.icon||''} ${c.name}</option>`).join('');
+  onRcCatChange(preselSub);
+}
+function onRcCatChange(preselSub){
+  const cat=$('rc-cat').value;const sel=$('rc-sub');
+  sel.innerHTML='<option value="">— Select —</option>';
+  if(cat&&catSubMap[cat]){sel.innerHTML+=catSubMap[cat].map(s=>`<option value="${s}"${s===preselSub?' selected':''}>${s}</option>`).join('')}
+}
+function populateRcGroups(data){
+  const sel=$('rc-group');
+  sel.innerHTML='<option value="">— None —</option>'+tGroups.map(g=>`<option value="${g.id}"${data&&data.group_id==g.id?' selected':''}>${g.icon} ${g.name}</option>`).join('');
+  onRcGroupChange(data?.subgroup_id);
+}
+function onRcGroupChange(preselSg){
+  const gid=$('rc-group').value;const sel=$('rc-subgroup');
+  sel.innerHTML='<option value="">— None —</option>';
+  if(!gid)return;const g=tGroups.find(x=>x.id==gid);
+  if(g&&g.subgroups){sel.innerHTML+=(g.subgroups||[]).map(sg=>`<option value="${sg.id}"${sg.id==preselSg?' selected':''}>${sg.name}</option>`).join('')}
+}
+async function saveRec(){const id=$('rc-id').value,title=$('rc-title').value.trim();if(!title){alert('Title required');return}const body={title,description:$('rc-desc').value||null,priority:$('rc-prio').value,status:$('rc-status').value||'todo',assignee_name:$('rc-assign').value||null,due_date:$('rc-due').value||null,category:$('rc-cat').value||null,subcategory:$('rc-sub').value||null,group_id:$('rc-group').value?parseInt($('rc-group').value):null,subgroup_id:$('rc-subgroup').value?parseInt($('rc-subgroup').value):null,recurrence:$('rc-recurrence').value,day_of_week:parseInt($('rc-dow').value),day_of_month:parseInt($('rc-dom').value)||1,month_of_year:parseInt($('rc-mom').value)||1,time_of_day:$('rc-time').value||'09:00'};$('rc-save').disabled=true;try{if(id)await fetch(A+'/recurring/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/recurring',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeRecModal();loadRecurring()}catch(e){alert('Failed: '+e.message)}$('rc-save').disabled=false}
 async function deleteRec(){const id=$('rc-id').value;if(!id||!confirm('Delete this recurring task?'))return;try{await fetch(A+'/recurring/'+id,{method:'DELETE',headers:hdr()});closeRecModal();loadRecurring()}catch{alert('Delete failed')}}
 async function toggleRec(id){try{await fetch(A+'/recurring/'+id+'/toggle',{method:'POST',headers:hdr()});loadRecurring()}catch{}}
 
