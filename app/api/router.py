@@ -15,8 +15,9 @@ from app.services.ai_engine import ai_engine
 from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.message import Message
 from app.models.reminder import Reminder
+from app.models.audit_log import AuditLog
 from app.models.user import User
-from app.api.auth import require_auth
+from app.api.auth import require_auth, require_permission
 
 router = APIRouter(prefix="/api/v1")
 
@@ -86,6 +87,13 @@ def _task_to_dict(t: Task) -> dict:
     }
 
 
+async def log_audit(db, task_id: int, user_email: str, action: str, field: str = None, old_val: str = None, new_val: str = None):
+    """Record a task audit log entry."""
+    entry = AuditLog(task_id=task_id, user_email=user_email, action=action,
+                     field_changed=field, old_value=old_val, new_value=new_val)
+    db.add(entry)
+
+
 @router.get("/tasks")
 async def list_tasks(
     status: Optional[str] = None,
@@ -141,6 +149,8 @@ async def create_task(body: TaskCreate, db: AsyncSession = Depends(get_db), _aut
     from app.services.notification_svc import create_notification
     await create_notification(db, user_id=0, notif_type="task_created",
         title=f"New task: {task.title}", entity_id=task.id, entity_type="task")
+    # Audit log: task created
+    await log_audit(db, task.id, _auth.get("email", ""), "created")
     return _task_to_dict(task)
 
 
@@ -149,6 +159,19 @@ async def update_task(task_id: int, body: TaskUpdate, db: AsyncSession = Depends
     task = await task_service.get_task_by_id(db, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    email = _auth.get("email", "")
+    # Audit: track field changes
+    if body.title is not None and body.title != task.title:
+        await log_audit(db, task_id, email, "updated", "title", task.title, body.title)
+    if body.status is not None and body.status != (task.status.value if task.status else None):
+        await log_audit(db, task_id, email, "status_changed", "status", task.status.value if task.status else "", body.status)
+    if body.priority is not None and body.priority != (task.priority.value if task.priority else None):
+        await log_audit(db, task_id, email, "updated", "priority", task.priority.value if task.priority else "", body.priority)
+    if body.assignee_name is not None and body.assignee_name != task.assignee_name:
+        await log_audit(db, task_id, email, "updated", "assignee", task.assignee_name or "", body.assignee_name)
+    if body.due_date is not None:
+        old_due = task.due_date.isoformat() if task.due_date else ""
+        await log_audit(db, task_id, email, "updated", "due_date", old_due, body.due_date)
     if body.title is not None: task.title = body.title
     if body.description is not None: task.description = body.description
     if body.status is not None:
@@ -182,11 +205,34 @@ async def update_task(task_id: int, body: TaskUpdate, db: AsyncSession = Depends
 
 
 @router.delete("/tasks/{task_id}")
-async def delete_task(task_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+async def delete_task(task_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_permission("delete"))):
+    # Audit log before deletion
+    task = await task_service.get_task_by_id(db, task_id)
+    if task:
+        await log_audit(db, task_id, _auth.get("email", ""), "deleted", None, task.title, None)
     deleted = await task_service.delete_task(db, task_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Task not found")
     return {"deleted": True}
+
+
+
+@router.get("/tasks/{task_id}/audit")
+async def get_task_audit(task_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """Get audit trail for a specific task."""
+    result = await db.execute(
+        select(AuditLog).where(AuditLog.task_id == task_id).order_by(AuditLog.created_at.desc()).limit(50)
+    )
+    entries = list(result.scalars().all())
+    return {"audit": [
+        {
+            "id": e.id, "task_id": e.task_id, "user_email": e.user_email,
+            "action": e.action, "field_changed": e.field_changed,
+            "old_value": e.old_value, "new_value": e.new_value,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+        }
+        for e in entries
+    ]}
 
 
 # ─── Categories ───
@@ -271,6 +317,56 @@ async def dashboard_summary(
         )
         trend.append({"date": day.isoformat(), "count": cnt_r.scalar() or 0})
 
+    # ── Burndown data ──
+    burndown = []
+    if filtered_tasks:
+        total_in_period = len(filtered_tasks)
+        # Daily burndown: remaining = total - cumulative done up to that day
+        for i in range(trend_days - 1, -1, -1):
+            day = (now - timedelta(days=i)).date()
+            done_by_day = sum(1 for t in filtered_tasks if t.completed_at and t.completed_at.date() <= day)
+            remaining = total_in_period - done_by_day
+            ideal = max(0, total_in_period - round(total_in_period * (trend_days - i) / trend_days))
+            burndown.append({"date": day.isoformat(), "remaining": remaining, "ideal": ideal})
+
+    # ── KPI calculations ──
+    completed_tasks = [t for t in filtered_tasks if t.status == TaskStatus.DONE and t.completed_at]
+    avg_days = 0
+    if completed_tasks:
+        total_days = sum((t.completed_at - t.created_at).total_seconds() / 86400 for t in completed_tasks if t.created_at)
+        avg_days = round(total_days / len(completed_tasks), 1) if completed_tasks else 0
+    on_time = sum(1 for t in completed_tasks if t.due_date and t.completed_at <= t.due_date)
+    on_time_pct = round(on_time / len(completed_tasks) * 100) if completed_tasks else 0
+    week_ago = now - timedelta(days=7)
+    tasks_this_week = sum(1 for t in filtered_tasks if t.created_at and t.created_at >= week_ago)
+
+    # ── Previous period for trend comparison ──
+    prev_start = None
+    prev_end = None
+    prev_stats = {}
+    if dt_start and dt_end:
+        period_days = (dt_end - dt_start).days
+        prev_end = dt_start
+        prev_start = prev_end - timedelta(days=period_days)
+    elif not dt_start and not dt_end:
+        # Default: compare last 7 days to previous 7 days
+        prev_end = now - timedelta(days=7)
+        prev_start = prev_end - timedelta(days=7)
+    if prev_start and prev_end:
+        prev_q = select(Task).where(Task.created_at >= prev_start, Task.created_at <= prev_end)
+        prev_result = await db.execute(prev_q.limit(200))
+        prev_tasks = list(prev_result.scalars().all())
+        prev_done = sum(1 for t in prev_tasks if t.status == TaskStatus.DONE)
+        prev_total = len(prev_tasks)
+        prev_overdue = sum(1 for t in prev_tasks if t.due_date and t.due_date < now and t.status != TaskStatus.DONE)
+        prev_completed = [t for t in prev_tasks if t.status == TaskStatus.DONE and t.completed_at]
+        prev_avg = 0
+        if prev_completed:
+            prev_avg = round(sum((t.completed_at - t.created_at).total_seconds() / 86400 for t in prev_completed if t.created_at) / len(prev_completed), 1)
+        prev_on_time = sum(1 for t in prev_completed if t.due_date and t.completed_at <= t.due_date)
+        prev_on_time_pct = round(prev_on_time / len(prev_completed) * 100) if prev_completed else 0
+        prev_stats = {"total": prev_total, "done": prev_done, "overdue": prev_overdue, "avg_days": prev_avg, "on_time_pct": prev_on_time_pct}
+
     return {
         "stats": {
             "total_tasks": todo + in_progress + review + done,
@@ -281,6 +377,14 @@ async def dashboard_summary(
         "overdue_tasks": [_task_to_dict(t) for t in overdue],
         "recent_tasks": [_task_to_dict(t) for t in filtered_tasks[:10]],
         "completion_trend": trend,
+        "burndown": burndown,
+        "kpis": {
+            "avg_completion_days": avg_days,
+            "on_time_pct": on_time_pct,
+            "overdue_count": len(overdue),
+            "tasks_this_week": tasks_this_week,
+        },
+        "previous_period": prev_stats,
     }
 
 
@@ -368,6 +472,8 @@ class ReminderCreate(BaseModel):
     remind_at: Optional[str] = None    # absolute: ISO datetime string
     task_id: Optional[int] = None      # optional link to a task
     event_id: Optional[str] = None     # optional link to a calendar event
+    is_recurring: Optional[bool] = False    # recurring reminder
+    recurrence_rule: Optional[str] = None   # daily, weekly, monthly, custom:3d
 
 
 class SnoozeRequest(BaseModel):
@@ -389,6 +495,8 @@ async def get_reminders(db: AsyncSession = Depends(get_db), _auth: dict = Depend
             "created_at": r.created_at.isoformat() if r.created_at else None,
             "task_id": r.task_id, "event_id": r.event_id,
             "snooze_count": r.snooze_count or 0,
+            "is_recurring": r.is_recurring or False,
+            "recurrence_rule": r.recurrence_rule,
         }
         # Include linked task title if available
         if r.task_id:
@@ -420,6 +528,8 @@ async def create_reminder(body: ReminderCreate, db: AsyncSession = Depends(get_d
         user_id=admin_id, chat_id=admin_id,
         message=body.message, remind_at=remind_at,
         task_id=body.task_id, event_id=body.event_id,
+        is_recurring=body.is_recurring or False,
+        recurrence_rule=body.recurrence_rule,
     )
     db.add(reminder)
     await db.flush()
@@ -452,6 +562,54 @@ async def snooze_reminder(reminder_id: int, body: SnoozeRequest, db: AsyncSessio
     reminder.snooze_count = (reminder.snooze_count or 0) + 1
     await db.flush()
     return {"id": reminder.id, "remind_at": reminder.remind_at.isoformat(), "snooze_count": reminder.snooze_count}
+
+
+
+@router.get("/reminders/history")
+async def get_reminder_history(limit: int = 50, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """Get sent/fired reminders history."""
+    result = await db.execute(
+        select(Reminder).where(Reminder.is_sent == True).order_by(Reminder.remind_at.desc()).limit(limit)
+    )
+    reminders = list(result.scalars().all())
+    items = []
+    for r in reminders:
+        item = {
+            "id": r.id, "message": r.message, "is_sent": r.is_sent,
+            "remind_at": r.remind_at.isoformat() if r.remind_at else None,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "task_id": r.task_id, "event_id": r.event_id,
+            "snooze_count": r.snooze_count or 0,
+            "is_recurring": r.is_recurring,
+        }
+        if r.task_id:
+            t_result = await db.execute(select(Task).where(Task.id == r.task_id))
+            linked_task = t_result.scalar_one_or_none()
+            item["task_title"] = linked_task.title if linked_task else None
+        items.append(item)
+    return {"reminders": items}
+
+
+
+# ─── AI Suggestions ───
+@router.get("/ai/suggestions")
+async def get_ai_suggestions(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """Get AI-suggested tasks based on current workload."""
+    result = await db.execute(select(Task).order_by(Task.created_at.desc()).limit(50))
+    tasks = list(result.scalars().all())
+    existing = [{"title": t.title, "status": t.status.value, "assignee": t.assignee_name or "Unassigned", "priority": t.priority.value} for t in tasks]
+    completed = [{"title": t.title} for t in tasks if t.status == TaskStatus.DONE][:10]
+    suggestions = await ai_engine.suggest_tasks(existing, recent_completed=completed)
+    return {"suggestions": suggestions}
+
+
+@router.post("/ai/suggest-time")
+async def suggest_reminder_time(body: dict, _auth: dict = Depends(require_auth)):
+    """AI suggests optimal reminder time for a task."""
+    title = body.get("title", "")
+    due_date = body.get("due_date", "")
+    result = await ai_engine.suggest_reminder_time(title, due_date)
+    return result
 
 
 # ─── AI Chat ───

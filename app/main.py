@@ -285,6 +285,22 @@ async def lifespan(app: FastAPI):
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_notif_user_read ON notifications(user_id, is_read)'))
             logger.info("🔧 Notifications migration checked")
 
+
+            # ── Audit Logs migration ──
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id SERIAL PRIMARY KEY,
+                    task_id INTEGER NOT NULL,
+                    user_email VARCHAR(255),
+                    action VARCHAR(50) NOT NULL,
+                    field_changed VARCHAR(100),
+                    old_value TEXT,
+                    new_value TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_audit_logs_task_id ON audit_logs(task_id)'))
+            logger.info("🔧 Audit logs migration checked")
             # ── Reminder Enhancement migration (Phase 16) ──
             reminder_migrations = [
                 ("reminders", "task_id", "ALTER TABLE reminders ADD COLUMN task_id INTEGER"),

@@ -200,6 +200,28 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .dep-item .dep-status{font-size:9px;color:var(--mt)}
 .dep-item .dep-remove{background:none;border:none;color:var(--mt);cursor:pointer;padding:2px 4px;font-size:11px;border-radius:4px;font-family:'DM Sans',sans-serif;flex-shrink:0}
 .dep-item .dep-remove:hover{color:var(--rd);background:var(--rs)}
+/* ── Audit History ── */
+.audit-entry{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:11px;align-items:flex-start}
+.audit-entry:last-child{border-bottom:none}
+.audit-time{color:var(--mt);white-space:nowrap;min-width:70px}
+.audit-action{padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600;white-space:nowrap}
+.audit-action.created{background:var(--gs);color:var(--gn)}
+.audit-action.updated{background:var(--as);color:var(--ac)}
+.audit-action.status_changed{background:var(--ys);color:#92400e}
+.audit-action.deleted{background:var(--rs);color:var(--rd)}
+.audit-detail{flex:1;color:var(--ft)}
+/* ── Reminder History Tab ── */
+.rm-tabs{display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid var(--bd)}
+.rm-tab{padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--mt);transition:all .2s}
+.rm-tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+.rm-tab:hover{color:var(--ft)}
+/* ── KPI Cards ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;text-align:center}
+.kpi-value{font-size:24px;font-weight:800;color:var(--ac);font-family:'Outfit',sans-serif}
+.kpi-label{font-size:10px;color:var(--mt);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.kpi-trend{font-size:10px;margin-top:4px}
+.kpi-trend.up{color:var(--gn)}.kpi-trend.down{color:var(--rd)}
 /* ── Task Detail Modal ── */
 .td-modal{max-width:640px}
 .td-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
@@ -329,6 +351,11 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .gantt-bar.todo{background:var(--ac)}.gantt-bar.in_progress{background:var(--or)}.gantt-bar.review{background:var(--pp)}.gantt-bar.done{background:var(--gn)}
 .gantt-today-line{position:absolute;top:0;bottom:0;width:2px;background:var(--rd);z-index:3;pointer-events:none}
 .gantt-dep-svg{position:absolute;top:0;left:180px;pointer-events:none;z-index:1}
+.gantt-bar.milestone{width:20px!important;height:20px;transform:rotate(45deg);border-radius:3px;padding:0;min-width:20px;display:flex;align-items:center;justify-content:center}
+.gantt-bar.milestone span{transform:rotate(-45deg);font-size:8px}
+.gantt-bar.critical{box-shadow:0 0 0 2px var(--rd),0 0 8px rgba(239,68,68,.3)}
+.gantt-bar.dragging{opacity:.6;cursor:grabbing}
+.gantt-bar[draggable]{cursor:grab}
 /* ── Offline Banner ── */
 .offline-bar{position:fixed;top:0;left:0;right:0;padding:8px 16px;background:var(--os);color:var(--or);font-size:12px;font-weight:600;text-align:center;z-index:300;display:none;align-items:center;justify-content:center;gap:8px}
 .offline-bar.v{display:flex}
@@ -432,8 +459,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     <div id="team-list"></div>
   </div>
   <div id="pg-msgs" class="pg"><h2 data-i18n="messagesPage">Messages</h2><div class="st" data-i18n="telegramMsgs">Telegram group messages</div><div class="fl" id="gfl"></div><div id="ml"></div></div>
-  <div id="pg-remind" class="pg"><h2 data-i18n="remindersPage">Reminders</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0" data-i18n="scheduledNotifs">Scheduled notifications</div><button class="btn p" onclick="openModal('remind')" data-i18n="newReminder">+ New Reminder</button></div><div id="rl"></div></div>
-  <div id="pg-chat" class="pg"><h2>✨ <span data-i18n="aiAssistant">AI Assistant</span></h2><button class="btn" onclick="newChat()" style="margin-bottom:8px;font-size:11px" data-i18n="newChat">💭 New Chat</button><div class="st" data-i18n="aiSub">Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything or upload files for analysis.</div></div><div class="ch-r"><input type="file" id="chf" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.csv,.docx,.doc,.sql,.py,.js,.json,.txt,.md,.xml,.yaml,.html" onchange="onFileSelect()"><button onclick="$('chf').click()" style="width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--mt);font-size:14px;cursor:pointer;flex-shrink:0">📎</button><input class="ch-i" id="chi" placeholder="Ask anything..." data-i18n-ph="phAskAnything" onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div><div id="chfn" style="display:none;padding:6px 0;font-size:11px;color:var(--ac)"></div></div></div>
+  <div id="pg-remind" class="pg"><h2 data-i18n="remindersPage">Reminders</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0" data-i18n="scheduledNotifs">Scheduled notifications</div><button class="btn p" onclick="openModal('remind')" data-i18n="newReminder">+ New Reminder</button></div><div class="rm-tabs"><div class="rm-tab active" onclick="switchRmTab('active')" id="rm-tab-active" data-i18n="active">Active</div><div class="rm-tab" onclick="switchRmTab('history')" id="rm-tab-history">📜 <span data-i18n="reminderHistory">History</span></div></div><div id="rl"></div><div id="rl-history" style="display:none"></div></div>
+  <div id="pg-chat" class="pg"><h2>✨ <span data-i18n="aiAssistant">AI Assistant</span></h2><button class="btn" onclick="newChat()" style="margin-bottom:8px;font-size:11px" data-i18n="newChat">💭 New Chat</button><div class="st" data-i18n="aiSub">Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything or upload files for analysis.</div></div><div id="prompt-chips" style="display:flex;gap:4px;flex-wrap:wrap;padding:0 2px;margin-bottom:4px">
+<button class="btn" style="padding:2px 8px;font-size:9px" onclick="$('chi').value='Summarize my tasks';sendAI()">📋 Summary</button>
+<button class="btn" style="padding:2px 8px;font-size:9px" onclick="$('chi').value='What should I prioritize today?';sendAI()">🎯 Priorities</button>
+<button class="btn" style="padding:2px 8px;font-size:9px" onclick="$('chi').value='Draft a status report';sendAI()">📝 Report</button>
+<button class="btn" style="padding:2px 8px;font-size:9px" onclick="$('chi').value='Who is overloaded on the team?';sendAI()">👥 Workload</button>
+</div><div class="ch-r"><input type="file" id="chf" style="display:none" accept=".pdf,.jpg,.jpeg,.png,.gif,.xlsx,.xls,.csv,.docx,.doc,.sql,.py,.js,.json,.txt,.md,.xml,.yaml,.html" onchange="onFileSelect()"><button onclick="$('chf').click()" style="width:38px;height:38px;border-radius:8px;border:1px solid var(--bd);background:var(--cd);color:var(--mt);font-size:14px;cursor:pointer;flex-shrink:0">📎</button><input class="ch-i" id="chi" placeholder="Ask anything..." data-i18n-ph="phAskAnything" onkeydown="if(event.key==='Enter')sendAI()"><button class="ch-s" onclick="sendAI()">↑</button></div><div id="chfn" style="display:none;padding:6px 0;font-size:11px;color:var(--ac)"></div></div></div>
   <div id="pg-calendar" class="pg">
     <div class="cal-toolbar"><div class="left"><button class="cal-today-btn" onclick="calGoToday()" data-i18n="today">Today</button><button class="cal-nav-btn" onclick="calGo(-1)">◀</button><button class="cal-nav-btn" onclick="calGo(1)">▶</button><span class="cal-title" id="cal-title"></span></div>
     <div class="right"><button class="btn p" onclick="openEventModal()" style="margin-right:8px" data-i18n="event">+ Event</button><button class="cal-view-btn a" id="cv-month" onclick="setCalView('month')" data-i18n="month">Month</button><button class="cal-view-btn" id="cv-week" onclick="setCalView('week')" data-i18n="week">Week</button><button class="cal-view-btn" id="cv-day" onclick="setCalView('day')" data-i18n="day">Day</button></div></div>
@@ -459,9 +491,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
         <button class="dr-btn" id="gantt-s-week" onclick="setGanttScale('week')">Week</button>
         <button class="dr-btn" id="gantt-s-month" onclick="setGanttScale('month')">Month</button>
       </div>
-      <div style="display:flex;gap:4px;align-items:center">
+      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
         <select class="sel" id="gantt-filter-group" onchange="renderGantt()"><option value="">All Groups</option></select>
         <select class="sel" id="gantt-filter-assignee" onchange="renderGantt()"><option value="">All Assignees</option></select>
+        <select class="sel" id="gantt-filter-category" onchange="renderGantt()"><option value="">All Categories</option></select>
+        <button class="btn" onclick="ganttToday()" style="padding:4px 10px;font-size:10px">📍 <span data-i18n="todayBtn">Today</span></button>
+        <label style="font-size:10px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" id="gantt-critical" onchange="renderGantt()"> <span data-i18n="criticalPath">Critical Path</span></label>
       </div>
     </div>
     <div class="gantt-container" id="gantt-container"></div>
@@ -486,8 +521,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
         <span style="color:var(--mt)">—</span>
         <input type="date" id="dr-end" class="inp" style="max-width:130px;padding:5px 8px;font-size:10px">
         <button class="btn p" onclick="applyDR()" style="padding:5px 10px;font-size:10px" data-i18n="apply">Apply</button>
+        <div style="position:relative;display:inline-block"><button class="btn" onclick="toggleExportMenu()" style="padding:5px 10px;font-size:10px">📥 <span data-i18n="exportAnalytics">Export</span></button><div id="export-menu" style="display:none;position:absolute;right:0;top:100%;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:4px;z-index:10;min-width:120px"><button class="btn" onclick="exportAnalyticsCSV()" style="width:100%;text-align:left;font-size:10px;padding:4px 8px">📊 CSV</button><button class="btn" onclick="exportChartsPNG()" style="width:100%;text-align:left;font-size:10px;padding:4px 8px">🖼️ PNG Charts</button></div></div>
       </div>
     </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid" id="kpi-cards"></div>
 
     <!-- Summary Cards -->
     <div class="row" id="analytics-summary"></div>
@@ -514,6 +553,19 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     <div class="cd">
       <h3 data-i18n="completionTrend">Completion Rate (Last 7 Days)</h3>
       <div style="position:relative;height:180px"><canvas id="chart-completion"></canvas></div>
+    </div>
+    <div class="cd">
+      <h3>📉 <span data-i18n="burndownChart">Burndown Chart</span></h3>
+      <div style="position:relative;height:180px"><canvas id="chart-burndown"></canvas></div>
+    </div>
+
+    <!-- AI Suggestions Card -->
+    <div class="cd" id="ai-suggest-card" style="border-color:rgba(168,85,247,.2);background:linear-gradient(135deg,rgba(168,85,247,.03),rgba(59,130,246,.03))">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0"><span style="font-size:16px">💡</span><span data-i18n="aiSuggestions">AI Suggestions</span></h3>
+        <button class="btn" onclick="loadAISuggestions()" style="padding:4px 10px;font-size:10px">🔄 Refresh</button>
+      </div>
+      <div id="ai-suggestions" style="font-size:11px;color:var(--mt)">Click Refresh to get AI task suggestions</div>
     </div>
 
     <!-- AI Insights & Recommendations -->
@@ -558,9 +610,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <div class="modal-overlay" id="modal-remind"><div class="modal"><h3 data-i18n="newReminder">New Reminder</h3>
 <div class="fg"><label data-i18n="reminderMsg">Message</label><input class="inp" id="mr-msg" placeholder="Remind me to..." data-i18n-ph="phRemindMe"></div>
 <div class="fg"><label data-i18n="remindAt">When</label><input class="inp" id="mr-at" type="datetime-local" onchange="this.blur()">
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="setRmQuick(15)">15m</button><button class="btn" onclick="setRmQuick(30)">30m</button><button class="btn" onclick="setRmQuick(60)">1h</button><button class="btn" onclick="setRmQuick(120)">2h</button><button class="btn" onclick="setRmQuick(1440)">Tomorrow</button></div></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="setRmQuick(15)">15m</button><button class="btn" onclick="setRmQuick(30)">30m</button><button class="btn" onclick="setRmQuick(60)">1h</button><button class="btn" onclick="setRmQuick(120)">2h</button><button class="btn" onclick="setRmQuick(1440)">Tomorrow</button><button class="btn" onclick="suggestRmTime()" style="background:linear-gradient(135deg,rgba(168,85,247,.1),rgba(59,130,246,.1));border-color:rgba(168,85,247,.3)">💡 <span data-i18n="suggestTime">Suggest</span></button></div></div>
 <div class="fg"><label data-i18n="linkedTask">Linked Task (optional)</label><select class="inp" id="mr-task"><option value="">— None —</option></select></div>
 <input type="hidden" id="mr-event" value="">
+<div class="fg" style="display:flex;align-items:center;gap:8px"><label style="margin:0"><input type="checkbox" id="mr-recurring" onchange="$('mr-rule-wrap').style.display=this.checked?'flex':'none'"> 🔁 <span data-i18n="recurring">Recurring</span></label><div id="mr-rule-wrap" style="display:none;gap:6px;align-items:center"><select class="inp" id="mr-rule" style="font-size:11px;padding:4px 8px"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="custom:2d">Every 2 days</option><option value="custom:3d">Every 3 days</option></select></div></div>
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeModal('remind')" data-i18n="cancel">Cancel</button><button class="btn p" onclick="saveReminder()" data-i18n="setReminder">Set Reminder</button></div></div></div>
 
 <!-- Task Detail Modal (with Actions) -->
@@ -622,6 +675,15 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     <select class="inp" id="td-dep-select" style="flex:1;font-size:11px"><option value="">Select a task...</option></select>
     <button class="btn p" style="padding:5px 12px;font-size:11px" onclick="addDepFromTD()">🔗 Link</button>
   </div>
+</div>
+
+<!-- Audit History Section -->
+<div class="td-section">
+  <div class="td-section-hdr" onclick="toggleAudit()" style="cursor:pointer">
+    <h4>📜 <span data-i18n="taskHistory">History</span></h4>
+    <span id="td-audit-count" style="font-size:11px;color:var(--mt)"></span>
+  </div>
+  <div id="td-audit" style="display:none;max-height:200px;overflow-y:auto"></div>
 </div>
 </div></div>
 <div class="modal-overlay" id="modal-event"><div class="modal"><h3 id="modal-event-title" data-i18n="newEvent">New Event</h3>
@@ -842,7 +904,7 @@ try{const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
 function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt()}
-function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
+function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let tCats=[];
 let catSubMap={};
@@ -1116,6 +1178,9 @@ async function openTD(taskId){
 }
 
 function closeTD(){$('modal-td').classList.remove('v');tdTask=null;tdActions=[]}
+let auditVisible=false;
+function toggleAudit(){auditVisible=!auditVisible;$('td-audit').style.display=auditVisible?'block':'none';if(auditVisible&&tdTask)loadTDAudit(tdTask.id)}
+async function loadTDAudit(taskId){try{const d=await(await fetch(A+'/tasks/'+taskId+'/audit',{headers:hdr()})).json();const entries=d.audit||[];$('td-audit-count').textContent=entries.length+' entries';$('td-audit').innerHTML=entries.length?entries.map(e=>{const dt=e.created_at?new Date(e.created_at).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';const detail=e.field_changed?(e.field_changed+': '+(e.old_value||'—')+' → '+(e.new_value||'—')):(e.action==='created'?'Task created':e.action==='deleted'?'Task deleted':e.action);return`<div class="audit-entry"><span class="audit-time">${dt}</span><span class="audit-action ${e.action}">${e.action}</span><span class="audit-detail">${detail}</span><span style="font-size:9px;color:var(--mt)">${e.user_email||''}</span></div>`}).join(''):'<div style="font-size:11px;color:var(--mt);padding:8px 0">No history yet</div>'}catch{$('td-audit').innerHTML='<div style="font-size:11px;color:var(--mt)">Failed to load history</div>'}}
 
 function editTaskFromTD(){
   if(!tdTask)return;
@@ -1914,8 +1979,8 @@ async function smartCreateReminder(text,sender){
     $('mr-min').value=30;
   }
 }
-async function loadRemind(){try{const d=await(await fetch(A+'/reminders',{headers:hdr()})).json();$('rl').innerHTML=(d.reminders||[]).map(rm=>{let taskBadge=rm.task_id?`<span style="font-size:9px;background:var(--as);color:var(--ac);padding:1px 6px;border-radius:4px;margin-left:4px">\U0001f4cb #${rm.task_id}${rm.task_title?' '+rm.task_title.slice(0,20):''}</span>`:'';let snoozeBadge=rm.snooze_count>0?`<span style="font-size:9px;background:var(--ys);color:#92400e;padding:1px 6px;border-radius:4px;margin-left:4px">\U0001f504 ${rm.snooze_count}x</span>`:'';return`<div class="tr"><span style="font-size:16px">\u23f0</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${rm.message}${taskBadge}${snoozeBadge}</div><div style="font-size:10px;color:var(--mt)">${rm.remind_at?new Date(rm.remind_at).toLocaleString():''}</div><div style="display:flex;gap:4px;margin-top:4px"><button class="btn" style="padding:2px 8px;font-size:9px" onclick="event.stopPropagation();snoozeRemind(${rm.id},15)">\u23f0 15m</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="event.stopPropagation();snoozeRemind(${rm.id},60)">\u23f0 1h</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="event.stopPropagation();snoozeRemind(${rm.id},1440)">\U0001f305 Tomorrow</button></div></div><button class="btn d" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();delRemind(${rm.id})">\u2715</button></div>`}).join('')||'<div class="empty">'+I18N[curLang].noReminders+'</div>'}catch{$('rl').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
-async function saveReminder(){const msg=$('mr-msg').value;if(!msg){alert('Message required');return}const atVal=$('mr-at').value;const taskId=$('mr-task').value?parseInt($('mr-task').value):null;const eventId=$('mr-event').value||null;const body={message:msg,task_id:taskId,event_id:eventId};if(atVal){body.remind_at=new Date(atVal).toISOString()}else{body.minutes=30}await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeModal('remind');loadRemind()}
+async function loadRemind(){try{const d=await(await fetch(A+'/reminders',{headers:hdr()})).json();$('rl').innerHTML=(d.reminders||[]).map(rm=>{let taskBadge=rm.task_id?`<span style="font-size:9px;background:var(--as);color:var(--ac);padding:1px 6px;border-radius:4px;margin-left:4px">\U0001f4cb #${rm.task_id}${rm.task_title?' '+rm.task_title.slice(0,20):''}</span>`:'';let recurBadge=rm.is_recurring?`<span style="font-size:9px;background:var(--gs);color:var(--gn);padding:1px 6px;border-radius:4px;margin-left:4px">\U0001f501 ${rm.recurrence_rule||'Recurring'}</span>`:'';let snoozeBadge=rm.snooze_count>0?`<span style="font-size:9px;background:var(--ys);color:#92400e;padding:1px 6px;border-radius:4px;margin-left:4px">\U0001f504 ${rm.snooze_count}x</span>`:'';return`<div class="tr"><span style="font-size:16px">\u23f0</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${rm.message}${taskBadge}${snoozeBadge}${recurBadge}</div><div style="font-size:10px;color:var(--mt)">${rm.remind_at?new Date(rm.remind_at).toLocaleString():''}</div><div style="display:flex;gap:4px;margin-top:4px"><button class="btn" style="padding:2px 8px;font-size:9px" onclick="event.stopPropagation();snoozeRemind(${rm.id},15)">\u23f0 15m</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="event.stopPropagation();snoozeRemind(${rm.id},60)">\u23f0 1h</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="event.stopPropagation();snoozeRemind(${rm.id},1440)">\U0001f305 Tomorrow</button></div></div><button class="btn d" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();delRemind(${rm.id})">\u2715</button></div>`}).join('')||'<div class="empty">'+I18N[curLang].noReminders+'</div>'}catch{$('rl').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
+async function saveReminder(){const msg=$('mr-msg').value;if(!msg){alert('Message required');return}const atVal=$('mr-at').value;const taskId=$('mr-task').value?parseInt($('mr-task').value):null;const eventId=$('mr-event').value||null;const isRecurring=$('mr-recurring').checked;const rule=isRecurring?$('mr-rule').value:null;const body={message:msg,task_id:taskId,event_id:eventId,is_recurring:isRecurring,recurrence_rule:rule};if(atVal){body.remind_at=new Date(atVal).toISOString()}else{body.minutes=30}await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeModal('remind');loadRemind()}
 async function delRemind(id){await fetch(A+'/reminders/'+id,{method:'DELETE',headers:hdr()});loadRemind()}
 async function snoozeRemind(id,minutes){await fetch(A+'/reminders/'+id+'/snooze',{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({minutes})});loadRemind()}
 function setRmQuick(min){const d=new Date(Date.now()+min*60000);const pad=n=>String(n).padStart(2,'0');$('mr-at').value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
@@ -1925,6 +1990,11 @@ let chL=false,chFile=null,chatHistory=[];function onFileSelect(){const f=$('chf'
 function clearFile(){chFile=null;$('chf').value='';$('chfn').style.display='none'}
 async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl" style="color:var(--mt)">${chFile?'Processing...':'Thinking...'}</div>`;c.scrollTop=c.scrollHeight;chatHistory.push({role:'user',content:dm});chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m,history:chatHistory.slice(-20)})})).json();$('chl').remove();const aiResp=d.response||'No response';chatHistory.push({role:'assistant',content:aiResp});c.innerHTML+=`<div class="ch-b ch-a">${esc(aiResp)}</div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">Error: ${e.message||'Failed'}</div>`}chL=false;c.scrollTop=c.scrollHeight}
 function newChat(){chatHistory=[];$('chm').innerHTML='<div class="ch-b ch-a" style="color:var(--mt)">'+t('newChatStarted')+'</div>'}
+// ── AI Suggestions ──
+async function loadAISuggestions(){$('ai-suggestions').innerHTML='<div style="color:var(--mt)">\U0001f914 Analyzing your tasks...</div>';try{const d=await(await fetch(A+'/ai/suggestions',{headers:hdr()})).json();const s=d.suggestions||[];if(!s.length){$('ai-suggestions').innerHTML='<div style="color:var(--mt)">No suggestions at this time</div>';return}$('ai-suggestions').innerHTML=s.map(sg=>`<div style="padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div><div style="font-weight:600;font-size:12px">${sg.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${sg.rationale||''}</div><div style="font-size:9px;color:var(--ac);margin-top:2px">${sg.suggested_assignee?'\U0001f464 '+sg.suggested_assignee:''} ${sg.priority?'\u2022 '+sg.priority:''}</div></div><button class="btn p" style="padding:3px 10px;font-size:9px;white-space:nowrap" onclick="createFromSuggestion(this)" data-title="${sg.title}" data-assignee="${sg.suggested_assignee||''}" data-prio="${sg.priority||'medium'}">+ Create</button></div></div>`).join('')}catch(e){$('ai-suggestions').innerHTML='<div style="color:var(--rd)">Failed to load suggestions</div>'}}
+function createFromSuggestion(btn){const t=btn.dataset.title||'';const a=btn.dataset.assignee||'';const p=btn.dataset.prio||'medium';openModal('task',{title:t,assignee_name:a,priority:p})}
+// ── Smart Reminder Timing ──
+async function suggestRmTime(){const msg=$('mr-msg').value;if(!msg){alert('Enter a message first');return}try{const taskId=$('mr-task').value;let title=msg,dueDate='';if(taskId&&allT){const tk=allT.find(t=>t.id===parseInt(taskId));if(tk){title=tk.title;dueDate=tk.due_date||''}}const d=await(await fetch(A+'/ai/suggest-time',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title,due_date:dueDate})})).json();if(d.remind_at){const dt=new Date(d.remind_at);const pad=n=>String(n).padStart(2,'0');$('mr-at').value=dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate())+'T'+pad(dt.getHours())+':'+pad(dt.getMinutes())}}catch{}}
 // ═══ RECURRING TASKS ═══
 const RECUR_LABELS={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',semi_annually:'Semi-Annual',yearly:'Yearly'};
 const RECUR_COLORS={daily:'#3b82f6',weekly:'#22c55e',monthly:'#a855f7',quarterly:'#f97316',semi_annually:'#ec4899',yearly:'#eab308'};
@@ -2021,8 +2091,78 @@ async function loadAnalytics(startDate,endDate){
       labels:days,
       datasets:[{label:'Completed',data:counts,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#22c55e'}]
     },{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8'},grid:{display:false}},y:{ticks:{color:'#94a3b8',stepSize:1},grid:{color:'rgba(255,255,255,.04)'}}}});
+    // ── KPI Cards ──
+    renderKPIs(dR.kpis,dR.previous_period);
+    // ── Burndown Chart ──
+    renderBurndown(dR.burndown);
   }catch(e){console.error('loadAnalytics:',e)}
 }
+// ── KPI Cards rendering ──
+function renderKPIs(kpis,prev){
+  if(!kpis){$('kpi-cards').innerHTML='';return}
+  const items=[
+    {icon:'⏱️',label:t('avgCompletion'),value:kpis.avg_completion_days+'d',key:'avg_days'},
+    {icon:'✅',label:t('onTimeRate'),value:kpis.on_time_pct+'%',key:'on_time_pct'},
+    {icon:'🔴',label:t('overdueCount'),value:kpis.overdue_count,key:'overdue'},
+    {icon:'📅',label:t('tasksThisWeek'),value:kpis.tasks_this_week,key:'tasks_this_week'}
+  ];
+  $('kpi-cards').innerHTML=items.map(k=>{
+    let trend='';
+    if(prev&&prev.done!==undefined){
+      let pv=0;
+      if(k.key==='avg_days')pv=prev.avg_days||0;
+      else if(k.key==='on_time_pct')pv=prev.on_time_pct||0;
+      else if(k.key==='overdue')pv=prev.overdue||0;
+      else if(k.key==='tasks_this_week')pv=prev.total||0;
+      const cv=typeof k.value==='string'?parseFloat(k.value):k.value;
+      if(pv>0){
+        const diff=Math.round((cv-pv)/pv*100);
+        const isGood=(k.key==='overdue'||k.key==='avg_days')?diff<0:diff>0;
+        trend=`<div class="kpi-trend ${isGood?'up':'down'}">${diff>0?'↑':'↓'} ${Math.abs(diff)}% ${t('vsPrevious')}</div>`;
+      }
+    }
+    return`<div class="kpi-card"><div style="font-size:16px;margin-bottom:4px">${k.icon}</div><div class="kpi-value">${k.value}</div><div class="kpi-label">${k.label}</div>${trend}</div>`;
+  }).join('');
+}
+// ── Burndown chart rendering ──
+function renderBurndown(burndown){
+  if(!burndown||!burndown.length)return;
+  const labels=burndown.map(b=>new Date(b.date).toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'}));
+  renderChart('chart-burndown','line',{
+    labels,
+    datasets:[
+      {label:'Remaining',data:burndown.map(b=>b.remaining),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.3,pointRadius:3},
+      {label:'Ideal',data:burndown.map(b=>b.ideal),borderColor:'#94a3b8',borderDash:[5,5],backgroundColor:'transparent',tension:.3,pointRadius:0}
+    ]
+  },{plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{ticks:{color:'#94a3b8'},grid:{display:false}},y:{ticks:{color:'#94a3b8',stepSize:1},grid:{color:'rgba(255,255,255,.04)'}}}});
+}
+// ── Export functions ──
+function toggleExportMenu(){const m=$('export-menu');m.style.display=m.style.display==='none'?'block':'none'}
+function exportAnalyticsCSV(){
+  toggleExportMenu();
+  // Collect chart data from existing instances
+  let csv='Metric,Value\n';
+  const cards=document.querySelectorAll('.kpi-card');
+  cards.forEach(c=>{const label=c.querySelector('.kpi-label')?.textContent||'';const val=c.querySelector('.kpi-value')?.textContent||'';csv+=label+','+val+'\n'});
+  // Add summary cards
+  const summary=$('analytics-summary');
+  if(summary){summary.querySelectorAll('.sc').forEach(c=>{const label=c.querySelector('.sc-l')?.textContent||'';const val=c.querySelector('.sc-v')?.textContent||'';csv+=label+','+val+'\n'})}
+  dl('analytics_export.csv',csv,'text/csv');
+}
+function exportChartsPNG(){
+  toggleExportMenu();
+  // Export each chart as PNG
+  Object.keys(chartInstances).forEach(id=>{
+    const chart=chartInstances[id];
+    if(chart){
+      const a=document.createElement('a');
+      a.href=chart.toBase64Image();
+      a.download=id+'.png';
+      a.click();
+    }
+  });
+}
+document.addEventListener('click',e=>{const m=$('export-menu');if(m&&m.style.display==='block'&&!e.target.closest('#export-menu')&&!e.target.closest('[onclick*="toggleExportMenu"]'))m.style.display='none'});
 function renderChart(id,type,data,opts){
   if(typeof Chart==='undefined'){console.error('Chart.js not loaded');return}
   if(chartInstances[id])chartInstances[id].destroy();
@@ -2204,6 +2344,28 @@ const I18N={
     notifications:'Notifications',markAllRead:'Mark all read',noNotifications:'No notifications',
     // Date Range Picker
     days7:'7 Days',days30:'30 Days',days90:'90 Days',thisYear:'This Year',allTime:'All Time',apply:'Apply',
+    // Task Audit / History
+    taskHistory:'History',auditAction:'Action',changedFrom:'From',changedTo:'To',noHistory:'No history yet',
+    // Reminder History
+    reminderHistory:'History',firedAt:'Fired',
+    // KPI Cards
+    avgCompletion:'Avg Completion',onTimeRate:'On-Time Rate',overdueCount:'Overdue',tasksThisWeek:'This Week',vsPrevious:'vs previous',improved:'improved',declined:'declined',
+    // Burndown
+    burndownChart:'Burndown Chart',
+    // AI Suggestions
+    aiSuggestions:'AI Suggestions',suggestedTasks:'Suggested Tasks',createSuggested:'Create',
+    // Prompt Library
+    promptLibrary:'Quick Prompts',savedPrompts:'Saved Prompts',
+    // Smart Reminder
+    suggestTime:'Suggest Time',
+    // Recurring Reminders
+    recurring:'Recurring',recurrenceRule:'Repeat',
+    // Export
+    exportAnalytics:'Export Analytics',exportChart:'Export Chart',
+    // Gantt enhancements
+    criticalPath:'Critical Path',milestones:'Milestones',todayBtn:'Today',
+    // RBAC
+    noPermission:'Insufficient permissions',
     // Gantt Chart
     ganttChart:'Gantt Chart',ganttSub:'Visual timeline with task dependencies',ganttNav:'Gantt',
     // Offline
@@ -2383,18 +2545,30 @@ async function loadGantt(){
     ganttDeps=dr.dep_map||{};
     // Populate filter dropdowns
     const groups=new Set();const assignees=new Set();
-    ganttTasks.forEach(t=>{if(t.assignee)assignees.add(t.assignee)});
+    const categories=new Set();
+    ganttTasks.forEach(t=>{if(t.assignee)assignees.add(t.assignee);if(t.category)categories.add(t.category)});
     const gs=$('gantt-filter-assignee');
     gs.innerHTML='<option value="">All Assignees</option>'+[...assignees].map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join('');
+    const cs=$('gantt-filter-category');
+    if(cs)cs.innerHTML='<option value="">All Categories</option>'+[...categories].map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
     renderGantt();
   }catch(e){console.error('loadGantt:',e)}
 }
 function renderGantt(){
   const container=$('gantt-container');
   const filterAssignee=$('gantt-filter-assignee')?.value||'';
+  const filterCategory=$('gantt-filter-category')?.value||'';
+  const showCritical=$('gantt-critical')?.checked||false;
   let tasks=ganttTasks;
   if(filterAssignee)tasks=tasks.filter(t=>t.assignee===filterAssignee);
+  if(filterCategory)tasks=tasks.filter(t=>t.category===filterCategory);
   if(!tasks.length){container.innerHTML='<div class="empty">'+t('noTasks')+'</div>';return}
+
+  // Calculate critical path
+  let criticalIds=new Set();
+  if(showCritical&&Object.keys(ganttDeps).length){
+    criticalIds=calcCriticalPath(tasks,ganttDeps);
+  }
 
   // Calculate date range
   const now=new Date();
@@ -2404,7 +2578,6 @@ function renderGantt(){
     if(c<minDate)minDate=new Date(c);if(d>maxDate)maxDate=new Date(d);
     if(c>maxDate)maxDate=new Date(c);
   });
-  // Add buffer
   minDate.setDate(minDate.getDate()-2);
   maxDate.setDate(maxDate.getDate()+5);
 
@@ -2420,14 +2593,14 @@ function renderGantt(){
   days.forEach(d=>{
     const ds=d.toISOString().split('T')[0];
     const isToday=ds===todayStr;
-    const label=ganttScale==='month'?d.getDate():ganttScale==='week'?(d.getDate()+(d.getDay()===1?'':'')):(d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]);
     headerHTML+=`<div class="gantt-header-cell${isToday?' today':''}" style="min-width:${cellW}px">${d.getDate()===1||days.indexOf(d)===0?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' ':ganttScale==='day'?d.getDate():d.getDate()}</div>`;
   });
   headerHTML+='</div>';
 
-  // Body
-  let bodyHTML='<div class="gantt-body">';
+  // Body — track row positions for arrows
+  let bodyHTML='<div class="gantt-body" id="gantt-body">';
   const todayIdx=days.findIndex(d=>d.toISOString().split('T')[0]===todayStr);
+  const barPositions={};
 
   tasks.forEach((task,rowIdx)=>{
     const startD=new Date(task.created_at);
@@ -2436,13 +2609,23 @@ function renderGantt(){
     const endIdx=Math.min(days.length-1,days.findIndex(d=>d.toISOString().split('T')[0]>=endD.toISOString().split('T')[0]));
     const barLeft=startIdx*cellW;
     const barWidth=Math.max(cellW,(endIdx-startIdx+1)*cellW);
+    const isMilestone=startD.toISOString().split('T')[0]===endD.toISOString().split('T')[0]&&task.due_date;
+    const isCritical=criticalIds.has(task.id);
+
+    // Store position for dependency arrows
+    barPositions[task.id]={left:barLeft,width:barWidth,top:rowIdx*36+18,right:barLeft+barWidth};
 
     bodyHTML+=`<div class="gantt-row"><div class="gantt-label" onclick="openTD(${task.id})" title="${esc(task.title)}">${esc(task.title)}</div><div class="gantt-cells" style="position:relative">`;
     days.forEach((d,i)=>{
       const isToday=d.toISOString().split('T')[0]===todayStr;
       bodyHTML+=`<div class="gantt-cell${isToday?' today':''}" style="min-width:${cellW}px"></div>`;
     });
-    bodyHTML+=`<div class="gantt-bar ${task.status}" style="left:${barLeft}px;width:${barWidth}px" onclick="openTD(${task.id})" title="${esc(task.title)} (${task.status})">${ganttScale!=='month'?esc(task.title.substring(0,20)):''}</div>`;
+
+    if(isMilestone){
+      bodyHTML+=`<div class="gantt-bar ${task.status} milestone${isCritical?' critical':''}" style="left:${barLeft}px" onclick="openTD(${task.id})" title="\u2666 ${esc(task.title)}" draggable="true" data-task-id="${task.id}"><span>\u2666</span></div>`;
+    }else{
+      bodyHTML+=`<div class="gantt-bar ${task.status}${isCritical?' critical':''}" style="left:${barLeft}px;width:${barWidth}px" onclick="openTD(${task.id})" title="${esc(task.title)} (${task.status})" draggable="true" data-task-id="${task.id}">${ganttScale!=='month'?esc(task.title.substring(0,20)):''}</div>`;
+    }
     bodyHTML+='</div></div>';
   });
 
@@ -2450,9 +2633,126 @@ function renderGantt(){
   if(todayIdx>=0){
     bodyHTML+=`<div class="gantt-today-line" style="left:${180+todayIdx*cellW+cellW/2}px"></div>`;
   }
-  bodyHTML+='</div>';
 
+  // Dependency arrows SVG
+  let svgHTML='';
+  if(Object.keys(ganttDeps).length){
+    const svgH=tasks.length*36+10;
+    const svgW=days.length*cellW;
+    svgHTML=`<svg class="gantt-dep-svg" width="${svgW}" height="${svgH}" style="left:180px">`;
+    svgHTML+=`<defs><marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/></marker><marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#ef4444"/></marker></defs>`;
+    tasks.forEach(task=>{
+      const dep=ganttDeps[String(task.id)];
+      if(!dep)return;
+      const blockedByIds=dep.blocked_by_ids||[];
+      blockedByIds.forEach(fromId=>{
+        const fromPos=barPositions[fromId];
+        const toPos=barPositions[task.id];
+        if(!fromPos||!toPos)return;
+        const isBlocked=dep.is_blocked;
+        const marker=isBlocked?'url(#arrow-red)':'url(#arrow)';
+        const color=isBlocked?'#ef4444':'#94a3b8';
+        const x1=fromPos.right;
+        const y1=fromPos.top;
+        const x2=toPos.left;
+        const y2=toPos.top;
+        // Draw curved arrow
+        const midX=(x1+x2)/2;
+        svgHTML+=`<path d="M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}" fill="none" stroke="${color}" stroke-width="1.5" marker-end="${marker}" opacity="0.6"/>`;
+      });
+    });
+    svgHTML+='</svg>';
+  }
+
+  bodyHTML+=svgHTML+'</div>';
   container.innerHTML=headerHTML+bodyHTML;
+
+  // ── Drag-to-reschedule setup ──
+  setupGanttDrag(container,days,cellW);
+}
+
+// ── Gantt helpers: Critical Path, Today scroll, Drag-to-reschedule ──
+function calcCriticalPath(tasks,deps){
+  const ids=new Set();
+  const taskMap={};
+  tasks.forEach(t=>{taskMap[t.id]=t});
+  function chainLen(taskId,visited=new Set()){
+    if(visited.has(taskId))return 0;
+    visited.add(taskId);
+    const dep=deps[String(taskId)];
+    if(!dep||!dep.blocking_ids||!dep.blocking_ids.length)return 1;
+    let maxChild=0;
+    dep.blocking_ids.forEach(childId=>{
+      const len=chainLen(childId,new Set(visited));
+      if(len>maxChild)maxChild=len;
+    });
+    return 1+maxChild;
+  }
+  let maxLen=0;let maxStart=null;
+  tasks.forEach(t=>{
+    const dep=deps[String(t.id)];
+    const isRoot=!dep||!dep.blocked_by_ids||dep.blocked_by_ids.length===0;
+    if(isRoot){
+      const len=chainLen(t.id);
+      if(len>maxLen){maxLen=len;maxStart=t.id}
+    }
+  });
+  if(maxStart!==null){
+    function tracePath(taskId){
+      ids.add(taskId);
+      const dep=deps[String(taskId)];
+      if(!dep||!dep.blocking_ids)return;
+      let bestChild=null,bestLen=0;
+      dep.blocking_ids.forEach(childId=>{
+        const len=chainLen(childId);
+        if(len>bestLen){bestLen=len;bestChild=childId}
+      });
+      if(bestChild!==null)tracePath(bestChild);
+    }
+    tracePath(maxStart);
+  }
+  return ids;
+}
+function ganttToday(){
+  const container=$('gantt-container');
+  const todayLine=container.querySelector('.gantt-today-line');
+  if(todayLine){
+    const offset=parseInt(todayLine.style.left)-container.clientWidth/2;
+    container.scrollLeft=Math.max(0,offset);
+  }
+}
+function setupGanttDrag(container,days,cellW){
+  let dragTask=null,dragStart=0;
+  container.addEventListener('dragstart',e=>{
+    const bar=e.target.closest('.gantt-bar[data-task-id]');
+    if(!bar)return;
+    dragTask=parseInt(bar.dataset.taskId);
+    dragStart=e.clientX;
+    bar.classList.add('dragging');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain',String(dragTask));
+  });
+  container.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move'});
+  container.addEventListener('dragend',async e=>{
+    const bar=e.target.closest('.gantt-bar[data-task-id]');
+    if(!bar||!dragTask)return;
+    bar.classList.remove('dragging');
+    const dx=e.clientX-dragStart;
+    const dayShift=Math.round(dx/cellW);
+    if(dayShift===0){dragTask=null;return}
+    const task=ganttTasks.find(t=>t.id===dragTask);
+    if(!task){dragTask=null;return}
+    const oldDue=task.due_date?new Date(task.due_date):null;
+    if(oldDue){
+      const newDue=new Date(oldDue);
+      newDue.setDate(newDue.getDate()+dayShift);
+      try{
+        await fetch(A+'/tasks/'+dragTask,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({due_date:newDue.toISOString()})});
+        await loadGantt();
+      }catch(err){console.error('Drag reschedule failed:',err)}
+    }
+    dragTask=null;
+  });
 }
 
 // ═══ OFFLINE SUPPORT ═══

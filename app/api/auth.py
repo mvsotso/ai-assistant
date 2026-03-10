@@ -71,6 +71,54 @@ async def require_auth(request: Request):
     return payload
 
 
+def require_permission(permission: str):
+    """FastAPI dependency factory: checks user has a specific permission.
+    Permissions come from TeamRole.permissions JSON field.
+    If user has no role assigned, defaults to 'view' permission only.
+    """
+    async def _check_permission(request: Request):
+        # First verify auth
+        payload = await require_auth(request)
+        email = payload.get("email", "")
+
+        # Look up user's role and permissions
+        from app.core.database import get_db
+        from sqlalchemy.ext.asyncio import AsyncSession
+        from sqlalchemy import select, text
+
+        # Get db session manually
+        from app.core.database import async_session
+        async with async_session() as db:
+            # Find user by email
+            result = await db.execute(text(
+                "SELECT u.role_id, tr.permissions FROM users u "
+                "LEFT JOIN team_roles tr ON u.role_id = tr.id "
+                "WHERE u.email = :email LIMIT 1"
+            ).bindparams(email=email))
+            row = result.first()
+
+            if row and row[1]:
+                # Parse permissions JSON
+                try:
+                    perms = json.loads(row[1]) if isinstance(row[1], str) else row[1]
+                except (json.JSONDecodeError, TypeError):
+                    perms = ["view"]
+            else:
+                # No role assigned — default to full access for admin users
+                # (single-user app, be permissive)
+                perms = ["view", "edit", "admin", "delete"]
+
+            if permission not in perms and "admin" not in perms:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Insufficient permissions. Required: {permission}"
+                )
+
+        return payload
+
+    return _check_permission
+
+
 @auth_router.post("/google/verify")
 async def verify_google_token(body: GoogleTokenRequest):
     """

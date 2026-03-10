@@ -115,6 +115,16 @@ def check_reminders():
                     if result_msg.get("ok") and result_msg.get("result"):
                         r.telegram_message_id = result_msg["result"].get("message_id")
 
+                    # Handle recurring reminders — auto-reschedule
+                    if r.is_recurring and r.recurrence_rule:
+                        next_at = _calc_next_reminder(r.remind_at, r.recurrence_rule)
+                        if next_at:
+                            r.is_sent = False
+                            r.remind_at = next_at
+                            r.snooze_count = 0
+                            r.telegram_message_id = None
+                            logger.info(f"Recurring reminder {r.id} rescheduled to {next_at}")
+
                     logger.info(f"Sent reminder {r.id} to chat {r.chat_id} with snooze buttons")
                 except Exception as e:
                     logger.error(f"Failed to send reminder {r.id}: {e}")

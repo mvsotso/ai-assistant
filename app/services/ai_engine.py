@@ -449,5 +449,79 @@ Format it cleanly for Telegram (use Markdown sparingly)."""
         return await self._call_claude(self._get_system_prompt(), prompt)
 
 
+    # ─── TASK SUGGESTIONS ───
+
+    async def suggest_tasks(self, existing_tasks: list, team_roles: list = None, recent_completed: list = None) -> list:
+        """Suggest new tasks based on current task patterns and team workload."""
+        tasks_str = "\n".join([f"- {t.get('title','')} ({t.get('status','')}, assigned to {t.get('assignee','Unassigned')}, priority: {t.get('priority','')})" for t in existing_tasks[:30]])
+        completed_str = ""
+        if recent_completed:
+            completed_str = "\nRecently completed:\n" + "\n".join([f"- {t.get('title','')}" for t in recent_completed[:10]])
+        team_str = ""
+        if team_roles:
+            team_str = "\nTeam: " + ", ".join([r.get('name', '') for r in team_roles[:10]])
+
+        prompt = f"""Analyze these current tasks and suggest 3-5 NEW tasks that should be created:
+
+Current tasks:
+{tasks_str}
+{completed_str}
+{team_str}
+
+Consider:
+- Follow-up tasks from completed work
+- Missing tasks implied by current work
+- Gaps in coverage or delegation
+- Upcoming deadlines that need preparation
+
+Return ONLY a JSON array (no markdown, no explanation) like:
+[{{"title": "...", "priority": "medium", "suggested_assignee": "...", "rationale": "Short reason"}}]"""
+
+        result = await self._call_claude(self._get_system_prompt(), prompt)
+        try:
+            import json
+            # Try to extract JSON from the response
+            clean = result.strip()
+            if clean.startswith("```"):
+                clean = clean.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+            return json.loads(clean)
+        except (json.JSONDecodeError, IndexError):
+            return []
+
+    # ─── SMART REMINDER TIMING ───
+
+    async def suggest_reminder_time(self, task_title: str, task_due_date: str = None, context: str = "") -> dict:
+        """Suggest optimal reminder time based on task urgency and deadline."""
+        prompt = f"""Given this task, suggest the optimal reminder time:
+
+Task: {task_title}
+Due date: {task_due_date or 'Not set'}
+Current time: {datetime.now(timezone.utc).isoformat()}
+Additional context: {context}
+
+Consider:
+- If due today, remind in 1 hour
+- If due tomorrow, remind today evening or tomorrow morning
+- If due in 2-3 days, remind 1 day before
+- If due in a week+, remind 2-3 days before
+- If no due date, suggest tomorrow morning (9:00 AM)
+
+Return ONLY a JSON object (no markdown): {{"remind_at": "ISO datetime", "reason": "Short explanation"}}"""
+
+        result = await self._call_claude(self._get_system_prompt(), prompt)
+        try:
+            import json
+            clean = result.strip()
+            if clean.startswith("```"):
+                clean = clean.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+            return json.loads(clean)
+        except (json.JSONDecodeError, IndexError):
+            # Fallback: suggest tomorrow 9 AM
+            from datetime import timedelta
+            tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+            tomorrow = tomorrow.replace(hour=2, minute=0, second=0, microsecond=0)  # 9 AM ICT = 2 AM UTC
+            return {"remind_at": tomorrow.isoformat(), "reason": "Default: tomorrow morning"}
+
+
 # Singleton
 ai_engine = AIEngine()
