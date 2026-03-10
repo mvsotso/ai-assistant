@@ -481,3 +481,140 @@ async def ai_chat_with_file(
     # Call AI with file
     response = await ai_engine.chat_with_file(message, file_data)
     return {"response": response, "file_summary": file_data["summary"]}
+
+# ─── MoM Processor ───
+MOM_EXTRACT_PROMPT = """You are analyzing Meeting Minutes (MoM) documents. Extract ALL action items, decisions, and follow-ups.
+
+For each action item provide:
+- title: Brief action-oriented title (max 100 chars)
+- assignee: Person name if mentioned, otherwise null
+- deadline: ISO date (YYYY-MM-DD) if mentioned, otherwise null
+- priority: "low", "medium", "high", or "urgent"
+- category: One of: Administration, Data Management, IT & Systems, Tax Operations, Project Management, Communication, Research. Or null.
+- type: "task" for action items/deliverables, "reminder" for follow-ups needing a nudge, "event" for scheduled meetings/reviews with a date/time
+- event_date: ISO datetime (YYYY-MM-DDTHH:MM:SS+07:00) if type is "event", otherwise null
+- event_duration_minutes: integer if type is "event", default 60
+- notes: Additional context (max 200 chars)
+
+Respond ONLY with valid JSON, no markdown:
+{"meeting_title": "...", "meeting_date": "YYYY-MM-DD or null", "items": [{"title": "...", "assignee": null, "deadline": null, "priority": "medium", "category": null, "type": "task", "event_date": null, "event_duration_minutes": 60, "notes": ""}]}"""
+
+
+@router.post("/mom/process")
+@limiter.limit("5/minute")
+async def mom_process(
+    request: Request,
+    file: UploadFile = File(...),
+    _auth: dict = Depends(require_auth),
+):
+    """Process a MoM document and extract action items via AI."""
+    from app.services.file_processor import extract_text_from_file
+    import json as json_mod
+
+    file_bytes = await file.read()
+    if len(file_bytes) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="File too large. Maximum 10MB.")
+
+    file_data = await extract_text_from_file(file_bytes, file.filename)
+    if not file_data.get("content"):
+        raise HTTPException(status_code=422, detail="Could not extract text from file.")
+
+    prompt = MOM_EXTRACT_PROMPT + "
+
+Document content:
+" + file_data["content"][:40000]
+    result = await ai_engine._call_claude(
+        "You extract structured action items from meeting minutes. Respond ONLY with valid JSON.",
+        prompt,
+        max_tokens=4000,
+    )
+
+    try:
+        clean = result.strip()
+        if clean.startswith("```"):
+            clean = clean.split("
+", 1)[1] if "
+" in clean else clean[3:]
+            clean = clean.rsplit("```", 1)[0]
+        parsed = json_mod.loads(clean)
+    except (json_mod.JSONDecodeError, Exception):
+        raise HTTPException(status_code=500, detail="AI failed to extract structured data. Please try again.")
+
+    items = parsed.get("items", [])
+    return {
+        "meeting_title": parsed.get("meeting_title", file.filename),
+        "meeting_date": parsed.get("meeting_date"),
+        "items": items,
+        "total": len(items),
+        "file_summary": file_data.get("summary", ""),
+    }
+
+
+class MomExecuteRequest(BaseModel):
+    meeting_title: Optional[str] = None
+    items: list
+
+
+@router.post("/mom/execute")
+async def mom_execute(
+    body: MomExecuteRequest,
+    db: AsyncSession = Depends(get_db),
+    _auth: dict = Depends(require_auth),
+):
+    """Execute reviewed MoM action items - create tasks, reminders, events."""
+    from app.services.action_executor import execute_actions
+    from datetime import datetime, timezone, timedelta
+
+    actions = []
+    for item in body.items:
+        item_type = item.get("type", "task")
+        desc = f"[MoM: {body.meeting_title or 'Meeting'}] {item.get('notes', '')}".strip()
+
+        if item_type == "task":
+            actions.append({
+                "action": "create_task",
+                "title": item["title"],
+                "assignee": item.get("assignee"),
+                "priority": item.get("priority", "medium"),
+                "category": item.get("category"),
+                "due": item.get("deadline"),
+                "description": desc,
+            })
+        elif item_type == "reminder":
+            minutes = 1440  # default 24 hours
+            if item.get("deadline"):
+                try:
+                    deadline = datetime.fromisoformat(item["deadline"].replace("Z", "+00:00"))
+                    if deadline.tzinfo is None:
+                        deadline = deadline.replace(tzinfo=timezone.utc)
+                    diff = (deadline - datetime.now(timezone.utc)).total_seconds() / 60
+                    minutes = max(int(diff), 5)
+                except (ValueError, TypeError):
+                    pass
+            actions.append({
+                "action": "set_reminder",
+                "message": f"[MoM] {item['title']}",
+                "minutes": minutes,
+            })
+        elif item_type == "event":
+            actions.append({
+                "action": "create_event",
+                "title": item["title"],
+                "start": item.get("event_date"),
+                "duration_minutes": item.get("event_duration_minutes", 60),
+                "description": desc,
+                "timezone": "Asia/Phnom_Penh",
+            })
+
+    results = await execute_actions(actions, db)
+    await db.commit()
+
+    created = sum(1 for r in results if r.get("success"))
+    failed = sum(1 for r in results if not r.get("success"))
+
+    return {
+        "total": len(results),
+        "created": created,
+        "failed": failed,
+        "results": results,
+    }

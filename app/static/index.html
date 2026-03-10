@@ -332,6 +332,19 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 /* ── Offline Banner ── */
 .offline-bar{position:fixed;top:0;left:0;right:0;padding:8px 16px;background:var(--os);color:var(--or);font-size:12px;font-weight:600;text-align:center;z-index:300;display:none;align-items:center;justify-content:center;gap:8px}
 .offline-bar.v{display:flex}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mom-row{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start;font-size:11px}
+.mom-row:hover{border-color:var(--ac)}
+.mom-row.disabled{opacity:.4}
+.mom-row input[type=checkbox]{margin-top:3px;flex-shrink:0}
+.mom-fields{flex:1;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mom-title-inp{flex:2 1 200px;background:var(--cd);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;color:var(--tx);font-size:11px;outline:none;font-family:'DM Sans',sans-serif}
+.mom-title-inp:focus{border-color:var(--ac)}
+.mom-sel{flex:0 0 auto;background:var(--cd);border:1px solid var(--bd);border-radius:6px;padding:4px 6px;color:var(--tx);font-size:10px;outline:none}
+.mom-type-badge{padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;flex-shrink:0}
+.mom-type-task{background:var(--as);color:var(--ac)}
+.mom-type-reminder{background:rgba(249,115,22,.12);color:#f97316}
+.mom-type-event{background:rgba(168,85,247,.12);color:#a855f7}
 </style>
 </head>
 <body>
@@ -382,6 +395,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn ex" onclick="exportCSV()" data-i18n="csv">📊 CSV</button>
         <button class="btn ex" onclick="exportJSON()" data-i18n="json">📋 JSON</button>
+        <button class="btn gm" onclick="openMomModal()" data-i18n="momBtn">📋 MoM</button>
         <button class="btn gm" onclick="openGM()" data-i18n="groups">⚙️ Groups</button>
         <button class="btn p" onclick="openModal('task')" data-i18n="newTask">+ New Task</button>
       </div>
@@ -736,6 +750,39 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 </div>
 </div></div>
 
+
+<!-- MoM Processor Modal -->
+<div class="modal-overlay" id="modal-mom" onclick="if(event.target===this)closeMom()"><div class="modal" style="max-width:720px">
+<h3 data-i18n="momTitle">📋 Meeting Minutes Processor</h3>
+<div id="mom-step-upload">
+  <div style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px">
+    <div style="font-size:12px;font-weight:600;margin-bottom:6px" data-i18n="momUploadStep">Step 1: Upload Meeting Minutes</div>
+    <div style="font-size:11px;color:var(--mt);margin-bottom:10px" data-i18n="momUploadDesc">Upload a PDF, Word, or Excel file containing your meeting minutes. AI will extract action items automatically.</div>
+    <input type="file" id="mom-file" style="display:none" accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt" onchange="onMomFileSelect()">
+    <div style="display:flex;gap:8px;align-items:center"><button class="btn" onclick="$('mom-file').click()" data-i18n="chooseFile">📎 Choose File</button><span id="mom-file-name" style="font-size:11px;color:var(--mt)" data-i18n="noFileSelected">No file selected</span></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeMom()" data-i18n="cancel">Cancel</button><button class="btn p" id="mom-process-btn" onclick="processMom()" disabled data-i18n="momProcess">🤖 Process with AI</button></div>
+</div>
+<div id="mom-step-loading" style="display:none;text-align:center;padding:40px 20px">
+  <div style="font-size:32px;margin-bottom:12px">🤖</div>
+  <div style="font-size:13px;font-weight:600" data-i18n="momAnalyzing">Analyzing meeting minutes...</div>
+  <div style="font-size:11px;color:var(--mt);margin-top:6px" data-i18n="momAnalyzingDesc">Extracting action items, deadlines, and assignments</div>
+  <div style="margin:16px auto;width:32px;height:32px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite"></div>
+</div>
+<div id="mom-step-review" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+    <div><span id="mom-meeting-title" style="font-size:13px;font-weight:700"></span><span id="mom-item-count" style="font-size:11px;color:var(--mt);margin-left:8px"></span></div>
+    <div style="display:flex;gap:4px"><button class="btn" onclick="momSelectAll(true)" style="font-size:10px;padding:3px 8px" data-i18n="momSelectAll">Select All</button><button class="btn" onclick="momSelectAll(false)" style="font-size:10px;padding:3px 8px" data-i18n="momDeselectAll">Deselect All</button></div>
+  </div>
+  <div id="mom-items-table" style="max-height:400px;overflow-y:auto;margin-bottom:14px"></div>
+  <div id="mom-error" style="display:none;color:var(--rd);font-size:12px;padding:10px;background:var(--rs);border-radius:8px;margin-bottom:10px"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button class="btn" onclick="momRestart()" data-i18n="momUploadAnother">Upload Another</button><button class="btn" onclick="closeMom()" data-i18n="cancel">Cancel</button><button class="btn p" id="mom-execute-btn" onclick="executeMom()" data-i18n="momCreateAll">🚀 Create Selected Items</button></div>
+</div>
+<div id="mom-step-results" style="display:none">
+  <div id="mom-results-content"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="momRestart()" data-i18n="momProcessAnother">Process Another</button><button class="btn p" onclick="closeMom();nav('tasks')" data-i18n="momViewTasks">View Tasks</button></div>
+</div>
+</div></div>
 <!-- Role Manager Modal -->
 <div class="modal-overlay" id="modal-roles" onclick="if(event.target===this)closeRoleMgr()"><div class="modal gm-panel"><h3 data-i18n="manageRoles">🏷️ Manage Roles</h3>
 <div class="gm-add" style="margin-bottom:14px">
@@ -1691,6 +1738,22 @@ function renderBulkResults(d){
   res.innerHTML=h;
 }
 
+
+// ═══ MoM Processor ═══
+let momItems=[];
+function openMomModal(){$('modal-mom').classList.add('v');momItems=[];$('mom-file').value='';$('mom-file-name').textContent=t('noFileSelected');$('mom-process-btn').disabled=true;momShowStep('upload')}
+function closeMom(){$('modal-mom').classList.remove('v')}
+function momShowStep(step){['upload','loading','review','results'].forEach(s=>{$('mom-step-'+s).style.display=s===step?'block':'none'})}
+function momRestart(){momItems=[];$('mom-file').value='';$('mom-file-name').textContent=t('noFileSelected');$('mom-process-btn').disabled=true;momShowStep('upload')}
+function onMomFileSelect(){const f=$('mom-file').files[0];if(f){$('mom-file-name').textContent='\U0001f4ce '+f.name;$('mom-process-btn').disabled=false}else{$('mom-file-name').textContent=t('noFileSelected');$('mom-process-btn').disabled=true}}
+async function processMom(){const f=$('mom-file').files[0];if(!f)return;momShowStep('loading');try{const fd=new FormData();fd.append('file',f);const r=await fetch(A+'/mom/process',{method:'POST',headers:hdr(),body:fd});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Processing failed');momItems=d.items.map((item,i)=>({...item,_selected:true,_idx:i}));$('mom-meeting-title').textContent=d.meeting_title||t('momTitle');$('mom-item-count').textContent='('+d.total+' '+t('momItemsFound')+')';renderMomItems();momShowStep('review')}catch(e){momShowStep('upload');alert(t('failed')+': '+e.message)}}
+function renderMomItems(){if(!momItems.length){$('mom-items-table').innerHTML='<div class="empty">'+t('momNoItems')+'</div>';return}
+const members=teamMembers.map(m=>m.first_name+(m.last_name?' '+m.last_name:'')).filter(Boolean);
+$('mom-items-table').innerHTML=momItems.map((item,i)=>{const typeLbl=item.type==='task'?'\U0001f4cb Task':item.type==='reminder'?'\u23f0 Remind':'\U0001f4c5 Event';return '<div class="mom-row'+(item._selected?'':' disabled')+'" id="mom-r-'+i+'"><input type="checkbox" '+(item._selected?'checked':'')+' onchange="momToggle('+i+',this.checked)"><div class="mom-fields"><input type="text" class="mom-title-inp" value="'+esc(item.title).replace(/"/g,'&quot;')+'" onchange="momItems['+i+'].title=this.value"><span class="mom-type-badge mom-type-'+item.type+'">'+typeLbl+'</span><select class="mom-sel" onchange="momItems['+i+'].type=this.value;renderMomItems()" title="'+t('momType')+'"><option value="task"'+(item.type==='task'?' selected':'')+'>'+t('momTypeTask')+'</option><option value="reminder"'+(item.type==='reminder'?' selected':'')+'>'+t('momTypeReminder')+'</option><option value="event"'+(item.type==='event'?' selected':'')+'>'+t('momTypeEvent')+'</option></select><select class="mom-sel" onchange="momItems['+i+'].priority=this.value" title="'+t('priority')+'"><option value="low"'+(item.priority==='low'?' selected':'')+'>'+t('low')+'</option><option value="medium"'+(item.priority==='medium'?' selected':'')+'>'+t('medium')+'</option><option value="high"'+(item.priority==='high'?' selected':'')+'>'+t('high')+'</option><option value="urgent"'+(item.priority==='urgent'?' selected':'')+'>'+t('urgent')+'</option></select><select class="mom-sel" onchange="momItems['+i+'].assignee=this.value||null" title="'+t('assignee')+'"><option value="">'+t('unassigned')+'</option>'+members.map(m=>'<option value="'+m+'"'+(item.assignee===m?' selected':'')+'>'+m+'</option>').join('')+'</select><input type="date" class="mom-sel" value="'+(item.deadline||'')+'" onchange="momItems['+i+'].deadline=this.value||null" title="'+t('dueDate')+'" style="width:120px">'+(item.type==='event'?'<input type="datetime-local" class="mom-sel" value="'+((item.event_date||'').slice(0,16))+'" onchange="momItems['+i+'].event_date=this.value?this.value+\':00+07:00\':null" title="Event time" style="width:160px">':'')+'</div></div>'}).join('')}
+function momToggle(i,checked){momItems[i]._selected=checked;$('mom-r-'+i).classList.toggle('disabled',!checked)}
+function momSelectAll(sel){momItems.forEach((item,i)=>{item._selected=sel;const el=$('mom-r-'+i);if(el){const cb=el.querySelector('input[type=checkbox]');if(cb)cb.checked=sel;el.classList.toggle('disabled',!sel)}})}
+async function executeMom(){const selected=momItems.filter(x=>x._selected);if(!selected.length){alert(t('momNoneSelected'));return}$('mom-execute-btn').disabled=true;$('mom-execute-btn').textContent=t('momCreating')+'...';$('mom-error').style.display='none';try{const meetTitle=$('mom-meeting-title').textContent;const r=await fetch(A+'/mom/execute',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({meeting_title:meetTitle,items:selected})});const d=await r.json();if(!r.ok)throw new Error(d.detail||'Execution failed');renderMomResults(d);momShowStep('results');loadTasks();loadBoard();loadDash();loadRemind()}catch(e){$('mom-error').style.display='block';$('mom-error').textContent='\u274c '+e.message}$('mom-execute-btn').disabled=false;$('mom-execute-btn').textContent=t('momCreateAll')}
+function renderMomResults(d){let h='<div style="text-align:center;padding:20px 0"><div style="font-size:32px;margin-bottom:10px">\u2705</div><div style="font-size:15px;font-weight:700;margin-bottom:12px">'+t('momComplete')+'</div></div>';h+='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px">';h+='<span style="background:var(--gs);color:var(--gn);padding:5px 12px;border-radius:12px;font-size:12px;font-weight:600">\u2705 '+t('momCreatedCount')+': '+d.created+'</span>';if(d.failed>0)h+='<span style="background:var(--rs);color:var(--rd);padding:5px 12px;border-radius:12px;font-size:12px;font-weight:600">\u274c '+t('failedCount')+': '+d.failed+'</span>';h+='</div>';if(d.results&&d.results.length){h+='<div style="max-height:250px;overflow-y:auto">';d.results.forEach(r=>{const icon=r.success?'\u2705':'\u274c';const color=r.success?'var(--gn)':'var(--rd)';const bg=r.success?'var(--gs)':'var(--rs)';h+='<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;margin-bottom:4px;background:'+bg+';font-size:11px"><span>'+icon+'</span><span style="color:'+color+'">'+esc(r.message||r.error||r.action)+'</span></div>'});h+='</div>'}$('mom-results-content').innerHTML=h}
 // ── Role Manager ──
 function openRoleMgr(){$('modal-roles').classList.add('v');renderRoleList()}
 function closeRoleMgr(){$('modal-roles').classList.remove('v')}
@@ -2091,7 +2154,7 @@ const I18N={
     // Offline
     offlineMode:'You are offline — changes will sync when reconnected',
     // AI Analysis
-    analyzing:'Analyzing',analyzeBtn:'Analyze'
+    analyzing:'Analyzing',analyzeBtn:'Analyze',momBtn:'📋 MoM',momTitle:'📋 Meeting Minutes Processor',momUploadStep:'Step 1: Upload Meeting Minutes',momUploadDesc:'Upload a PDF, Word, or Excel file. AI will extract action items automatically.',momProcess:'🤖 Process with AI',momAnalyzing:'Analyzing meeting minutes...',momAnalyzingDesc:'Extracting action items, deadlines, and assignments',momItemsFound:'items found',momNoItems:'No action items found in this document.',momSelectAll:'Select All',momDeselectAll:'Deselect All',momType:'Type',momTypeTask:'Task',momTypeReminder:'Reminder',momTypeEvent:'Event',unassigned:'Unassigned',momNoneSelected:'Please select at least one item.',momCreating:'Creating',momCreateAll:'🚀 Create Selected Items',momUploadAnother:'Upload Another',momProcessAnother:'Process Another',momViewTasks:'View Tasks',momComplete:'Items Created Successfully!',momCreatedCount:'Created'
   },
   kh:{
     home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',analyticsNav:'វិភាគ',
@@ -2134,7 +2197,7 @@ const I18N={
     days7:'៧ ថ្ងៃ',days30:'៣០ ថ្ងៃ',days90:'៩០ ថ្ងៃ',thisYear:'ឆ្នាំនេះ',allTime:'ទាំងអស់',apply:'អនុវត្ត',
     ganttChart:'គំនូសតាង Gantt',ganttSub:'ពេលវេលាភារកិច្ចដែលមានភាពពឹងផ្អែក',ganttNav:'Gantt',
     offlineMode:'អ្នកនៅក្រៅបណ្ដាញ — ការផ្លាស់ប្ដូរនឹងធ្វើសមកាលកម្មពេលតភ្ជាប់ឡើងវិញ',
-    analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ'
+    analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ',momBtn:'📋 កំណត់ហេតុ',momTitle:'📋 កំណត់ហេតុប្រជុំ',momUploadStep:'ជំហាន ១: ផ្ទុកកំណត់ហេតុ',momUploadDesc:'ផ្ទុក PDF Word ឬ Excel។ AI នឹងស្រង់ចេញសកម្មភាពដោយស្វ័យប្រវត្តិ។',momProcess:'🤖 ដំណើរការជាមួយ AI',momAnalyzing:'កំពុងវិភាគកំណត់ហេតុ...',momAnalyzingDesc:'កំពុងស្រង់ចេញសកម្មភាព',momItemsFound:'រកឃើញ',momNoItems:'គ្មានសកម្មភាពរកឃើញ។',momSelectAll:'ជ្រើសទាំងអស់',momDeselectAll:'មិនជ្រើសទាំងអស់',momType:'ប្រភេទ',momTypeTask:'ភារកិច្ច',momTypeReminder:'ការរំលឹក',momTypeEvent:'ព្រឹត្តិការណ៍',unassigned:'មិនបានកំណត់',momNoneSelected:'សូមជ្រើសយ៉ាងហោចណាស់មួយ។',momCreating:'កំពុងបង្កើត',momCreateAll:'🚀 បង្កើតសកម្មភាព',momUploadAnother:'ផ្ទុកផ្សេងទៀត',momProcessAnother:'ដំណើរការផ្សេងទៀត',momViewTasks:'មើលភារកិច្ច',momComplete:'បានបង្កើតសកម្មភាពដោយជោគជ័យ!',momCreatedCount:'បានបង្កើត'
   }
 };
 // Helper: get translated string
