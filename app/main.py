@@ -29,6 +29,7 @@ from app.models.task_action import TaskAction  # noqa: ensure table creation
 from app.models.task_dependency import TaskDependency  # noqa: ensure table creation
 from app.models.push_subscription import PushSubscription  # noqa: ensure table creation
 from app.models.email_preference import EmailPreference  # noqa: ensure table creation
+from app.models.system_setting import SystemSetting  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -351,6 +352,20 @@ async def lifespan(app: FastAPI):
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_email_prefs_email ON email_preferences(user_email)'))
             logger.info('Email preferences migration checked')
 
+            # -- System Settings migration (settings UI) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS system_settings (
+                    id SERIAL PRIMARY KEY,
+                    key VARCHAR(100) UNIQUE NOT NULL,
+                    value TEXT,
+                    is_secret BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(key)'))
+            logger.info('System settings migration checked')
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 
@@ -403,6 +418,7 @@ app.add_middleware(
 
 # Register routes
 from app.api.notification_api import notification_router, notification_public_router  # noqa
+from app.api.settings_api import settings_router  # noqa
 app.include_router(router)
 app.include_router(calendar_router)
 app.include_router(recurring_router)
@@ -414,6 +430,7 @@ app.include_router(dependency_router)
 app.include_router(auth_router)
 app.include_router(notification_router)
 app.include_router(notification_public_router)
+app.include_router(settings_router)
 
 
 @app.get("/")

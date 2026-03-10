@@ -1,5 +1,6 @@
 """
 Email Service — SMTP email notifications with HTML templates.
+Reads SMTP config from database (system_settings) first, then falls back to .env.
 """
 import logging
 from email.mime.text import MIMEText
@@ -11,6 +12,53 @@ from sqlalchemy import select
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+async def _get_smtp_config() -> dict:
+    """Get SMTP configuration from database first, then fall back to .env."""
+    env = get_settings()
+
+    # Try database settings first
+    try:
+        from app.core.database import async_session
+        from app.models.system_setting import SystemSetting
+
+        async with async_session() as db:
+            result = await db.execute(
+                select(SystemSetting).where(
+                    SystemSetting.key.in_([
+                        "smtp_host", "smtp_port", "smtp_username",
+                        "smtp_password", "smtp_from_email", "smtp_from_name",
+                        "smtp_use_tls",
+                    ])
+                )
+            )
+            db_settings = {s.key: s.value for s in result.scalars().all()}
+
+            # If DB has smtp_host configured, use DB settings
+            if db_settings.get("smtp_host"):
+                return {
+                    "host": db_settings.get("smtp_host", ""),
+                    "port": int(db_settings.get("smtp_port", "587")),
+                    "username": db_settings.get("smtp_username", ""),
+                    "password": db_settings.get("smtp_password", ""),
+                    "from_email": db_settings.get("smtp_from_email", ""),
+                    "from_name": db_settings.get("smtp_from_name", "AI Assistant"),
+                    "use_tls": db_settings.get("smtp_use_tls", "true").lower() == "true",
+                }
+    except Exception as e:
+        logger.debug(f"DB settings lookup failed, using env: {e}")
+
+    # Fall back to environment variables
+    return {
+        "host": env.smtp_host,
+        "port": env.smtp_port,
+        "username": env.smtp_username,
+        "password": env.smtp_password,
+        "from_email": env.smtp_from_email,
+        "from_name": env.smtp_from_name,
+        "use_tls": env.smtp_use_tls,
+    }
 
 
 async def _get_email_prefs(db: AsyncSession, user_email: str):
@@ -50,8 +98,8 @@ def _build_html(title: str, body_content: str) -> str:
 
 async def send_email(to: str, subject: str, html_body: str):
     """Send an email via SMTP. Silently skips if SMTP not configured."""
-    settings = get_settings()
-    if not settings.smtp_host:
+    cfg = await _get_smtp_config()
+    if not cfg["host"]:
         return  # SMTP not configured
 
     try:
@@ -59,17 +107,17 @@ async def send_email(to: str, subject: str, html_body: str):
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = f"{settings.smtp_from_name} <{settings.smtp_from_email}>"
+        msg["From"] = f"{cfg['from_name']} <{cfg['from_email']}>"
         msg["To"] = to
         msg.attach(MIMEText(html_body, "html", "utf-8"))
 
         await aiosmtplib.send(
             msg,
-            hostname=settings.smtp_host,
-            port=settings.smtp_port,
-            username=settings.smtp_username or None,
-            password=settings.smtp_password or None,
-            use_tls=settings.smtp_use_tls,
+            hostname=cfg["host"],
+            port=cfg["port"],
+            username=cfg["username"] or None,
+            password=cfg["password"] or None,
+            use_tls=cfg["use_tls"],
         )
         logger.info(f"Email sent to {to}: {subject}")
     except ImportError:

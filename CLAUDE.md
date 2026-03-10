@@ -10,7 +10,7 @@ Telegram bot @sotso_assistant_bot.
 - **Database:** PostgreSQL 16
 - **Cache/Queue:** Redis 7, Celery
 - **AI:** Claude Opus 4.6 via Anthropic API
-- **Frontend:** Single-file vanilla HTML/CSS/JS at `app/static/index.html` (~2950 lines)
+- **Frontend:** Single-file vanilla HTML/CSS/JS at `app/static/index.html` (~3100 lines)
 - **Calendar:** Google Calendar + Drive API with OAuth2
 - **Bot:** Telegram Bot API via httpx (webhook mode)
 - **Deploy:** Docker Compose on GCP VM (asia-southeast1-b), CI/CD via GitHub Actions
@@ -57,13 +57,13 @@ app/
 ## Key Architecture Decisions
 - **Single HTML file** for dashboard — all CSS, HTML, JS in `app/static/index.html`
 - **Auto-migrations** in `main.py` lifespan — CREATE TABLE IF NOT EXISTS + ALTER TABLE for new columns
-- **i18n** — 220+ keys in `I18N` object (EN/KH), `data-i18n` attributes, `t('key')` helper function
+- **i18n** — 250+ keys in `I18N` object (EN/KH), `data-i18n` attributes, `t('key')` helper function
 - **Noto Sans Khmer** Google Font for Khmer language support
 - **Chart.js** with Cloudflare CDN fallback for analytics
 - **AI-embedded actions** in Task Detail Modal and Event Modal
 
 ## Database
-PostgreSQL with tables: users, messages, tasks, reminders, task_comments, recurring_tasks, task_groups, task_subgroups, team_roles, task_actions, task_dependencies, notifications, categories, subcategories, audit_logs, push_subscriptions, email_preferences
+PostgreSQL with tables: users, messages, tasks, reminders, task_comments, recurring_tasks, task_groups, task_subgroups, team_roles, task_actions, task_dependencies, notifications, categories, subcategories, audit_logs, push_subscriptions, email_preferences, system_settings
 
 ## Deployment
 ```bash
@@ -86,7 +86,7 @@ DuckDNS (legacy): sotso-assistant.duckdns.org
 - Test by pushing to git (CI/CD deploys automatically)
 
 ## Current Features (Phases 1-19)
-Telegram bot, Google Calendar/Drive, AI chat with file upload and conversation memory, task management with groups/subgroups, team management with roles and Excel bulk import, task actions/checklist, task dependencies (blocks/blocked-by), recurring tasks (matching normal task form), analytics with 6 Chart.js charts + AI insights, global search (Ctrl+K), full EN/KH i18n, AI-embedded actions in tasks (follow up, progress check, summary, delegate) and events (key notes, agenda, prep brief, follow up, auto-keynotes from attachments), smart event creation from messages with field validation, Set Reminder from messages with AI extraction, assignee dropdown with team member suggestions, fully interactive dashboard with clickable everything, category & subcategory CRUD management, enhanced reminders with datetime picker + snooze (web & Telegram inline buttons) + task linking + recurring reminders, notification badge system, MoM processor, task audit log with history view, reminder history tab, KPI dashboard cards (avg completion, on-time rate, overdue, weekly), burndown chart, AI task suggestions, prompt library (quick prompts in AI chat), smart reminder timing (AI-suggested), Gantt chart with dependency arrows (SVG) + drag-to-reschedule + critical path highlighting + milestones + category filter, analytics export (CSV/PNG), trend comparison (vs previous period), RBAC with require_permission decorator, web push notifications (VAPID), email notifications (SMTP with per-user preferences), complete API rate limiting (slowapi on all endpoints).
+Telegram bot, Google Calendar/Drive, AI chat with file upload and conversation memory, task management with groups/subgroups, team management with roles and Excel bulk import, task actions/checklist, task dependencies (blocks/blocked-by), recurring tasks (matching normal task form), analytics with 6 Chart.js charts + AI insights, global search (Ctrl+K), full EN/KH i18n, AI-embedded actions in tasks (follow up, progress check, summary, delegate) and events (key notes, agenda, prep brief, follow up, auto-keynotes from attachments), smart event creation from messages with field validation, Set Reminder from messages with AI extraction, assignee dropdown with team member suggestions, fully interactive dashboard with clickable everything, category & subcategory CRUD management, enhanced reminders with datetime picker + snooze (web & Telegram inline buttons) + task linking + recurring reminders, notification badge system, MoM processor, task audit log with history view, reminder history tab, KPI dashboard cards (avg completion, on-time rate, overdue, weekly), burndown chart, AI task suggestions, prompt library (quick prompts in AI chat), smart reminder timing (AI-suggested), Gantt chart with dependency arrows (SVG) + drag-to-reschedule + critical path highlighting + milestones + category filter, analytics export (CSV/PNG), trend comparison (vs previous period), RBAC with require_permission decorator, web push notifications (VAPID), email notifications (SMTP with per-user preferences), complete API rate limiting (slowapi on all endpoints), Settings page with SMTP configuration UI (database-backed, no .env needed), system_settings key-value store for admin config.
 
 ## Infrastructure Notes
 - **Docker MTU:** Must be 1460 to match GCP network MTU (configured in `docker-compose.prod.yml` networks section)
@@ -96,7 +96,7 @@ Telegram bot, Google Calendar/Drive, AI chat with file upload and conversation m
 - **IP changes:** If VM IP changes (ephemeral), update DuckDNS, Telegram webhook, and Google OAuth redirect URI
 - **Workplace WiFi:** May block the site — enable Cloudflare Proxy (orange cloud) + Chrome Secure DNS (Cloudflare 1.1.1.1)
 - **Cloudflare Proxy:** Enabled (orange cloud) on aia.rikreay24.com A record; SSL mode = Full
-- **Service Worker cache:** Currently at v23 — bump on every frontend change
+- **Service Worker cache:** Currently at v24 — bump on every frontend change
 - **Edit/Write tool workaround:** EEXIST errors on Edit/Write tools — use Python scripts in `C:\Users\Dell\AppData\Local\Temp\` executed via Bash
 
 ## What To Work On Next
@@ -106,4 +106,3 @@ Telegram bot, Google Calendar/Drive, AI chat with file upload and conversation m
 4. AI attachment content analysis (fetch Drive file content)
 5. Offline sync improvements (IndexedDB persistence, Background Sync API)
 6. Reserve static IP in GCP to avoid IP changes on VM restart
-8. Task templates / quick-create presets
