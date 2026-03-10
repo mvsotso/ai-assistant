@@ -190,27 +190,7 @@ async def delete_task(task_id: int, db: AsyncSession = Depends(get_db), _auth: d
 
 
 # ─── Categories ───
-@router.get("/categories")
-async def get_categories(db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
-    """Get all unique categories and subcategories."""
-    cat_result = await db.execute(
-        select(Task.category).where(Task.category.isnot(None)).distinct()
-    )
-    categories = [r[0] for r in cat_result.all() if r[0]]
-
-    subcat_result = await db.execute(
-        select(Task.category, Task.subcategory)
-        .where(Task.subcategory.isnot(None))
-        .distinct()
-    )
-    subcategories = {}
-    for cat, subcat in subcat_result.all():
-        if cat and subcat:
-            if cat not in subcategories:
-                subcategories[cat] = []
-            subcategories[cat].append(subcat)
-
-    return {"categories": categories, "subcategories": subcategories}
+# Categories endpoint moved to category_api.py
 
 
 # ─── Board ───

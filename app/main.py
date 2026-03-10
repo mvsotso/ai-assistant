@@ -17,6 +17,7 @@ from app.api.router import router
 from app.api.calendar_api import calendar_router
 from app.api.recurring_api import recurring_router
 from app.api.task_group_api import router as task_group_router
+from app.api.category_api import router as category_router
 from app.api.team_api import router as team_mgmt_router
 from app.api.task_action_api import router as task_action_router
 from app.api.dependency_api import router as dependency_router
@@ -121,6 +122,67 @@ async def lifespan(app: FastAPI):
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_tasks_subgroup_id ON tasks(subgroup_id)'))
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_subgroups_group_id ON task_subgroups(group_id)'))
             logger.info("🔧 Task groups migration checked")
+            # ── Categories migration ──
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS categories (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL UNIQUE,
+                    description TEXT,
+                    icon VARCHAR(10) DEFAULT '📂',
+                    color VARCHAR(7) DEFAULT '#3b82f6',
+                    sort_order INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS subcategories (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    description TEXT,
+                    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+                    sort_order INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_subcategories_category_id ON subcategories(category_id)'))
+            # Seed predefined categories if table is empty
+            seed_check = await conn.execute(text("SELECT COUNT(*) FROM categories"))
+            if seed_check.scalar() == 0:
+                seed_cats = [
+                    ("Administration", "🏢", "#6366f1"),
+                    ("Data Management", "📊", "#3b82f6"),
+                    ("IT & Systems", "💻", "#10b981"),
+                    ("Tax Operations", "💰", "#f59e0b"),
+                    ("Project Management", "📋", "#8b5cf6"),
+                    ("Communication", "📢", "#ec4899"),
+                    ("Research", "🔍", "#14b8a6"),
+                ]
+                seed_subs = {
+                    "Administration": ["HR", "Finance", "Procurement", "Legal", "General Affairs"],
+                    "Data Management": ["ETL", "Data Quality", "Database", "Data Governance", "Reporting"],
+                    "IT & Systems": ["Infrastructure", "Development", "Security", "Support", "Networking"],
+                    "Tax Operations": ["Audit", "Compliance", "Collection", "Registration", "Enforcement"],
+                    "Project Management": ["Planning", "Execution", "Monitoring", "Evaluation", "Closure"],
+                    "Communication": ["Internal", "External", "Media", "Events", "Training"],
+                    "Research": ["Policy", "Analysis", "Statistics", "Survey", "Documentation"],
+                }
+                for idx, (name, icon, color) in enumerate(seed_cats):
+                    await conn.execute(text(
+                        "INSERT INTO categories (name, icon, color, sort_order) VALUES (:n, :i, :c, :s)"
+                    ), {"n": name, "i": icon, "c": color, "s": idx})
+                    cat_row = await conn.execute(text("SELECT id FROM categories WHERE name = :n"), {"n": name})
+                    cat_id = cat_row.scalar()
+                    for si, sub_name in enumerate(seed_subs.get(name, [])):
+                        await conn.execute(text(
+                            "INSERT INTO subcategories (name, category_id, sort_order) VALUES (:n, :cid, :s)"
+                        ), {"n": sub_name, "cid": cat_id, "s": si})
+                logger.info("🌱 Seeded 7 predefined categories with subcategories")
+            logger.info("🔧 Categories migration checked")
+
 
             # ── Team Roles migration ──
             await conn.execute(text("""
@@ -279,6 +341,7 @@ app.include_router(router)
 app.include_router(calendar_router)
 app.include_router(recurring_router)
 app.include_router(task_group_router)
+app.include_router(category_router)
 app.include_router(team_mgmt_router)
 app.include_router(task_action_router)
 app.include_router(dependency_router)
