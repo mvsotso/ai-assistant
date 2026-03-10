@@ -153,6 +153,27 @@ class AIEngine:
             logger.error(f"Claude API error: {e}")
             return f"Sorry, I encountered an error: {str(e)}"
 
+    async def _call_claude_history(self, system: str, messages: list, max_tokens: int = None) -> str:
+        """Claude API call with full conversation history."""
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens or self.max_tokens,
+                system=system,
+                messages=messages,
+            )
+            return response.content[0].text
+        except anthropic.BadRequestError as e:
+            logger.error(f"Claude API bad request: {e}")
+            return "Sorry, I couldn't process that request. Please try rephrasing."
+        except anthropic.AuthenticationError:
+            return "API authentication error. Please check the Anthropic API key."
+        except anthropic.RateLimitError:
+            return "I'm receiving too many requests right now. Please try again in a moment."
+        except Exception as e:
+            logger.error(f"Claude API error: {e}")
+            return f"Sorry, I encountered an error: {str(e)}"
+
     async def _call_claude_multimodal(self, system: str, text: str, file_data: dict = None, max_tokens: int = None) -> str:
         """Claude API call with optional image/file support."""
         try:
@@ -207,16 +228,27 @@ class AIEngine:
 
     # ─── MAIN CHAT ───
 
-    async def chat(self, user_message: str, context: str = "") -> str:
-        """Process a user message with full context and return AI response."""
+    async def chat(self, user_message: str, context: str = "", history: list = None) -> str:
+        """Process a user message with full context and conversation history."""
         system = self._get_system_prompt()
         if context:
             system += f"\n\nCurrent context:\n{context}"
+        if history and len(history) > 0:
+            # Build multi-turn messages: history + current message
+            messages = []
+            for msg in history[-20:]:  # Last 20 messages max
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                if role in ("user", "assistant") and content:
+                    messages.append({"role": role, "content": content})
+            # Add current message
+            messages.append({"role": "user", "content": user_message})
+            return await self._call_claude_history(system, messages)
         return await self._call_claude(system, user_message)
 
-    async def chat_with_actions(self, user_message: str, context: str = "") -> tuple[str, list[dict]]:
+    async def chat_with_actions(self, user_message: str, context: str = "", history: list = None) -> tuple[str, list[dict]]:
         """Chat and extract any action blocks from the response."""
-        response = await self.chat(user_message, context)
+        response = await self.chat(user_message, context, history=history)
 
         # Extract action blocks
         actions = []

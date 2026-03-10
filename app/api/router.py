@@ -437,12 +437,13 @@ async def delete_reminder(reminder_id: int, db: AsyncSession = Depends(get_db), 
 class ChatRequest(BaseModel):
     message: str
     context: Optional[str] = None
+    history: Optional[list] = None
 
 
 @router.post("/ai/chat")
 @limiter.limit("10/minute")
 async def ai_chat(request: Request, body: ChatRequest, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
-    response, actions = await ai_engine.chat_with_actions(body.message, context=body.context or "")
+    response, actions = await ai_engine.chat_with_actions(body.message, context=body.context or "", history=body.history)
     action_results = []
     if actions:
         from app.services.action_executor import execute_actions
