@@ -17,9 +17,67 @@ from app.models.message import Message
 from app.models.reminder import Reminder
 from app.models.audit_log import AuditLog
 from app.models.user import User
-from app.api.auth import require_auth, require_permission
+from app.api.auth import require_auth, require_permission, verify_session_token
+from fastapi.responses import StreamingResponse
+import asyncio
 
 router = APIRouter(prefix="/api/v1")
+
+# ─── SSE Real-Time Events ───
+async def broadcast_event(event_type: str, data: dict):
+    """Broadcast an event to all connected SSE clients via Redis pub/sub."""
+    try:
+        import redis.asyncio as aioredis
+        r = aioredis.from_url(_get_settings().redis_url)
+        import json as _json
+        await r.publish("sse_events", _json.dumps({"event": event_type, "data": data}))
+        await r.aclose()
+    except Exception as e:
+        logging.getLogger(__name__).debug(f"SSE broadcast: {e}")
+
+@router.get("/events/stream")
+async def event_stream(request: Request, token: str = ""):
+    """SSE endpoint for real-time updates. Auth via query param."""
+    if not token:
+        raise HTTPException(status_code=401, detail="Token required")
+    payload = verify_session_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    import redis.asyncio as aioredis
+
+    async def generate():
+        r = aioredis.from_url(_get_settings().redis_url)
+        pubsub = r.pubsub()
+        await pubsub.subscribe("sse_events")
+        try:
+            yield "event: connected\ndata: {}\n\n"
+            while True:
+                if await request.is_disconnected():
+                    break
+                msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                if msg and msg["type"] == "message":
+                    import json as _j
+                    try:
+                        evt = _j.loads(msg["data"].decode("utf-8"))
+                        yield f"event: {evt.get('event','update')}\ndata: {_j.dumps(evt.get('data',{}))}\n\n"
+                    except (ValueError, KeyError):
+                        yield f"data: {msg['data'].decode('utf-8')}\n\n"
+                else:
+                    yield ": keepalive\n\n"
+                    await asyncio.sleep(15)
+        except asyncio.CancelledError:
+            pass
+        finally:
+            await pubsub.unsubscribe("sse_events")
+            await pubsub.close()
+            await r.aclose()
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
 
 # Import rate limiter (shared with main.py via Redis)
 from slowapi import Limiter
@@ -172,6 +230,7 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
                 await send_task_assigned_email(db, au.email, task.title, task.assignee_name, task.due_date)
         except Exception:
             pass
+    await broadcast_event("task_updated", {"action": "created", "task_id": task.id, "title": task.title})
     return _task_to_dict(task)
 
 
@@ -240,6 +299,7 @@ async def update_task(request: Request, task_id: int, body: TaskUpdate, db: Asyn
                     await send_task_assigned_email(db, au.email, task.title, task.assignee_name, task.due_date)
     except Exception:
         pass
+    await broadcast_event("task_updated", {"action": "updated", "task_id": task.id, "title": task.title})
     return _task_to_dict(task)
 
 
@@ -253,6 +313,7 @@ async def delete_task(request: Request, task_id: int, db: AsyncSession = Depends
     deleted = await task_service.delete_task(db, task_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Task not found")
+    await broadcast_event("task_updated", {"action": "deleted", "task_id": task_id})
     return {"deleted": True}
 
 
@@ -665,6 +726,41 @@ async def suggest_reminder_time(request: Request, body: dict, _auth: dict = Depe
     due_date = body.get("due_date", "")
     result = await ai_engine.suggest_reminder_time(title, due_date)
     return result
+
+
+# ─── AI Prioritize ───
+class PrioritizeRequest(BaseModel):
+    include_workload: bool = True
+
+@limiter.limit("10/minute")
+@router.post("/ai/prioritize")
+async def ai_prioritize(request: Request, body: PrioritizeRequest, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """AI-powered task prioritization and workload balancing."""
+    result = await db.execute(
+        select(Task).where(Task.status.in_([TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW]))
+        .order_by(Task.created_at.desc()).limit(100)
+    )
+    tasks = list(result.scalars().all())
+    task_data = [{
+        "id": t.id, "title": t.title, "status": t.status.value,
+        "priority": t.priority.value, "assignee": t.assignee_name or "Unassigned",
+        "due_date": t.due_date.isoformat() if t.due_date else None,
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+        "category": t.category,
+    } for t in tasks]
+    workload = {}
+    if body.include_workload:
+        for t in tasks:
+            name = t.assignee_name or "Unassigned"
+            if name not in workload:
+                workload[name] = {"total": 0, "high_priority": 0, "overdue": 0}
+            workload[name]["total"] += 1
+            if t.priority.value in ("high", "urgent"):
+                workload[name]["high_priority"] += 1
+            if t.due_date and t.due_date < datetime.now(timezone.utc) and t.status != TaskStatus.DONE:
+                workload[name]["overdue"] += 1
+    prioritization = await ai_engine.prioritize_tasks(task_data, workload)
+    return prioritization
 
 
 # ─── AI Chat ───

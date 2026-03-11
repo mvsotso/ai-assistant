@@ -522,6 +522,49 @@ Return ONLY a JSON object (no markdown): {{"remind_at": "ISO datetime", "reason"
             tomorrow = tomorrow.replace(hour=2, minute=0, second=0, microsecond=0)  # 9 AM ICT = 2 AM UTC
             return {"remind_at": tomorrow.isoformat(), "reason": "Default: tomorrow morning"}
 
+    async def prioritize_tasks(self, tasks: list, workload: dict) -> dict:
+        """AI-powered task prioritization and workload analysis."""
+        import json as json_mod
+        tasks_str = json_mod.dumps(tasks, indent=2, default=str)[:8000]
+        workload_str = json_mod.dumps(workload, indent=2) if workload else "No workload data"
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        prompt = f"""Analyze these tasks and provide prioritization with workload balancing.
+
+Tasks:
+{tasks_str}
+
+Team workload:
+{workload_str}
+
+Current date: {now}
+
+Consider: urgency (due dates), priority levels, blocked status, workload distribution.
+
+Return ONLY valid JSON (no markdown):
+{{
+    "prioritized_tasks": [
+        {{"id": 1, "score": 9, "reason": "brief reason", "suggested_priority": "high"}}
+    ],
+    "workload_recommendations": [
+        {{"member": "Name", "current_load": 5, "recommendation": "brief recommendation"}}
+    ],
+    "summary": "Brief overall assessment"
+}}"""
+
+        result = await self._call_claude(
+            "You are a project management AI. Analyze tasks and provide prioritization. Respond ONLY with valid JSON.",
+            prompt,
+            max_tokens=3000,
+        )
+        try:
+            clean = result.strip()
+            if clean.startswith("```"):
+                clean = clean.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+            return json_mod.loads(clean)
+        except (json_mod.JSONDecodeError, IndexError):
+            return {"prioritized_tasks": [], "workload_recommendations": [], "summary": result}
+
 
 # Singleton
 ai_engine = AIEngine()

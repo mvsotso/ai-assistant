@@ -154,8 +154,18 @@ async def verify_google_token(request: Request, body: GoogleTokenRequest):
     if str(email_verified).lower() != "true":
         raise HTTPException(status_code=401, detail="Email not verified")
 
-    # Check email is in allowed list
+    # Check email is in allowed list (static + dynamic from DB)
     allowed = [e.strip().lower() for e in settings.dashboard_allowed_emails.split(",")]
+    try:
+        from sqlalchemy import select as _sel, text as _txt
+        from app.core.database import async_session as _asess
+        async with _asess() as _db:
+            _r = await _db.execute(_txt("SELECT value FROM system_settings WHERE key = 'allowed_emails' LIMIT 1"))
+            _row = _r.first()
+            if _row and _row[0]:
+                allowed.extend([e.strip().lower() for e in _row[0].split(",") if e.strip()])
+    except Exception:
+        pass
     if email.lower() not in allowed:
         logger.warning(f"Dashboard access denied for: {email}")
         raise HTTPException(status_code=403, detail=f"Access denied. {email} is not authorized to access this dashboard.")
@@ -244,8 +254,18 @@ async def google_oauth_callback(code: str, request: Request):
     if not verified:
         return RedirectResponse(url="/?login_error=email_not_verified")
 
-    # Check allowed emails
+    # Check allowed emails (static + dynamic from DB)
     allowed = [e.strip().lower() for e in settings.dashboard_allowed_emails.split(",")]
+    try:
+        from sqlalchemy import text as _txt
+        from app.core.database import async_session as _asess
+        async with _asess() as _db:
+            _r = await _db.execute(_txt("SELECT value FROM system_settings WHERE key = 'allowed_emails' LIMIT 1"))
+            _row = _r.first()
+            if _row and _row[0]:
+                allowed.extend([e.strip().lower() for e in _row[0].split(",") if e.strip()])
+    except Exception:
+        pass
     if email.lower() not in allowed:
         logger.warning(f"Dashboard access denied for: {email}")
         return RedirectResponse(url="/?login_error=access_denied")

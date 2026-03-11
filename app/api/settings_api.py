@@ -214,3 +214,24 @@ async def test_smtp(
     except Exception as e:
         logger.error(f"SMTP test failed: {e}")
         raise HTTPException(status_code=400, detail=f"SMTP test failed: {str(e)}")
+
+
+# ─── Generic Settings (allowed_emails, etc.) ───
+class GenericSettingRequest(BaseModel):
+    value: str
+
+@_limiter.limit("30/minute")
+@settings_router.get("/{key}")
+async def get_setting_value(key: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Get a single setting value by key."""
+    val = await get_setting(db, key)
+    return {"key": key, "value": val or ""}
+
+@_limiter.limit("10/minute")
+@settings_router.put("/{key}")
+async def update_setting_value(key: str, body: GenericSettingRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    """Update a single setting value by key."""
+    await upsert_setting(db, key, body.value)
+    await db.commit()
+    logger.info(f"Setting updated: {key}")
+    return {"ok": True, "key": key}

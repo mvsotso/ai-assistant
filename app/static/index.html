@@ -495,6 +495,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
         <button class="btn ex" onclick="exportCSV()" data-i18n="csv">📊 CSV</button>
         <button class="btn ex" onclick="exportJSON()" data-i18n="json">📋 JSON</button>
         <button class="btn gm" onclick="openMomModal()" data-i18n="momBtn">📋 MoM</button>
+        <button class="btn gm" onclick="aiPrioritize()" id="ai-prio-btn">🤖 <span data-i18n="aiPrioritize">AI Prioritize</span></button>
         <button class="btn gm" onclick="openGM()" data-i18n="groups">⚙️ Groups</button>
         <button class="btn gm" onclick="openCM()" data-i18n="categories">🏷️ Categories</button>
         <div style="position:relative;display:inline-block" id="qc-wrap"><button class="btn" onclick="toggleQC()" style="padding:6px 12px;font-size:11px">⚡ <span data-i18n="quickCreate">Quick Create</span></button><div id="qc-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:4px;z-index:20;min-width:220px;max-height:300px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div></div>
@@ -511,6 +512,20 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     <div class="fl" id="catfl"></div>
     <!-- Task List -->
     <div id="tl"></div>
+    <!-- AI Prioritization Results -->
+    <div id="ai-prio-results" class="cd" style="display:none;margin-top:12px;padding:16px;border:1px solid var(--bd);border-radius:12px;background:var(--sf)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h3 style="margin:0;font-size:14px">🤖 <span data-i18n="aiPrioResults">AI Prioritization Results</span></h3>
+        <button class="btn" onclick="$('ai-prio-results').style.display='none'" style="padding:4px 10px;font-size:10px">✕</button>
+      </div>
+      <div id="ai-prio-summary" style="font-size:12px;color:var(--mt);margin-bottom:12px;padding:8px;background:var(--cd);border-radius:8px"></div>
+      <div id="ai-prio-list" style="display:flex;flex-direction:column;gap:4px"></div>
+      <div id="ai-prio-workload" style="margin-top:12px"></div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn p" onclick="applyAIPriorities()" style="font-size:11px">✅ <span data-i18n="applyPriorities">Apply Priorities</span></button>
+        <button class="btn" onclick="$('ai-prio-results').style.display='none'" style="font-size:11px">Dismiss</button>
+      </div>
+    </div>
   </div>
 
   <div id="pg-team" class="pg">
@@ -588,6 +603,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
       <div style="display:flex;gap:4px">
         <button class="dr-btn a" id="dg-layout-hier" onclick="setDGLayout('hierarchical')">Hierarchical</button>
         <button class="dr-btn" id="dg-layout-phys" onclick="setDGLayout('physics')">Force-directed</button>
+        <button class="dr-btn" id="dg-link-mode" onclick="toggleDGLinkMode()" title="Drag between nodes to create dependencies" data-i18n="dgLinkMode">🔗 Link Mode</button>
       </div>
       <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
         <select class="sel" id="dg-filter-group" onchange="renderDepGraph()"><option value="">All Groups</option></select>
@@ -604,6 +620,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
       <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block"></span> Blocked</span>
     </div>
     <div id="depgraph-container" style="background:var(--cd);border:1px solid var(--bd);border-radius:12px;height:calc(100vh - 260px);min-height:400px"></div>
+    <div id="dg-ctx-menu" style="display:none;position:fixed;z-index:100;background:var(--cd);border:1px solid var(--bd);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.4);padding:4px 0;min-width:180px">
+      <div class="dg-ctx-item" onclick="dgCtxNewTask()" style="padding:8px 14px;font-size:12px;cursor:pointer;color:var(--tx)" onmouseenter="this.style.background='var(--sf)'" onmouseleave="this.style.background=''">+ <span data-i18n="dgNewTask">New Task</span></div>
+      <div class="dg-ctx-item" id="dg-ctx-linked" onclick="dgCtxNewLinked()" style="padding:8px 14px;font-size:12px;cursor:pointer;color:var(--tx)" onmouseenter="this.style.background='var(--sf)'" onmouseleave="this.style.background=''">🔗 <span data-i18n="dgNewLinked">New Linked Task</span></div>
+    </div>
   </div>
 
   <div id="pg-analytics" class="pg">
@@ -847,6 +867,27 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
             <span style="color:var(--mt)" data-i18n="aboutEmail">Email</span><span id="set-about-email">-</span>
             <span style="color:var(--mt)" data-i18n="aboutLang">Language</span><span id="set-about-lang">English</span>
             <span style="color:var(--mt)" data-i18n="aboutVersion">Version</span><span>Phase 19 - v1.0</span>
+          </div>
+        </div>
+      </div>
+      <!-- User Management Card -->
+      <div class="settings-card">
+        <div class="settings-card-hdr">
+          <div class="settings-icon" style="background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(59,130,246,.15));">&#128101;</div>
+          <div>
+            <h3 data-i18n="manageUsers">Manage Users</h3>
+            <div style="font-size:11px;color:var(--mt);margin-top:2px" data-i18n="allowedEmailsSub">Control who can access the dashboard</div>
+          </div>
+        </div>
+        <div class="settings-card-body">
+          <div style="font-size:11px;color:var(--mt);margin-bottom:8px" data-i18n="allowedEmails">Allowed Email Addresses</div>
+          <div id="user-email-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
+          <div style="display:flex;gap:4px">
+            <input type="email" id="new-user-email" class="inp" placeholder="user@example.com" style="flex:1;font-size:12px">
+            <button class="btn p" onclick="addAllowedEmail()" style="padding:6px 12px;font-size:11px">+ <span data-i18n="addEmail">Add</span></button>
+          </div>
+          <div class="settings-actions">
+            <button class="settings-btn primary" onclick="saveAllowedEmails()">&#128190; <span data-i18n="saveSettings">Save</span></button>
           </div>
         </div>
       </div>
@@ -1198,7 +1239,7 @@ function clear(){localStorage.removeItem('ai_s');tok=null;usr=null}
 async function checkSession(){const s=stored();if(!s?.token)return false;if(s.expires_at<Date.now()/1000){clear();return false}try{const r=await fetch(A+'/auth/verify',{headers:{Authorization:'Bearer '+s.token}});if(r.ok){tok=s.token;usr={email:s.email,name:s.name,picture:s.picture};return true}}catch{}clear();return false}
 async function gSign(r){const e=$('login-err');e.style.display='none';try{const res=await fetch(A+'/auth/google/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:r.credential})});const d=await res.json();if(res.ok){tok=d.token;usr={email:d.email,name:d.name,picture:d.picture};store(d);showApp()}else{e.textContent=d.detail||'Denied';e.style.display='block'}}catch{e.textContent='Server error';e.style.display='block'}}
 function logout(){clear();$('app').classList.remove('v');$('login').style.display='flex'}
-function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCatsAPI();loadTeamFull();loadTemplates();initMiniCal();loadNotifCount();initPush();loadEmailPrefs()}
+function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCatsAPI();loadTeamFull();loadTemplates();initMiniCal();loadNotifCount();initPush();loadEmailPrefs();initSSE();loadAllowedEmails()}
 let _gClientId='';
 async function googleRedirectLogin(){if(!_gClientId){const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d.client_id}const redir=location.origin+'/api/v1/auth/google/callback';const u='https://accounts.google.com/o/oauth2/v2/auth?client_id='+encodeURIComponent(_gClientId)+'&redirect_uri='+encodeURIComponent(redir)+'&response_type=code&scope=openid%20email%20profile&prompt=select_account';location.href=u}
 window.onload=async()=>{if(await checkSession()){showApp();return}
@@ -1407,7 +1448,7 @@ function onMtGroupChange(preselSg){
   if(preselSg)sgSel.value=preselSg;
 }
 
-async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length){try{const _td=await _r.json();if(_td&&_td.id){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}}catch(e){console.warn('Checklist add:',e)}window._pendingChecklist=null}}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}
+async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length||dgPendingLink){try{const _td=await _r.json();if(_td&&_td.id){if(window._pendingChecklist){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}if(dgPendingLink){await fetch(A+'/tasks/'+_td.id+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:dgPendingLink})});dgPendingLink=null;if(curPage==='depgraph')loadDepGraph()}}}catch(e){console.warn('Post-create:',e)}window._pendingChecklist=null}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}
 async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash();loadGrps()}}
 
 // ═══ GROUP MANAGER ═══
@@ -1942,7 +1983,21 @@ function renderDepGraph(){
   if(dgNetwork){dgNetwork.destroy();dgNetwork=null}
   dgNetwork=new vis.Network(container,{nodes:new vis.DataSet(nodes),edges:new vis.DataSet(edges)},opts);
   dgNetwork.on('click',function(p){if(p.nodes.length>0)openTD(p.nodes[0])});
+  // ── Context Menu ──
+  dgNetwork.on('oncontext',function(params){params.event.preventDefault();const nodeId=dgNetwork.getNodeAt(params.pointer.DOM);dgCtxNodeId=nodeId||null;const menu=$('dg-ctx-menu');menu.style.left=params.event.clientX+'px';menu.style.top=params.event.clientY+'px';menu.style.display='block';$('dg-ctx-linked').style.display=nodeId?'block':'none'});
 }
+let dgCtxNodeId=null,dgPendingLink=null,dgLinkMode=false;
+document.addEventListener('click',function(e){if(!e.target.closest('#dg-ctx-menu'))$('dg-ctx-menu').style.display='none'});
+function dgCtxNewTask(){$('dg-ctx-menu').style.display='none';dgPendingLink=null;openModal('task')}
+function dgCtxNewLinked(){$('dg-ctx-menu').style.display='none';if(!dgCtxNodeId)return;dgPendingLink=dgCtxNodeId;openModal('task')}
+function toggleDGLinkMode(){dgLinkMode=!dgLinkMode;const btn=$('dg-link-mode');btn.classList.toggle('a',dgLinkMode);if(!dgNetwork)return;dgNetwork.setOptions({manipulation:dgLinkMode?{enabled:true,addEdge:function(edgeData,callback){if(edgeData.from===edgeData.to){callback(null);return}createDepFromGraph(edgeData.from,edgeData.to);callback(null)},addNode:false,editEdge:false,deleteNode:false,deleteEdge:false}:{enabled:false}})}
+async function createDepFromGraph(fromId,toId){try{const r=await fetch(A+'/tasks/'+toId+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:fromId})});const d=await r.json();if(r.ok){dgLinkMode=false;$('dg-link-mode').classList.remove('a');loadDepGraph()}else{alert(d.detail||'Failed to create dependency')}}catch(e){alert('Error: '+e.message)}}
+
+// ═══ AI PRIORITIZATION ═══
+let aiPrioData=null;
+async function aiPrioritize(){const btn=$('ai-prio-btn');btn.disabled=true;btn.innerHTML='🤖 <span>Analyzing...</span>';try{const r=await fetch(A+'/ai/prioritize',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({include_workload:true})});const d=await r.json();aiPrioData=d;renderPrioritization(d)}catch(e){alert('Failed: '+e.message)}btn.disabled=false;btn.innerHTML='🤖 <span data-i18n="aiPrioritize">'+t('aiPrioritize')+'</span>'}
+function renderPrioritization(data){const container=$('ai-prio-results');container.style.display='block';$('ai-prio-summary').textContent=data.summary||'No summary available';const tasks=data.prioritized_tasks||[];const PB={urgent:'#dc2626',high:'#f97316',medium:'#3b82f6',low:'#6b7094'};$('ai-prio-list').innerHTML=tasks.map((t,i)=>{const task=allT.find(at=>at.id===t.id);const title=task?esc(task.title):'Task #'+t.id;return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--cd);border-radius:6px;cursor:pointer;font-size:12px" onclick="openTD('+t.id+')"><span style="font-weight:700;color:var(--ac);min-width:24px">#'+(i+1)+'</span><span style="flex:1">'+title+'</span><span style="padding:2px 8px;border-radius:4px;font-size:10px;background:'+(PB[t.suggested_priority]||PB.medium)+';color:#fff">'+t.suggested_priority+'</span><span style="font-size:10px;color:var(--mt)">'+t.score+'/10</span></div>'}).join('');const wl=data.workload_recommendations||[];$('ai-prio-workload').innerHTML=wl.length?'<h4 style="font-size:12px;margin-bottom:8px">'+t('workloadRec')+'</h4>'+wl.map(w=>'<div style="font-size:11px;color:var(--mt);margin-bottom:4px;padding:4px 8px;background:var(--cd);border-radius:4px"><b>'+esc(w.member)+'</b> ('+w.current_load+' tasks): '+esc(w.recommendation)+'</div>').join(''):''}
+async function applyAIPriorities(){if(!aiPrioData||!aiPrioData.prioritized_tasks)return;const tasks=aiPrioData.prioritized_tasks;let ok=0;for(const pt of tasks){try{await fetch(A+'/tasks/'+pt.id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({priority:pt.suggested_priority})});ok++}catch{}}$('ai-prio-results').style.display='none';loadTasks();loadBoard();alert('Updated '+ok+'/'+tasks.length+' task priorities')}
 
 function exportCSV(){if(!allT.length){alert('No tasks');return}const h=['ID','Title','Description','Status','Priority','Assignee','Category','Subcategory','Due Date','Created'];const rows=allT.map(t=>[t.id,`"${(t.title||'').replace(/"/g,'""')}"`,`"${(t.description||'').replace(/"/g,'""')}"`,t.status,t.priority,t.assignee||'',t.category||'',t.subcategory||'',t.due_date?t.due_date.split('T')[0]:'',t.created_at?t.created_at.split('T')[0]:'']);dl([h.join(','),...rows.map(r=>r.join(','))].join('\n'),'tasks_'+new Date().toISOString().split('T')[0]+'.csv','text/csv')}
 function exportJSON(){if(!allT.length){alert('No tasks');return}dl(JSON.stringify(allT.map(t=>({id:t.id,title:t.title,description:t.description,status:t.status,priority:t.priority,assignee:t.assignee,category:t.category,due_date:t.due_date})),null,2),'tasks_'+new Date().toISOString().split('T')[0]+'.json','application/json')}
@@ -2612,7 +2667,7 @@ let curLang='en';
 const I18N={
   en:{
     // Sidebar nav labels
-    home:'Home',board:'Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Remind',aiChat:'AI Chat',calendarNav:'Calendar',recurringNav:'Recurring',templatesNav:'Templates',depGraphNav:'Dep Graph',depGraphTitle:'Dependency Graph',depGraphSub:'Interactive task dependency visualization',analyticsNav:'Analytics',
+    home:'Home',board:'Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Remind',aiChat:'AI Chat',calendarNav:'Calendar',recurringNav:'Recurring',templatesNav:'Templates',depGraphNav:'Dep Graph',aiPrioritize:'AI Prioritize',aiPrioResults:'AI Prioritization Results',applyPriorities:'Apply Priorities',workloadRec:'Workload Recommendations',depGraphTitle:'Dependency Graph',depGraphSub:'Interactive task dependency visualization',dgNewTask:'New Task',dgNewLinked:'New Linked Task',dgLinkMode:'Link Mode',analyticsNav:'Analytics',
     // Page headers
     dashboard:'Dashboard',taskBoard:'Task Board',tasksPage:'Tasks',teamMembers:'Team Members',messagesPage:'Messages',remindersPage:'Reminders',aiAssistant:'AI Assistant',calendarPage:'Calendar',recurringTasks:'Recurring Tasks',analyticsPage:'Analytics',
     // Subtitles / descriptions
@@ -2713,7 +2768,7 @@ const I18N={
     enablePush:'Enable Push',disablePush:'Disable Push',pushEnabled:'Push notifications enabled',pushDisabled:'Push notifications disabled',testPush:'Test Push',pushNotSupported:'Push notifications not supported in this browser',
     emailPrefsTitle:'Email Notifications',emailNotifications:'Email Notifications',emailTaskAssigned:'Task Assigned',emailStatusChange:'Status Changes',emailReminder:'Reminders',emailDailySummary:'Daily Summary',savePrefs:'Save Preferences',emailPrefsSaved:'Email preferences saved',emailEnabled:'Email notifications enabled',emailDisabled:'Email notifications disabled',
     // Settings Page
-    settingsNav:'Settings',settingsPage:'Settings',settingsSub:'Configure email, notifications, and system preferences',
+    settingsNav:'Settings',manageUsers:'Manage Users',allowedEmails:'Allowed Email Addresses',allowedEmailsSub:'Control who can access the dashboard',addEmail:'Add',settingsPage:'Settings',settingsSub:'Configure email, notifications, and system preferences',
     smtpConfig:'SMTP Configuration',smtpConfigSub:'Email server settings for sending notifications',
     smtpHost:'SMTP Host',smtpPort:'Port',smtpUsername:'Username / Email',smtpPassword:'App Password',
     smtpFromEmail:'From Email',smtpFromName:'From Name',smtpTls:'Use TLS encryption (recommended)',
@@ -2734,7 +2789,7 @@ const I18N={
     analyzing:'Analyzing',analyzeBtn:'Analyze',analyzeAllBtn:'Analyze All',momBtn:'📋 MoM',momTitle:'📋 Meeting Minutes Processor',momUploadStep:'Step 1: Upload Meeting Minutes',momUploadDesc:'Upload a PDF, Word, or Excel file. AI will extract action items automatically.',momProcess:'🤖 Process with AI',momAnalyzing:'Analyzing meeting minutes...',momAnalyzingDesc:'Extracting action items, deadlines, and assignments',momItemsFound:'items found',momNoItems:'No action items found in this document.',momSelectAll:'Select All',momDeselectAll:'Deselect All',momType:'Type',momTypeTask:'Task',momTypeReminder:'Reminder',momTypeEvent:'Event',unassigned:'Unassigned',momNoneSelected:'Please select at least one item.',momCreating:'Creating',momCreateAll:'🚀 Create Selected Items',momUploadAnother:'Upload Another',momProcessAnother:'Process Another',momViewTasks:'View Tasks',momComplete:'Items Created Successfully!',momCreatedCount:'Created',newChat:'💭 New Chat',newChatStarted:'New conversation started. How can I help you?'
   },
   kh:{
-    home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',templatesNav:'គំរូ',depGraphNav:'ក្រាហ្វពឹងអាស្រ័យ',depGraphTitle:'ក្រាហ្វភាពពឹងអាស្រ័យ',depGraphSub:'ការមើលភាពពឹងអាស្រ័យភារកិច្ចអន្តរកម្ម',analyticsNav:'វិភាគ',
+    home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',templatesNav:'គំរូ',depGraphNav:'ក្រាហ្វពឹងអាស្រ័យ',aiPrioritize:'AI កំណត់អាទិភាព',aiPrioResults:'លទ្ឋផលកំណត់អាទិភាព AI',applyPriorities:'អនុវត្តអាទិភាព',workloadRec:'អំណើណំបន្ទុកការងារ',depGraphTitle:'ក្រាហ្វភាពពឹងអាស្រ័យ',depGraphSub:'ការមើលភាពពឹងអាស្រ័យភារកិច្ចអន្តរកម្ម',dgNewTask:'ភារកិច្ចថ្មី',dgNewLinked:'ភារកិច្ចភ្ជាប់ថ្មី',dgLinkMode:'របៀបភ្ជាប់',analyticsNav:'វិភាគ',
     dashboard:'ផ្ទាំងគ្រប់គ្រង',taskBoard:'ក្តារភារកិច្ច',tasksPage:'ភារកិច្ច',teamMembers:'សមាជិកក្រុម',messagesPage:'សារ',remindersPage:'ការរំលឹក',aiAssistant:'AI ជំនួយការ',calendarPage:'ប្រតិទិន',recurringTasks:'ភារកិច្ចដដែលៗ',analyticsPage:'វិភាគ',
     telegramMsgs:'សារក្រុម Telegram',scheduledNotifs:'ការជូនដំណឹងដែលបានកំណត់',aiSub:'ជជែកជាមួយ Claude Opus 4.6 · English & ខ្មែរ · អាចផ្ទុកឯកសារ',dragCards:'អូសកាតដើម្បីប្តូរស្ថានភាព',taskTemplates:'គំរូភារកិច្ចដែលបង្កើតដោយស្វ័យប្រវត្តិតាមកាលវិភាគ',analyticsSub:'និន្នាការបញ្ចប់ភារកិច្ច និងសមត្ថភាពក្រុម',
     loginTitle:'AI ជំនួយការផ្ទាល់ខ្លួន',loginSub:'ចូលដោយប្រើគណនី Google របស់អ្នកដើម្បីចូលផ្ទាំងគ្រប់គ្រង។',signInGoogle:'ចូលដោយ Google',
@@ -2775,13 +2830,26 @@ const I18N={
     ganttChart:'គំនូសតាង Gantt',ganttSub:'ពេលវេលាភារកិច្ចដែលមានភាពពឹងផ្អែក',ganttNav:'Gantt',
     enablePush:'បើកការជូនដំណឹងភ្លេង',disablePush:'បិដការជូនដំណឹងភ្លេង',pushEnabled:'ការជូនដំណឹងភ្លេងត្រូវបានបើក',pushDisabled:'ការជូនដំណឹងភ្លេងត្រូវបានបិដ',testPush:'សាកល្បង Push',pushNotSupported:'ការជូនដំណឹងភ្លេងមិនអាចប្រើប្រាស់នៅត្រងនេះ',
     emailPrefsTitle:'ការជូនដំណឹងអ៊ីមែល',emailNotifications:'ការជូនដំណឹងអ៊ីមែល',emailTaskAssigned:'ការងារត្រូវបានតែងតាំង',emailStatusChange:'ការផ្លាស់ប្តូរស្ថានភាព',emailReminder:'ការរំលឹក',emailDailySummary:'សង្ខេបប្រចាំថ្ងៃ',savePrefs:'រក្សាទុក',emailPrefsSaved:'បានរក្សាទុកការកំណត់អ៊ីមែល',emailEnabled:'បើកអ៊ីមែល',emailDisabled:'បិដអ៊ីមែល',
-    settingsNav:'ការកំណត់',settingsPage:'ការកំណត់',settingsSub:'កំណត់អ៊ីមែល ការជូនដំណឹង និងប្រព័ន្ធ',smtpConfig:'ការកំណត់ SMTP',smtpConfigSub:'ការកំណត់ម៉ាស៊ីនអ៊ីមែល',smtpHost:'ម៉ាស៊ីន SMTP',smtpPort:'លេខគេ',smtpUsername:'អ្តកប្រើប្រាស់',smtpPassword:'ពាក្យសម្ងាត់',smtpFromEmail:'អ៊ីមែលផ្ញើ',smtpFromName:'ឈ្មោះផ្ញើ',smtpTls:'ប្រើ TLS (ការដែណាំ)',appPassHint:'សម្រាប់ Gmail ប្រើ App Password',saveSettings:'រក្សាទុកការកំណត់',sendTestEmail:'ផ្ញើអ៊ីមែលសាកល្បង',smtpSaved:'បានរក្សាទុក SMTP',emailPrefsPageTitle:'ការកំណត់ជូនដំណឹងអ៊ីមែល',emailPrefsSub:'ជ្រើសរើសអ៊ីមែលណាមួយ',masterEmailToggle:'បើកជូនដំណឹងអ៊ីមែល',pushNotifTitle:'ការជូនដំណឹង Push',pushNotifSub:'ការកំណត់ការជូនដំណឹង Push',enablePush:'បើកការជូនដំណឹង Push',sendTestPush:'ផ្ញើ Push សាកល្បង',aboutTitle:'អំពី',aboutUser:'អ្តកប្រើ',aboutEmail:'អ៊ីមែល',aboutLang:'ភាសា',aboutVersion:'កំណែរ',
+    settingsNav:'ការកំណត់',manageUsers:'គ្រប់គ្រងអ្នកប្រើប្រាស់',allowedEmails:'អាសយដ្ឋានអ៊ីមែលដែលអនុញ្ញាត',allowedEmailsSub:'គ្រប់គ្រងអ្នកដែលអាចចូលផ្ទាំងគ្រប់គ្រង',addEmail:'បន្ថែម',settingsPage:'ការកំណត់',settingsSub:'កំណត់អ៊ីមែល ការជូនដំណឹង និងប្រព័ន្ធ',smtpConfig:'ការកំណត់ SMTP',smtpConfigSub:'ការកំណត់ម៉ាស៊ីនអ៊ីមែល',smtpHost:'ម៉ាស៊ីន SMTP',smtpPort:'លេខគេ',smtpUsername:'អ្តកប្រើប្រាស់',smtpPassword:'ពាក្យសម្ងាត់',smtpFromEmail:'អ៊ីមែលផ្ញើ',smtpFromName:'ឈ្មោះផ្ញើ',smtpTls:'ប្រើ TLS (ការដែណាំ)',appPassHint:'សម្រាប់ Gmail ប្រើ App Password',saveSettings:'រក្សាទុកការកំណត់',sendTestEmail:'ផ្ញើអ៊ីមែលសាកល្បង',smtpSaved:'បានរក្សាទុក SMTP',emailPrefsPageTitle:'ការកំណត់ជូនដំណឹងអ៊ីមែល',emailPrefsSub:'ជ្រើសរើសអ៊ីមែលណាមួយ',masterEmailToggle:'បើកជូនដំណឹងអ៊ីមែល',pushNotifTitle:'ការជូនដំណឹង Push',pushNotifSub:'ការកំណត់ការជូនដំណឹង Push',enablePush:'បើកការជូនដំណឹង Push',sendTestPush:'ផ្ញើ Push សាកល្បង',aboutTitle:'អំពី',aboutUser:'អ្តកប្រើ',aboutEmail:'អ៊ីមែល',aboutLang:'ភាសា',aboutVersion:'កំណែរ',
     offlineMode:'អ្នកនៅក្រៅបណ្ដាញ — ការផ្លាស់ប្ដូរនឹងធ្វើសមកាលកម្មពេលតភ្ជាប់ឡើងវិញ',syncing:'កំពុងធ្វើសមកាលកម្ម...',syncComplete:'បានធ្វើសមកាលកម្មទាំងអស់!',pendingSync:'ការផ្លាស់ប្តូរកំពុងរង់ចាំ',
     analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ',analyzeAllBtn:'វិភាគទាំងអស់',momBtn:'📋 កំណត់ហេតុ',momTitle:'📋 កំណត់ហេតុប្រជុំ',momUploadStep:'ជំហាន ១: ផ្ទុកកំណត់ហេតុ',momUploadDesc:'ផ្ទុក PDF Word ឬ Excel។ AI នឹងស្រង់ចេញសកម្មភាពដោយស្វ័យប្រវត្តិ។',momProcess:'🤖 ដំណើរការជាមួយ AI',momAnalyzing:'កំពុងវិភាគកំណត់ហេតុ...',momAnalyzingDesc:'កំពុងស្រង់ចេញសកម្មភាព',momItemsFound:'រកឃើញ',momNoItems:'គ្មានសកម្មភាពរកឃើញ។',momSelectAll:'ជ្រើសទាំងអស់',momDeselectAll:'មិនជ្រើសទាំងអស់',momType:'ប្រភេទ',momTypeTask:'ភារកិច្ច',momTypeReminder:'ការរំលឹក',momTypeEvent:'ព្រឹត្តិការណ៍',unassigned:'មិនបានកំណត់',momNoneSelected:'សូមជ្រើសយ៉ាងហោចណាស់មួយ។',momCreating:'កំពុងបង្កើត',momCreateAll:'🚀 បង្កើតសកម្មភាព',momUploadAnother:'ផ្ទុកផ្សេងទៀត',momProcessAnother:'ដំណើរការផ្សេងទៀត',momViewTasks:'មើលភារកិច្ច',momComplete:'បានបង្កើតសកម្មភាពដោយជោគជ័យ!',momCreatedCount:'បានបង្កើត',newChat:'💭 ការសនតនាថ្មី',newChatStarted:'ការសនតនាថ្មីបានចាប់ផ្តើម។ តើខ្ញុំអាចជួយអ្វី?'
   }
 };
 // Helper: get translated string
 function t(key){return(I18N[curLang]||I18N.en)[key]||(I18N.en)[key]||key}
+
+// ═══ SSE REAL-TIME SYNC ═══
+let sseAbort=null;
+function initSSE(){if(sseAbort)sseAbort.abort();sseAbort=new AbortController();const tkn=localStorage.getItem('session_token');if(!tkn)return;fetch(A+'/events/stream?token='+encodeURIComponent(tkn),{headers:hdr(),signal:sseAbort.signal}).then(response=>{const reader=response.body.getReader();const decoder=new TextDecoder();let buffer='';function read(){reader.read().then(({done,value})=>{if(done){setTimeout(initSSE,5000);return}buffer+=decoder.decode(value,{stream:true});const parts=buffer.split('\n\n');buffer=parts.pop();parts.forEach(block=>{if(!block.trim()||block.trim()===':')return;const eventMatch=block.match(/event:\s*(\w+)/);const dataMatch=block.match(/data:\s*(.+)/);if(dataMatch){try{const d=JSON.parse(dataMatch[1]);handleSSEEvent(eventMatch?eventMatch[1]:'update',d)}catch{}}});read()}).catch(e=>{if(e.name!=='AbortError')setTimeout(initSSE,5000)})}read()}).catch(e=>{if(e.name!=='AbortError')setTimeout(initSSE,5000)})}
+function handleSSEEvent(type,data){if(type==='task_updated'){if(curPage==='tasks')loadTasks();if(curPage==='board')loadBoard();if(curPage==='dashboard')loadDash();if(curPage==='depgraph')loadDepGraph();loadNotifCount()}}
+
+// ═══ USER MANAGEMENT ═══
+let allowedEmailsList=[];
+async function loadAllowedEmails(){try{const r=await fetch(A+'/settings/allowed_emails',{headers:hdr()});if(r.ok){const d=await r.json();allowedEmailsList=(d.value||'').split(',').map(e=>e.trim()).filter(Boolean);renderAllowedEmails()}}catch{}}
+function renderAllowedEmails(){const el=$('user-email-list');if(!el)return;el.innerHTML=allowedEmailsList.map((email,i)=>'<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--cd);border-radius:6px;font-size:12px"><span style="flex:1">'+esc(email)+'</span><button onclick="removeAllowedEmail('+i+')" style="background:none;border:none;color:var(--mt);cursor:pointer;font-size:14px" title="Remove">&times;</button></div>').join('')}
+function addAllowedEmail(){const inp=$('new-user-email');const email=inp.value.trim().toLowerCase();if(!email||!email.includes('@'))return;if(allowedEmailsList.includes(email)){alert('Email already in list');return}allowedEmailsList.push(email);renderAllowedEmails();inp.value=''}
+function removeAllowedEmail(i){allowedEmailsList.splice(i,1);renderAllowedEmails()}
+async function saveAllowedEmails(){try{const r=await fetch(A+'/settings/allowed_emails',{method:'PUT',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({value:allowedEmailsList.join(',')})});if(r.ok)alert('Saved!')}catch{alert('Failed')}}
 
 // ═══ NOTIFICATION CENTER ═══
 let notifPanelOpen=false;
