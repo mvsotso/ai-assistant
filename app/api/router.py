@@ -654,6 +654,8 @@ async def dashboard_summary(request: Request,
         "kpis": {
             "avg_completion_days": avg_days,
             "on_time_pct": on_time_pct,
+            "total_tasks": todo + in_progress + review + done,
+            "completed": done,
             "overdue_count": len(overdue),
             "tasks_this_week": tasks_this_week,
         },
