@@ -2499,6 +2499,27 @@ async function loadRemind(){try{const d=await(await fetch(A+'/reminders',{header
 async function saveReminder(){const msg=$('mr-msg').value;if(!msg){alert('Message required');return}const atVal=$('mr-at').value;const taskId=$('mr-task').value?parseInt($('mr-task').value):null;const eventId=$('mr-event').value||null;const isRecurring=$('mr-recurring').checked;const rule=isRecurring?$('mr-rule').value:null;const body={message:msg,task_id:taskId,event_id:eventId,is_recurring:isRecurring,recurrence_rule:rule};if(atVal){body.remind_at=new Date(atVal).toISOString()}else{body.minutes=30}await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeModal('remind');loadRemind()}
 async function delRemind(id){await fetch(A+'/reminders/'+id,{method:'DELETE',headers:hdr()});loadRemind()}
 async function snoozeRemind(id,minutes){await fetch(A+'/reminders/'+id+'/snooze',{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({minutes})});loadRemind()}
+function switchRmTab(tab){
+  $('rm-tab-active').classList.toggle('active',tab==='active');
+  $('rm-tab-history').classList.toggle('active',tab==='history');
+  $('rl').style.display=tab==='active'?'block':'none';
+  $('rl-history').style.display=tab==='history'?'block':'none';
+  if(tab==='history')loadRmHistory();
+}
+async function loadRmHistory(){
+  const el=$('rl-history');if(!el)return;
+  el.innerHTML='<div style="color:var(--mt);font-size:11px;padding:8px">Loading...</div>';
+  try{
+    const d=await(await fetch(A+'/reminders/history',{headers:hdr()})).json();
+    const items=d.reminders||[];
+    if(!items.length){el.innerHTML='<div class="empty">'+(I18N[curLang].noReminders||'No reminders')+'</div>';return}
+    el.innerHTML=items.map(rm=>{
+      const dt=rm.remind_at?new Date(rm.remind_at).toLocaleString():'';
+      const taskBadge=rm.task_id?'<span style="font-size:9px;background:var(--as);color:var(--ac);padding:1px 6px;border-radius:4px;margin-left:4px">#'+rm.task_id+'</span>':'';
+      return'<div class="tr" style="opacity:.7"><span style="font-size:16px">\u2705</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">'+esc(rm.message)+taskBadge+'</div><div style="font-size:10px;color:var(--mt)">Sent: '+dt+'</div></div></div>'
+    }).join('');
+  }catch{el.innerHTML='<div class="empty">'+(I18N[curLang].failed||'Failed')+'</div>'}
+}
 function setRmQuick(min){const d=new Date(Date.now()+min*60000);const pad=n=>String(n).padStart(2,'0');$('mr-at').value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function remindAboutTask(){if(!tdTask)return;closeTD();openModal('remind');$('mr-msg').value='Follow up on: '+tdTask.title;$('mr-task').value=tdTask.id;setRmQuick(60)}
 async function populateRmTaskSelect(){const sel=$('mr-task');sel.innerHTML='<option value="">\u2014 None \u2014</option>';try{const r=await fetch(A+'/tasks?limit=200',{headers:hdr()});const d=await r.json();const tasks=(d.tasks||[]).filter(t=>t.status!=='done');sel.innerHTML+= tasks.map(t=>`<option value="${t.id}">#${t.id} ${t.title.slice(0,40)}</option>`).join('')}catch{}}
