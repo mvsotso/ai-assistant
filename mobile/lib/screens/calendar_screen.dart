@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../config/theme.dart';
 import '../services/calendar_service.dart';
@@ -33,17 +34,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
       final map = <DateTime, List<Map<String, dynamic>>>{};
       for (final e in events) {
-        final dateStr = e['start']?['dateTime'] ?? e['start']?['date'] ?? '';
+        // Backend returns start_raw as ISO, start as formatted time
+        final dateStr = (e['start_raw'] ?? e['start'] ?? '').toString();
         if (dateStr.isNotEmpty) {
-          final date = DateTime.tryParse(dateStr);
+          final date = DateTime.tryParse(dateStr)?.toLocal();
           if (date != null) {
             final key = DateTime(date.year, date.month, date.day);
             map.putIfAbsent(key, () => []).add(e);
           }
         }
       }
+      debugPrint('[Calendar] Event map has ${map.length} date keys: ${map.keys.toList()}');
       if (mounted) setState(() { _events = map; _loading = false; });
     } catch (e) {
+      debugPrint('Calendar load error: $e');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -96,15 +100,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   itemCount: _selectedEvents.length,
                   itemBuilder: (_, i) {
                     final e = _selectedEvents[i];
-                    final time = (e['start']?['dateTime'] ?? '').toString();
-                    final timeStr = time.length >= 16 ? time.substring(11, 16) : 'All day';
+                    final timeStr = (e['start'] ?? 'All day').toString();
                     return Card(
                       child: ListTile(
                         leading: Container(
                           width: 4, height: 40,
                           decoration: BoxDecoration(color: AppTheme.accent, borderRadius: BorderRadius.circular(2)),
                         ),
-                        title: Text(e['summary'] ?? 'No title', style: const TextStyle(fontSize: 14, color: AppTheme.text)),
+                        title: Text(e['title'] ?? e['summary'] ?? 'No title', style: const TextStyle(fontSize: 14, color: AppTheme.text)),
                         subtitle: Text(timeStr, style: const TextStyle(fontSize: 12, color: AppTheme.muted)),
                       ),
                     );

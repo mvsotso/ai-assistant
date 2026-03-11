@@ -11,18 +11,21 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _loading = false;
+  String? _error;
 
   Future<void> _signIn() async {
-    setState(() => _loading = true);
-    final result = await AuthService.signIn();
-    setState(() => _loading = false);
-    if (result != null && mounted) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in failed. Please try again.')),
-      );
+    setState(() { _loading = true; _error = null; });
+    try {
+      final result = await AuthService.signIn();
+      if (result != null && mounted) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+      } else if (mounted) {
+        setState(() => _error = 'Sign in was cancelled or failed. Please try again.');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Error: $e');
     }
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
@@ -58,6 +61,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                 ),
               ),
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.red.withOpacity(0.3)),
+                  ),
+                  child: Text(_error!, style: const TextStyle(fontSize: 12, color: AppTheme.red), textAlign: TextAlign.center),
+                ),
+              ],
             ],
           ),
         ),

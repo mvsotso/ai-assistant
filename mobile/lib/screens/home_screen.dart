@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import 'dashboard_screen.dart';
 import 'task_list_screen.dart';
+import 'reminder_list_screen.dart';
 import 'ai_chat_screen.dart';
 import 'calendar_screen.dart';
 
@@ -17,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _screens = const [
     DashboardScreen(),
     TaskListScreen(),
+    ReminderListScreen(),
     AIChatScreen(),
     CalendarScreen(),
   ];
@@ -31,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
           BottomNavigationBarItem(icon: Icon(Icons.task_alt), label: 'Tasks'),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_active), label: 'Reminders'),
           BottomNavigationBarItem(icon: Icon(Icons.smart_toy), label: 'AI Chat'),
           BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Calendar'),
         ],

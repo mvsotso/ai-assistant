@@ -4,6 +4,7 @@ import '../models/task.dart';
 import '../services/task_service.dart';
 import '../widgets/priority_badge.dart';
 import '../widgets/status_chip.dart';
+import '../widgets/checklist_widget.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final int taskId;
@@ -52,7 +53,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       title: const Text('Delete Task?'),
                       actions: [
                         TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: AppTheme.red))),
+                        TextButton(onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete', style: TextStyle(color: AppTheme.red))),
                       ],
                     ),
                   );
@@ -63,7 +65,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: AppTheme.red))),
+                const PopupMenuItem(value: 'delete',
+                  child: Text('Delete', style: TextStyle(color: AppTheme.red))),
               ],
             ),
         ],
@@ -82,14 +85,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   PriorityBadge(priority: _task!.priority),
                   const Spacer(),
                   if (_task!.dueDate != null)
-                    Text('Due: ${_task!.dueDate!.split("T").first}', style: const TextStyle(fontSize: 12, color: AppTheme.muted)),
+                    Text('Due: ${_task!.dueDate!.split("T").first}',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.muted)),
                 ]),
                 const SizedBox(height: 16),
                 // Description
                 if (_task!.description != null && _task!.description!.isNotEmpty) ...[
-                  const Text('Description', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.muted)),
+                  const Text('Description',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.muted)),
                   const SizedBox(height: 6),
-                  Text(_task!.description!, style: const TextStyle(fontSize: 14, color: AppTheme.text, height: 1.5)),
+                  Text(_task!.description!,
+                    style: const TextStyle(fontSize: 14, color: AppTheme.text, height: 1.5)),
                   const SizedBox(height: 16),
                 ],
                 // Details
@@ -98,7 +104,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 _detailRow('Group', _task!.groupName ?? '-'),
                 const SizedBox(height: 24),
                 // Status actions
-                const Text('Change Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.muted)),
+                const Text('Change Status',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.muted)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8, runSpacing: 8,
@@ -111,10 +118,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         foregroundColor: isActive ? Colors.white : AppTheme.text,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       ),
-                      child: Text(s.replaceAll('_', ' ').toUpperCase(), style: const TextStyle(fontSize: 11)),
+                      child: Text(s.replaceAll('_', ' ').toUpperCase(),
+                        style: const TextStyle(fontSize: 11)),
                     );
                   }).toList(),
                 ),
+                // Checklist
+                const SizedBox(height: 16),
+                ChecklistWidget(taskId: widget.taskId),
               ],
             ),
     );
@@ -124,7 +135,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(children: [
-        SizedBox(width: 100, child: Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.muted))),
+        SizedBox(width: 100,
+          child: Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.muted))),
         Expanded(child: Text(value, style: const TextStyle(fontSize: 13, color: AppTheme.text))),
       ]),
     );

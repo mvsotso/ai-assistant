@@ -25,7 +25,7 @@ class AppTheme {
       backgroundColor: surface, elevation: 0, centerTitle: true,
       titleTextStyle: TextStyle(fontFamily: 'DM Sans', fontSize: 18, fontWeight: FontWeight.w600, color: text),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: card, elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: border)),
     ),
