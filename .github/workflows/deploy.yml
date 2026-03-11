@@ -40,6 +40,8 @@ jobs:
 
             echo "=== Building and deploying ==="
             docker compose -f docker-compose.prod.yml down
+            echo "=== Pruning build cache ==="
+            docker builder prune -f 2>/dev/null || true
             docker compose -f docker-compose.prod.yml up -d --build
 
             echo "=== Waiting 30s for startup ==="
