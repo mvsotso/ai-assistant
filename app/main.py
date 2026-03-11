@@ -451,10 +451,15 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS — restrict to trusted origins
 _cors_origins = [
+    "https://aia.rikreay24.com",
     "https://sotso-assistant.duckdns.org",
     "http://localhost:8000",
     "http://localhost:3000",
+    "http://localhost:8080",
+    "http://localhost:8181",
     "http://127.0.0.1:8000",
+    "http://127.0.0.1:8080",
+    "http://127.0.0.1:8181",
 ]
 app.add_middleware(
     CORSMiddleware,
