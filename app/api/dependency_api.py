@@ -1,7 +1,7 @@
 """
 Task Dependencies API — blocks/blocked-by relationships between tasks.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_
 from pydantic import BaseModel
@@ -45,7 +45,7 @@ def _dep_task_dict(t: Task) -> dict:
 
 @_limiter.limit("60/minute")
 @router.get("/{task_id}/dependencies")
-async def get_task_dependencies(task_id: int, db: AsyncSession = Depends(get_db)):
+async def get_task_dependencies(request: Request, task_id: int, db: AsyncSession = Depends(get_db)):
     """
     Get all dependencies for a task.
     Returns:
@@ -95,7 +95,7 @@ async def get_task_dependencies(task_id: int, db: AsyncSession = Depends(get_db)
 
 @_limiter.limit("30/minute")
 @router.post("/{task_id}/dependencies")
-async def add_dependency(task_id: int, body: DependencyCreate, db: AsyncSession = Depends(get_db)):
+async def add_dependency(request: Request, task_id: int, body: DependencyCreate, db: AsyncSession = Depends(get_db)):
     """
     Add a dependency: task_id depends on (is blocked by) depends_on_id.
     The depends_on task must be completed before task_id can proceed.
@@ -159,7 +159,7 @@ async def add_dependency(task_id: int, body: DependencyCreate, db: AsyncSession 
 
 @_limiter.limit("30/minute")
 @router.delete("/{task_id}/dependencies/{dep_id}")
-async def remove_dependency(task_id: int, dep_id: int, db: AsyncSession = Depends(get_db)):
+async def remove_dependency(request: Request, task_id: int, dep_id: int, db: AsyncSession = Depends(get_db)):
     """Remove a dependency link."""
     result = await db.execute(
         select(TaskDependency).where(
@@ -177,7 +177,7 @@ async def remove_dependency(task_id: int, dep_id: int, db: AsyncSession = Depend
 
 @_limiter.limit("60/minute")
 @router.get("/dependency-map")
-async def get_dependency_map(db: AsyncSession = Depends(get_db)):
+async def get_dependency_map(request: Request, db: AsyncSession = Depends(get_db)):
     """
     Get a map of all task dependencies for batch display.
     Returns: { task_id: { blocked_by_count, blocking_count, is_blocked } }

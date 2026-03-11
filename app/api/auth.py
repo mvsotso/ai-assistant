@@ -127,7 +127,7 @@ def require_permission(permission: str):
 
 @_limiter.limit("5/minute")
 @auth_router.post("/google/verify")
-async def verify_google_token(body: GoogleTokenRequest):
+async def verify_google_token(request: Request, body: GoogleTokenRequest):
     """
     Verify Google ID token from the frontend Sign-In button.
     Returns a session token if the email is in the allowed list.
@@ -184,7 +184,7 @@ async def verify_session(request: Request):
 
 @_limiter.limit("30/minute")
 @auth_router.get("/client-id")
-async def get_google_client_id():
+async def get_google_client_id(request: Request):
     """Return the Google Client ID for the frontend Sign-In button."""
     if not settings.google_client_id:
         raise HTTPException(status_code=500, detail="Google Client ID not configured")

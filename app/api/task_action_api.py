@@ -1,7 +1,7 @@
 """
 Task Actions API — CRUD for checklist items within tasks.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -44,7 +44,7 @@ class ActionReorder(BaseModel):
 
 @_limiter.limit("60/minute")
 @router.get("/{task_id}/actions")
-async def list_actions(task_id: int, db: AsyncSession = Depends(get_db)):
+async def list_actions(request: Request, task_id: int, db: AsyncSession = Depends(get_db)):
     """Get all actions for a task, ordered by sort_order."""
     result = await db.execute(
         select(TaskAction)
@@ -68,7 +68,7 @@ async def list_actions(task_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("/{task_id}/actions")
-async def create_action(task_id: int, data: ActionCreate, db: AsyncSession = Depends(get_db)):
+async def create_action(request: Request, task_id: int, data: ActionCreate, db: AsyncSession = Depends(get_db)):
     """Add a new action to a task."""
     # Verify task exists
     task = await db.execute(select(Task).where(Task.id == task_id))
@@ -106,7 +106,7 @@ async def create_action(task_id: int, data: ActionCreate, db: AsyncSession = Dep
 
 @_limiter.limit("30/minute")
 @router.patch("/{task_id}/actions/{action_id}")
-async def update_action(task_id: int, action_id: int, data: ActionUpdate, db: AsyncSession = Depends(get_db)):
+async def update_action(request: Request, task_id: int, action_id: int, data: ActionUpdate, db: AsyncSession = Depends(get_db)):
     """Update an action."""
     result = await db.execute(
         select(TaskAction).where(TaskAction.id == action_id, TaskAction.task_id == task_id)
@@ -145,7 +145,7 @@ async def update_action(task_id: int, action_id: int, data: ActionUpdate, db: As
 
 @_limiter.limit("30/minute")
 @router.post("/{task_id}/actions/{action_id}/toggle")
-async def toggle_action(task_id: int, action_id: int, db: AsyncSession = Depends(get_db)):
+async def toggle_action(request: Request, task_id: int, action_id: int, db: AsyncSession = Depends(get_db)):
     """Toggle an action's done status."""
     result = await db.execute(
         select(TaskAction).where(TaskAction.id == action_id, TaskAction.task_id == task_id)
@@ -170,7 +170,7 @@ async def toggle_action(task_id: int, action_id: int, db: AsyncSession = Depends
 
 @_limiter.limit("30/minute")
 @router.delete("/{task_id}/actions/{action_id}")
-async def delete_action(task_id: int, action_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_action(request: Request, task_id: int, action_id: int, db: AsyncSession = Depends(get_db)):
     """Delete an action."""
     result = await db.execute(
         select(TaskAction).where(TaskAction.id == action_id, TaskAction.task_id == task_id)
@@ -188,7 +188,7 @@ async def delete_action(task_id: int, action_id: int, db: AsyncSession = Depends
 
 @_limiter.limit("30/minute")
 @router.post("/{task_id}/actions/reorder")
-async def reorder_actions(task_id: int, data: ActionReorder, db: AsyncSession = Depends(get_db)):
+async def reorder_actions(request: Request, task_id: int, data: ActionReorder, db: AsyncSession = Depends(get_db)):
     """Reorder actions by providing ordered list of IDs."""
     for idx, aid in enumerate(data.ids):
         await db.execute(
@@ -204,7 +204,7 @@ async def reorder_actions(task_id: int, data: ActionReorder, db: AsyncSession = 
 
 @_limiter.limit("60/minute")
 @router.get("/action-stats")
-async def get_all_action_stats(db: AsyncSession = Depends(get_db)):
+async def get_all_action_stats(request: Request, db: AsyncSession = Depends(get_db)):
     """Get action progress stats for all tasks that have actions."""
     from sqlalchemy import case
     result = await db.execute(

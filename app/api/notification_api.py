@@ -36,7 +36,7 @@ notification_public_router = APIRouter(
 
 @_limiter.limit("60/minute")
 @notification_router.get("")
-async def list_notifications(
+async def list_notifications(request: Request, 
     unread_only: bool = False,
     limit: int = 30,
     db: AsyncSession = Depends(get_db),
@@ -48,7 +48,7 @@ async def list_notifications(
 
 @_limiter.limit("60/minute")
 @notification_router.get("/count")
-async def notification_count(db: AsyncSession = Depends(get_db)):
+async def notification_count(request: Request, db: AsyncSession = Depends(get_db)):
     """Get unread notification count."""
     count = await get_unread_count(db)
     return {"count": count}
@@ -56,7 +56,7 @@ async def notification_count(db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @notification_router.post("/{notif_id}/read")
-async def read_notification(notif_id: int, db: AsyncSession = Depends(get_db)):
+async def read_notification(request: Request, notif_id: int, db: AsyncSession = Depends(get_db)):
     """Mark a notification as read."""
     ok = await mark_read(db, notif_id)
     if not ok:
@@ -66,7 +66,7 @@ async def read_notification(notif_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @notification_router.post("/read-all")
-async def read_all_notifications(db: AsyncSession = Depends(get_db)):
+async def read_all_notifications(request: Request, db: AsyncSession = Depends(get_db)):
     """Mark all notifications as read."""
     await mark_all_read(db)
     return {"ok": True}
@@ -74,7 +74,7 @@ async def read_all_notifications(db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @notification_router.delete("/{notif_id}")
-async def delete_notification(notif_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_notification(request: Request, notif_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a notification."""
     result = await db.execute(select(Notification).where(Notification.id == notif_id))
     notif = result.scalar_one_or_none()

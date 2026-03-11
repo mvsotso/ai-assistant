@@ -3,7 +3,7 @@ Team Management API
 Full CRUD for roles and team members.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -126,7 +126,7 @@ async def _get_task_stats(db: AsyncSession, user_name: str):
 
 @_limiter.limit("60/minute")
 @router.get("/roles")
-async def list_roles(db: AsyncSession = Depends(get_db)):
+async def list_roles(request: Request, db: AsyncSession = Depends(get_db)):
     """List all team roles with member counts."""
     result = await db.execute(select(TeamRole).order_by(TeamRole.sort_order, TeamRole.id))
     roles = result.scalars().all()
@@ -143,7 +143,7 @@ async def list_roles(db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("/roles")
-async def create_role(data: RoleCreate, db: AsyncSession = Depends(get_db)):
+async def create_role(request: Request, data: RoleCreate, db: AsyncSession = Depends(get_db)):
     """Create a new role."""
     # Check unique name
     existing = await db.execute(select(TeamRole).where(TeamRole.name == data.name))
@@ -168,7 +168,7 @@ async def create_role(data: RoleCreate, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.patch("/roles/{role_id}")
-async def update_role(role_id: int, data: RoleUpdate, db: AsyncSession = Depends(get_db)):
+async def update_role(request: Request, role_id: int, data: RoleUpdate, db: AsyncSession = Depends(get_db)):
     """Update a role."""
     result = await db.execute(select(TeamRole).where(TeamRole.id == role_id))
     role = result.scalar_one_or_none()
@@ -193,7 +193,7 @@ async def update_role(role_id: int, data: RoleUpdate, db: AsyncSession = Depends
 
 @_limiter.limit("30/minute")
 @router.delete("/roles/{role_id}")
-async def delete_role(role_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_role(request: Request, role_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a role. Members lose their role."""
     result = await db.execute(select(TeamRole).where(TeamRole.id == role_id))
     role = result.scalar_one_or_none()
@@ -213,7 +213,7 @@ async def delete_role(role_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("60/minute")
 @router.get("/members")
-async def list_members(db: AsyncSession = Depends(get_db)):
+async def list_members(request: Request, db: AsyncSession = Depends(get_db)):
     """List all team members with roles and task stats."""
     result = await db.execute(select(User).order_by(User.created_at.asc()))
     users = result.scalars().all()
@@ -234,7 +234,7 @@ async def list_members(db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("/members")
-async def create_member(data: MemberCreate, db: AsyncSession = Depends(get_db)):
+async def create_member(request: Request, data: MemberCreate, db: AsyncSession = Depends(get_db)):
     """Manually add a new team member."""
     # Generate a placeholder telegram_id if not provided
     tg_id = data.telegram_id
@@ -280,7 +280,7 @@ async def create_member(data: MemberCreate, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("60/minute")
 @router.get("/members/template")
-async def download_member_template(db: AsyncSession = Depends(get_db)):
+async def download_member_template(request: Request, db: AsyncSession = Depends(get_db)):
     """Download Excel template for bulk member import."""
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
@@ -418,7 +418,7 @@ def _parse_import_file(data: bytes, ext: str) -> list[dict]:
 
 @_limiter.limit("30/minute")
 @router.post("/members/bulk-import")
-async def bulk_import_members(
+async def bulk_import_members(request: Request, 
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
@@ -586,7 +586,7 @@ async def bulk_import_members(
 
 @_limiter.limit("60/minute")
 @router.get("/members/{member_id}")
-async def get_member(member_id: int, db: AsyncSession = Depends(get_db)):
+async def get_member(request: Request, member_id: int, db: AsyncSession = Depends(get_db)):
     """Get single member profile."""
     result = await db.execute(select(User).where(User.id == member_id))
     u = result.scalar_one_or_none()
@@ -605,7 +605,7 @@ async def get_member(member_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.patch("/members/{member_id}")
-async def update_member(member_id: int, data: MemberUpdate, db: AsyncSession = Depends(get_db)):
+async def update_member(request: Request, member_id: int, data: MemberUpdate, db: AsyncSession = Depends(get_db)):
     """Update a team member's profile."""
     result = await db.execute(select(User).where(User.id == member_id))
     user = result.scalar_one_or_none()
@@ -628,7 +628,7 @@ async def update_member(member_id: int, data: MemberUpdate, db: AsyncSession = D
 
 @_limiter.limit("30/minute")
 @router.delete("/members/{member_id}")
-async def delete_member(member_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_member(request: Request, member_id: int, db: AsyncSession = Depends(get_db)):
     """Remove a team member."""
     result = await db.execute(select(User).where(User.id == member_id))
     user = result.scalar_one_or_none()
@@ -643,7 +643,7 @@ async def delete_member(member_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("/invite")
-async def invite_member(data: InviteMember, db: AsyncSession = Depends(get_db)):
+async def invite_member(request: Request, data: InviteMember, db: AsyncSession = Depends(get_db)):
     """Invite a member by Telegram username (creates placeholder entry)."""
     username = data.telegram_username.lstrip("@")
 

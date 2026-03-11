@@ -46,7 +46,7 @@ async def get_web_credentials(request: Request, db: AsyncSession):
 
 @_limiter.limit("60/minute")
 @calendar_router.get("/auth/callback")
-async def google_auth_callback(code: str, state: str = "", db: AsyncSession = Depends(get_db)):
+async def google_auth_callback(request: Request, code: str, state: str = "", db: AsyncSession = Depends(get_db)):
     try:
         credentials = calendar_service.exchange_code(code)
         telegram_id = int(state) if state else 0
@@ -65,7 +65,7 @@ async def google_auth_callback(code: str, state: str = "", db: AsyncSession = De
 
 @_limiter.limit("60/minute")
 @calendar_router.get("/today/{telegram_id}")
-async def get_today(telegram_id: int, db: AsyncSession = Depends(get_db)):
+async def get_today(request: Request, telegram_id: int, db: AsyncSession = Depends(get_db)):
     creds = await token_store.load_token(db, telegram_id)
     if not creds:
         raise HTTPException(status_code=401, detail="Google Calendar not connected")
@@ -73,7 +73,7 @@ async def get_today(telegram_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("60/minute")
 @calendar_router.get("/week/{telegram_id}")
-async def get_week(telegram_id: int, db: AsyncSession = Depends(get_db)):
+async def get_week(request: Request, telegram_id: int, db: AsyncSession = Depends(get_db)):
     creds = await token_store.load_token(db, telegram_id)
     if not creds:
         raise HTTPException(status_code=401, detail="Google Calendar not connected")
@@ -81,7 +81,7 @@ async def get_week(telegram_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("60/minute")
 @calendar_router.get("/free/{telegram_id}")
-async def get_free_slots(telegram_id: int, db: AsyncSession = Depends(get_db)):
+async def get_free_slots(request: Request, telegram_id: int, db: AsyncSession = Depends(get_db)):
     creds = await token_store.load_token(db, telegram_id)
     if not creds:
         raise HTTPException(status_code=401, detail="Google Calendar not connected")
@@ -96,7 +96,7 @@ class EventCreate(BaseModel):
 
 @_limiter.limit("30/minute")
 @calendar_router.post("/events/{telegram_id}")
-async def create_event_bot(telegram_id: int, body: EventCreate, db: AsyncSession = Depends(get_db)):
+async def create_event_bot(request: Request, telegram_id: int, body: EventCreate, db: AsyncSession = Depends(get_db)):
     creds = await token_store.load_token(db, telegram_id)
     if not creds:
         raise HTTPException(status_code=401, detail="Google Calendar not connected")

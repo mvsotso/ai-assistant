@@ -3,7 +3,7 @@ Category & Subcategory API
 Full CRUD for task categories and subcategories
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, func, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -55,7 +55,7 @@ class SubcategoryUpdate(BaseModel):
 
 @_limiter.limit("60/minute")
 @router.get("")
-async def list_categories(db: AsyncSession = Depends(get_db)):
+async def list_categories(request: Request, db: AsyncSession = Depends(get_db)):
     """List all categories with subcategories and task counts."""
     result = await db.execute(
         select(Category)
@@ -98,7 +98,7 @@ async def list_categories(db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("")
-async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_db)):
+async def create_category(request: Request, data: CategoryCreate, db: AsyncSession = Depends(get_db)):
     """Create a new category."""
     existing = await db.execute(select(Category).where(Category.name == data.name))
     if existing.scalar_one_or_none():
@@ -122,7 +122,7 @@ async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_d
 
 @_limiter.limit("30/minute")
 @router.patch("/{cat_id}")
-async def update_category(cat_id: int, data: CategoryUpdate, db: AsyncSession = Depends(get_db)):
+async def update_category(request: Request, cat_id: int, data: CategoryUpdate, db: AsyncSession = Depends(get_db)):
     """Update a category."""
     result = await db.execute(
         select(Category).options(selectinload(Category.subcategories)).where(Category.id == cat_id)
@@ -148,7 +148,7 @@ async def update_category(cat_id: int, data: CategoryUpdate, db: AsyncSession = 
 
 @_limiter.limit("30/minute")
 @router.delete("/{cat_id}")
-async def delete_category(cat_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_category(request: Request, cat_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a category. Tasks lose their category."""
     result = await db.execute(select(Category).where(Category.id == cat_id))
     cat = result.scalar_one_or_none()
@@ -169,7 +169,7 @@ async def delete_category(cat_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("/subcategories")
-async def create_subcategory(data: SubcategoryCreate, db: AsyncSession = Depends(get_db)):
+async def create_subcategory(request: Request, data: SubcategoryCreate, db: AsyncSession = Depends(get_db)):
     """Create a subcategory under a category."""
     parent = await db.execute(select(Category).where(Category.id == data.category_id))
     if not parent.scalar_one_or_none():
@@ -194,7 +194,7 @@ async def create_subcategory(data: SubcategoryCreate, db: AsyncSession = Depends
 
 @_limiter.limit("30/minute")
 @router.patch("/subcategories/{sc_id}")
-async def update_subcategory(sc_id: int, data: SubcategoryUpdate, db: AsyncSession = Depends(get_db)):
+async def update_subcategory(request: Request, sc_id: int, data: SubcategoryUpdate, db: AsyncSession = Depends(get_db)):
     """Update a subcategory."""
     result = await db.execute(select(Subcategory).where(Subcategory.id == sc_id))
     sc = result.scalar_one_or_none()
@@ -222,7 +222,7 @@ async def update_subcategory(sc_id: int, data: SubcategoryUpdate, db: AsyncSessi
 
 @_limiter.limit("30/minute")
 @router.delete("/subcategories/{sc_id}")
-async def delete_subcategory(sc_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_subcategory(request: Request, sc_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a subcategory. Tasks keep category but lose subcategory."""
     result = await db.execute(select(Subcategory).where(Subcategory.id == sc_id))
     sc = result.scalar_one_or_none()

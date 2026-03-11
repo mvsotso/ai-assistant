@@ -62,7 +62,7 @@ class ReorderRequest(BaseModel):
 
 @_limiter.limit("60/minute")
 @router.get("")
-async def list_groups(db: AsyncSession = Depends(get_db)):
+async def list_groups(request: Request, db: AsyncSession = Depends(get_db)):
     """List all task groups with their subgroups and task counts"""
     result = await db.execute(
         select(TaskGroup)
@@ -103,7 +103,7 @@ async def list_groups(db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("")
-async def create_group(data: GroupCreate, db: AsyncSession = Depends(get_db)):
+async def create_group(request: Request, data: GroupCreate, db: AsyncSession = Depends(get_db)):
     """Create a new task group"""
     # Get next sort order
     max_order = await db.execute(select(func.max(TaskGroup.sort_order)))
@@ -124,7 +124,7 @@ async def create_group(data: GroupCreate, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.patch("/{group_id}")
-async def update_group(group_id: int, data: GroupUpdate, db: AsyncSession = Depends(get_db)):
+async def update_group(request: Request, group_id: int, data: GroupUpdate, db: AsyncSession = Depends(get_db)):
     """Update a task group"""
     result = await db.execute(
         select(TaskGroup).options(selectinload(TaskGroup.subgroups)).where(TaskGroup.id == group_id)
@@ -143,7 +143,7 @@ async def update_group(group_id: int, data: GroupUpdate, db: AsyncSession = Depe
 
 @_limiter.limit("30/minute")
 @router.delete("/{group_id}")
-async def delete_group(group_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_group(request: Request, group_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a task group. Tasks in this group become ungrouped."""
     result = await db.execute(select(TaskGroup).where(TaskGroup.id == group_id))
     group = result.scalar_one_or_none()
@@ -162,7 +162,7 @@ async def delete_group(group_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("/reorder")
-async def reorder_groups(data: ReorderRequest, db: AsyncSession = Depends(get_db)):
+async def reorder_groups(request: Request, data: ReorderRequest, db: AsyncSession = Depends(get_db)):
     """Reorder groups by providing ordered list of IDs"""
     for idx, gid in enumerate(data.ids):
         await db.execute(
@@ -176,7 +176,7 @@ async def reorder_groups(data: ReorderRequest, db: AsyncSession = Depends(get_db
 
 @_limiter.limit("30/minute")
 @router.post("/subgroups")
-async def create_subgroup(data: SubGroupCreate, db: AsyncSession = Depends(get_db)):
+async def create_subgroup(request: Request, data: SubGroupCreate, db: AsyncSession = Depends(get_db)):
     """Create a subgroup under a group"""
     # Verify group exists
     grp = await db.execute(select(TaskGroup).where(TaskGroup.id == data.group_id))
@@ -202,7 +202,7 @@ async def create_subgroup(data: SubGroupCreate, db: AsyncSession = Depends(get_d
 
 @_limiter.limit("30/minute")
 @router.patch("/subgroups/{subgroup_id}")
-async def update_subgroup(subgroup_id: int, data: SubGroupUpdate, db: AsyncSession = Depends(get_db)):
+async def update_subgroup(request: Request, subgroup_id: int, data: SubGroupUpdate, db: AsyncSession = Depends(get_db)):
     """Update a subgroup"""
     result = await db.execute(select(TaskSubGroup).where(TaskSubGroup.id == subgroup_id))
     sg = result.scalar_one_or_none()
@@ -219,7 +219,7 @@ async def update_subgroup(subgroup_id: int, data: SubGroupUpdate, db: AsyncSessi
 
 @_limiter.limit("30/minute")
 @router.delete("/subgroups/{subgroup_id}")
-async def delete_subgroup(subgroup_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_subgroup(request: Request, subgroup_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a subgroup. Tasks keep their group but lose subgroup."""
     result = await db.execute(select(TaskSubGroup).where(TaskSubGroup.id == subgroup_id))
     sg = result.scalar_one_or_none()
@@ -238,7 +238,7 @@ async def delete_subgroup(subgroup_id: int, db: AsyncSession = Depends(get_db)):
 
 @_limiter.limit("30/minute")
 @router.post("/subgroups/reorder")
-async def reorder_subgroups(data: ReorderRequest, db: AsyncSession = Depends(get_db)):
+async def reorder_subgroups(request: Request, data: ReorderRequest, db: AsyncSession = Depends(get_db)):
     """Reorder subgroups"""
     for idx, sid in enumerate(data.ids):
         await db.execute(
@@ -252,7 +252,7 @@ async def reorder_subgroups(data: ReorderRequest, db: AsyncSession = Depends(get
 
 @_limiter.limit("30/minute")
 @router.patch("/tasks/{task_id}/assign")
-async def assign_task_group(task_id: int, data: TaskGroupAssign, db: AsyncSession = Depends(get_db)):
+async def assign_task_group(request: Request, task_id: int, data: TaskGroupAssign, db: AsyncSession = Depends(get_db)):
     """Assign or change a task's group and subgroup"""
     result = await db.execute(select(Task).where(Task.id == task_id))
     task = result.scalar_one_or_none()
@@ -289,7 +289,7 @@ class BulkAssign(BaseModel):
 
 @_limiter.limit("30/minute")
 @router.post("/tasks/bulk-assign")
-async def bulk_assign_tasks(data: BulkAssign, db: AsyncSession = Depends(get_db)):
+async def bulk_assign_tasks(request: Request, data: BulkAssign, db: AsyncSession = Depends(get_db)):
     """Assign multiple tasks to a group/subgroup at once"""
     await db.execute(
         update(Task)
