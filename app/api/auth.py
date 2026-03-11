@@ -129,18 +129,32 @@ def require_permission(permission: str):
 @auth_router.post("/google/verify")
 async def verify_google_token(request: Request, body: GoogleTokenRequest):
     """
-    Verify Google ID token from the frontend Sign-In button.
+    Verify Google ID token or access token from the frontend Sign-In button.
+    Supports both ID tokens (JWT) and access tokens (ya29.*) for web compatibility.
     Returns a session token if the email is in the allowed list.
     """
-    # Verify the Google ID token
+    credential = body.credential
+    is_access_token = credential.startswith("ya29.") or credential.startswith("ya29/")
+
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                f"https://oauth2.googleapis.com/tokeninfo?id_token={body.credential}"
-            )
-            if resp.status_code != 200:
-                raise HTTPException(status_code=401, detail="Invalid Google token")
-            token_info = resp.json()
+            if is_access_token:
+                # Access token (from web google_sign_in) — verify via userinfo endpoint
+                resp = await client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {credential}"},
+                )
+                if resp.status_code != 200:
+                    raise HTTPException(status_code=401, detail="Invalid Google access token")
+                token_info = resp.json()
+            else:
+                # ID token (JWT) — verify via tokeninfo endpoint
+                resp = await client.get(
+                    f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
+                )
+                if resp.status_code != 200:
+                    raise HTTPException(status_code=401, detail="Invalid Google token")
+                token_info = resp.json()
     except httpx.RequestError as e:
         logger.error(f"Google token verification failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to verify Google token")
@@ -149,6 +163,10 @@ async def verify_google_token(request: Request, body: GoogleTokenRequest):
     name = token_info.get("name", email.split("@")[0])
     picture = token_info.get("picture", "")
     email_verified = token_info.get("email_verified", "false")
+
+    # For access token userinfo response, email_verified is a boolean
+    if isinstance(email_verified, bool):
+        email_verified = str(email_verified).lower()
 
     # Check email is verified
     if str(email_verified).lower() != "true":
