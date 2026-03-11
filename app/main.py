@@ -457,9 +457,11 @@ _cors_origins = [
     "http://localhost:3000",
     "http://localhost:8080",
     "http://localhost:8181",
+    "http://localhost:8282",
     "http://127.0.0.1:8000",
     "http://127.0.0.1:8080",
     "http://127.0.0.1:8181",
+    "http://127.0.0.1:8282",
 ]
 app.add_middleware(
     CORSMiddleware,
