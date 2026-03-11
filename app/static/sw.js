@@ -1,11 +1,11 @@
 /**
  * Service Worker — Offline support for AI Personal Assistant
  * Cache-first for static assets, network-first for API with fallback.
+ * IndexedDB persistence + Background Sync for offline mutations.
  */
-const CACHE_VERSION = 'v26';
+const CACHE_VERSION = 'v27';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const API_CACHE = `api-${CACHE_VERSION}`;
-const QUEUE_STORE = 'offline-queue';
 
 // Static assets to pre-cache
 const PRECACHE = [
@@ -24,15 +24,77 @@ const CACHEABLE_API = [
   '/api/v1/categories',
   '/api/v1/task-groups',
   '/api/v1/notifications/count',
+  '/api/v1/templates',
 ];
+
+// ─── IndexedDB Helpers ───
+const IDB_NAME = 'aia-offline-store';
+const IDB_VERSION = 1;
+const STORE_API = 'api-cache';
+const STORE_QUEUE = 'mutation-queue';
+
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_API)) {
+        db.createObjectStore(STORE_API, { keyPath: 'url' });
+      }
+      if (!db.objectStoreNames.contains(STORE_QUEUE)) {
+        db.createObjectStore(STORE_QUEUE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbPut(storeName, data) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).put(data);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
+
+async function idbGet(storeName, key) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const req = tx.objectStore(storeName).get(key);
+    req.onsuccess = () => { db.close(); resolve(req.result); };
+    req.onerror = () => { db.close(); reject(req.error); };
+  });
+}
+
+async function idbGetAll(storeName) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const req = tx.objectStore(storeName).getAll();
+    req.onsuccess = () => { db.close(); resolve(req.result); };
+    req.onerror = () => { db.close(); reject(req.error); };
+  });
+}
+
+async function idbDelete(storeName, key) {
+  const db = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).delete(key);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
+  });
+}
 
 // ─── Install: Pre-cache static assets ───
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(PRECACHE).catch(() => {
-        // Silently fail pre-cache if offline during install
-      });
+      return cache.addAll(PRECACHE).catch(() => {});
     })
   );
   self.skipWaiting();
@@ -90,7 +152,6 @@ async function cacheFirst(request) {
     }
     return response;
   } catch {
-    // Return offline fallback for navigation
     if (request.mode === 'navigate') {
       const cached = await caches.match('/');
       if (cached) return cached;
@@ -99,22 +160,34 @@ async function cacheFirst(request) {
   }
 }
 
-// ─── Network-first with cache fallback for API ───
+// ─── Network-first with cache fallback + IndexedDB persistence ───
 async function networkFirstAPI(request) {
   const isCacheable = CACHEABLE_API.some((p) => request.url.includes(p));
   try {
     const response = await fetch(request);
-    // Cache successful API responses
     if (response.ok && isCacheable) {
+      // Cache in both Cache API and IndexedDB
       const cache = await caches.open(API_CACHE);
       cache.put(request, response.clone());
+      try {
+        const data = await response.clone().json();
+        await idbPut(STORE_API, { url: request.url, data, timestamp: Date.now() });
+      } catch (e) { /* skip non-JSON */ }
     }
     return response;
   } catch {
-    // Offline: try cache
+    // Offline: try Cache API first, then IndexedDB
     if (isCacheable) {
       const cached = await caches.match(request);
       if (cached) return cached;
+      try {
+        const entry = await idbGet(STORE_API, request.url);
+        if (entry && entry.data) {
+          return new Response(JSON.stringify(entry.data), {
+            headers: { 'Content-Type': 'application/json', 'X-From-IDB': 'true' }
+          });
+        }
+      } catch (e) { /* IndexedDB failed too */ }
     }
     return new Response(JSON.stringify({ error: 'offline', cached: false }), {
       status: 503,
@@ -123,7 +196,7 @@ async function networkFirstAPI(request) {
   }
 }
 
-// ─── Queue failed mutations for offline sync ───
+// ─── Queue mutations in IndexedDB for offline sync ───
 async function queueRequest(request) {
   try {
     const body = await request.clone().text();
@@ -134,19 +207,79 @@ async function queueRequest(request) {
       body: body,
       timestamp: Date.now(),
     };
-    // Use BroadcastChannel to notify the page
+    await idbPut(STORE_QUEUE, item);
+    // Register background sync
+    if (self.registration.sync) {
+      await self.registration.sync.register('replay-mutations');
+    }
+    // Notify page of queue change
+    const queueItems = await idbGetAll(STORE_QUEUE);
     const bc = new BroadcastChannel('sw-messages');
-    bc.postMessage({ type: 'queued', item });
+    bc.postMessage({ type: 'queue-updated', count: queueItems.length });
     bc.close();
   } catch (e) {
-    // Silently fail queue
+    console.error('Queue failed:', e);
   }
 }
 
-// ─── Listen for sync messages from the page ───
+// ─── Background Sync: Replay queued mutations ───
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'replay-mutations') {
+    event.waitUntil(replayMutations());
+  }
+});
+
+async function replayMutations() {
+  let items;
+  try {
+    items = await idbGetAll(STORE_QUEUE);
+  } catch { return; }
+  if (!items.length) return;
+
+  items.sort((a, b) => a.timestamp - b.timestamp);
+  let successCount = 0;
+
+  for (const item of items) {
+    try {
+      const response = await fetch(item.url, {
+        method: item.method,
+        headers: item.headers,
+        body: item.body || undefined,
+      });
+      if (response.ok || response.status < 500) {
+        await idbDelete(STORE_QUEUE, item.id);
+        successCount++;
+      }
+    } catch {
+      break; // Network still down
+    }
+  }
+
+  // Notify page
+  const remaining = await idbGetAll(STORE_QUEUE);
+  const bc = new BroadcastChannel('sw-messages');
+  bc.postMessage({
+    type: 'sync-complete',
+    synced: successCount,
+    remaining: remaining.length,
+  });
+  bc.close();
+}
+
+// ─── Listen for messages from page ───
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'GET_QUEUE_COUNT') {
+    idbGetAll(STORE_QUEUE).then(items => {
+      const bc = new BroadcastChannel('sw-messages');
+      bc.postMessage({ type: 'queue-updated', count: items.length });
+      bc.close();
+    }).catch(() => {});
+  }
+  if (event.data && event.data.type === 'FORCE_SYNC') {
+    replayMutations();
   }
 });
 
@@ -156,7 +289,6 @@ self.addEventListener('push', (event) => {
   try {
     if (event.data) data = Object.assign(data, event.data.json());
   } catch (e) {
-    // Use defaults if JSON parse fails
     if (event.data) data.body = event.data.text();
   }
   const options = {
@@ -177,13 +309,11 @@ self.addEventListener('notificationclick', (event) => {
   const url = event.notification.data?.url || '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Focus existing tab if found
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           return client.focus();
         }
       }
-      // Open new window if no existing tab
       return clients.openWindow(url);
     })
   );
