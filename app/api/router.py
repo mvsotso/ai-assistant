@@ -60,6 +60,8 @@ class TaskCreate(BaseModel):
     subcategory: Optional[str] = None
     label: Optional[str] = None
     due_date: Optional[str] = None  # ISO date string
+    group_id: Optional[int] = None
+    subgroup_id: Optional[int] = None
 
 
 class TaskUpdate(BaseModel):
@@ -72,6 +74,8 @@ class TaskUpdate(BaseModel):
     subcategory: Optional[str] = None
     label: Optional[str] = None
     due_date: Optional[str] = None
+    group_id: Optional[int] = None
+    subgroup_id: Optional[int] = None
 
 
 def _task_to_dict(t: Task) -> dict:
@@ -141,6 +145,10 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
         task.category = body.category
     if body.subcategory:
         task.subcategory = body.subcategory
+    if body.group_id:
+        task.group_id = body.group_id
+    if body.subgroup_id:
+        task.subgroup_id = body.subgroup_id
     if body.status and body.status != "todo":
         try:
             task.status = TaskStatus(body.status)
@@ -204,6 +212,8 @@ async def update_task(request: Request, task_id: int, body: TaskUpdate, db: Asyn
     if body.category is not None: task.category = body.category
     if body.subcategory is not None: task.subcategory = body.subcategory
     if body.label is not None: task.label = body.label
+    if body.group_id is not None: task.group_id = body.group_id
+    if body.subgroup_id is not None: task.subgroup_id = body.subgroup_id
     if body.due_date is not None:
         try:
             task.due_date = datetime.fromisoformat(body.due_date.replace("Z", "+00:00"))
