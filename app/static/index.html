@@ -448,6 +448,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
   <button class="nb" data-p="remind" onclick="nav('remind')"><span>⏰</span><span class="l" data-i18n="remind">Remind</span></button>
   <!-- Management & Tools -->
   <button class="nb" data-p="recurring" onclick="nav('recurring')"><span>🔁</span><span class="l" data-i18n="recurringNav">Recurring</span></button>
+  <button class="nb" data-p="templates" onclick="nav('templates')"><span>📋</span><span class="l" data-i18n="templatesNav">Templates</span></button>
   <button class="nb" data-p="analytics" onclick="nav('analytics')"><span>📊</span><span class="l" data-i18n="analyticsNav">Analytics</span></button>
   <button class="nb" data-p="chat" onclick="nav('chat')"><span>✨</span><span class="l" data-i18n="aiChat">AI Chat</span></button>
   <div style="margin-top:auto"></div>
@@ -493,6 +494,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
         <button class="btn gm" onclick="openMomModal()" data-i18n="momBtn">📋 MoM</button>
         <button class="btn gm" onclick="openGM()" data-i18n="groups">⚙️ Groups</button>
         <button class="btn gm" onclick="openCM()" data-i18n="categories">🏷️ Categories</button>
+        <div style="position:relative;display:inline-block" id="qc-wrap"><button class="btn" onclick="toggleQC()" style="padding:6px 12px;font-size:11px">⚡ <span data-i18n="quickCreate">Quick Create</span></button><div id="qc-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:4px;z-index:20;min-width:220px;max-height:300px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div></div>
         <button class="btn p" onclick="openModal('task')" data-i18n="newTask">+ New Task</button>
       </div>
     </div>
@@ -543,7 +545,17 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     <div id="rec-list"></div>
   </div>
 
-  <!-- Gantt Chart Page -->
+  <!-- Templates Page -->
+  <div id="pg-templates" class="pg">
+    <h2>📋 <span data-i18n="templatesPage">Task Templates</span></h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div class="st" style="margin:0" data-i18n="templatesSub">Reusable presets for quick task creation</div>
+      <button class="btn p" onclick="openTmplModal()" data-i18n="newTemplate">+ New Template</button>
+    </div>
+    <div id="tmpl-list"></div>
+  </div>
+
+    <!-- Gantt Chart Page -->
   <div id="pg-gantt" class="pg">
     <h2>📈 <span data-i18n="ganttChart">Gantt Chart</span></h2>
     <div class="st" data-i18n="ganttSub">Visual timeline with task dependencies</div>
@@ -826,6 +838,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 
 <!-- Task Modal (updated with group/subgroup fields) -->
 <div class="modal-overlay" id="modal-task"><div class="modal"><h3 id="modal-task-title" data-i18n="newTaskTitle">New Task</h3>
+<div class="fg" id="mt-tmpl-wrap" style="margin-bottom:4px"><label data-i18n="useTemplate">Use Template</label><select class="inp" id="mt-tmpl" onchange="applyTemplate(this.value)" style="font-size:11px"><option value="">-- None --</option></select></div>
 <div class="fg"><label data-i18n="title">Title</label><input class="inp" id="mt-title" placeholder="Task title..." data-i18n-ph="phTaskTitle"></div>
 <div class="fg"><label data-i18n="description">Description</label><textarea class="inp" id="mt-desc" rows="3" placeholder="Description..." data-i18n-ph="phDescription" style="resize:vertical"></textarea></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -954,6 +967,34 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </div>
 
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeEventModal()" data-i18n="cancel">Cancel</button><button class="btn d" id="me-del" onclick="deleteEvent()" style="display:none" data-i18n="delete">Delete</button><button class="btn p" id="me-save" onclick="saveEvent()" data-i18n="createEvent">Create Event</button></div></div></div>
+
+<!-- Template Modal -->
+<div class="modal-overlay" id="modal-tmpl"><div class="modal"><h3 id="modal-tmpl-title" data-i18n="newTemplate">New Template</h3>
+<div class="fg"><label data-i18n="templateName">Template Name</label><input class="inp" id="tt-name" placeholder="e.g. Meeting Follow-Up"></div>
+<div class="fg"><label data-i18n="titleTemplate">Title Template</label><input class="inp" id="tt-title" placeholder="Follow up: {title}"><div style="font-size:9px;color:var(--mt);margin-top:2px" data-i18n="variablesHint">Variables: {date}, {user}, {weekday}, {title}</div></div>
+<div class="fg"><label data-i18n="description">Description</label><textarea class="inp" id="tt-desc" rows="2" style="resize:vertical"></textarea></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="fg"><label data-i18n="priority">Priority</label><select class="inp" id="tt-prio"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
+<div class="fg"><label data-i18n="status">Status</label><select class="inp" id="tt-status"><option value="todo" selected>To Do</option><option value="in_progress">In Progress</option><option value="review">Review</option></select></div>
+<div class="fg"><label data-i18n="assignee">Assignee</label><input class="inp" id="tt-assign" placeholder="Name..." list="tt-team-dl"><datalist id="tt-team-dl"></datalist></div>
+<div class="fg"><label data-i18n="dueOffset">Due In (hours)</label><input class="inp" id="tt-offset" type="number" min="0" placeholder="e.g. 24"></div>
+<div class="fg"><label data-i18n="category">Category</label><select class="inp" id="tt-cat" onchange="onTtCatChange()"><option value="">-- Select --</option></select></div>
+<div class="fg"><label data-i18n="subcategory">Subcategory</label><select class="inp" id="tt-sub"><option value="">-- Select --</option></select></div>
+<div class="fg"><label data-i18n="group">Group</label><select class="inp" id="tt-group" onchange="onTtGroupChange()"><option value="">-- None --</option></select></div>
+<div class="fg"><label data-i18n="subGroup">Sub-Group</label><select class="inp" id="tt-subgroup"><option value="">-- None --</option></select></div>
+</div>
+<div style="display:flex;gap:6px;align-items:center;margin-top:6px">
+<label data-i18n="templateIcon" style="font-size:10px">Icon</label><input class="inp" id="tt-icon" value="📋" maxlength="4" style="width:50px;text-align:center">
+<input type="color" id="tt-color" value="#3b82f6" style="width:32px;height:32px;border:none;cursor:pointer">
+</div>
+<div class="fg" style="margin-top:8px"><label data-i18n="defaultChecklist">Default Checklist</label><div id="tt-checklist"></div>
+<div style="display:flex;gap:6px;margin-top:4px"><input class="inp" id="tt-cl-new" placeholder="Add checklist item..." style="flex:1" onkeydown="if(event.key==='Enter'){addTmplCheckItem();event.preventDefault()}"><button class="btn p" style="padding:4px 10px;font-size:10px" onclick="addTmplCheckItem()">+</button></div></div>
+<input type="hidden" id="tt-id" value="">
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
+<button class="btn" onclick="closeTmplModal()" data-i18n="cancel">Cancel</button>
+<button class="btn d" id="tt-del" onclick="deleteTmpl()" style="display:none" data-i18n="delete">Delete</button>
+<button class="btn p" onclick="saveTmpl()" data-i18n="save">Save</button>
+</div></div></div>
 
 <!-- Recurring Task Modal -->
 <div class="modal-overlay" id="modal-rec"><div class="modal"><h3 id="modal-rec-title" data-i18n="newRecurring">New Recurring Task</h3>
@@ -1118,7 +1159,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <script>
 const A=window.location.origin+'/api/v1',PC={urgent:'#ef4444',high:'#f97316',medium:'#eab308',low:'#22c55e'},PB={urgent:'rgba(239,68,68,.1)',high:'rgba(249,115,22,.1)',medium:'rgba(234,179,8,.1)',low:'rgba(34,197,94,.1)'},SI={todo:'📋',in_progress:'🔄',review:'👀',done:'✅'};
 let tok=null,usr=null,allT=[],curF='all',curCat='all';const $=id=>document.getElementById(id);
-const PT={dash:'Dashboard',board:'Task Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Reminders',chat:'AI Chat',calendar:'Calendar',recurring:'Recurring Tasks',analytics:'Analytics',gantt:'Gantt Chart',settings:'Settings'};
+const PT={dash:'Dashboard',board:'Task Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Reminders',chat:'AI Chat',calendar:'Calendar',recurring:'Recurring Tasks',analytics:'Analytics',gantt:'Gantt Chart',settings:'Settings',templates:'Templates'};
 function toggleSidebar(){$('sidebar').classList.toggle('open');$('sb-overlay').classList.toggle('open')}
 function closeSidebar(){$('sidebar').classList.remove('open');$('sb-overlay').classList.remove('open')}
 function stored(){try{return JSON.parse(localStorage.getItem('ai_s'))}catch{return null}}
@@ -1127,7 +1168,7 @@ function clear(){localStorage.removeItem('ai_s');tok=null;usr=null}
 async function checkSession(){const s=stored();if(!s?.token)return false;if(s.expires_at<Date.now()/1000){clear();return false}try{const r=await fetch(A+'/auth/verify',{headers:{Authorization:'Bearer '+s.token}});if(r.ok){tok=s.token;usr={email:s.email,name:s.name,picture:s.picture};return true}}catch{}clear();return false}
 async function gSign(r){const e=$('login-err');e.style.display='none';try{const res=await fetch(A+'/auth/google/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:r.credential})});const d=await res.json();if(res.ok){tok=d.token;usr={email:d.email,name:d.name,picture:d.picture};store(d);showApp()}else{e.textContent=d.detail||'Denied';e.style.display='block'}}catch{e.textContent='Server error';e.style.display='block'}}
 function logout(){clear();$('app').classList.remove('v');$('login').style.display='flex'}
-function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCatsAPI();loadTeamFull();initMiniCal();loadNotifCount();initPush();loadEmailPrefs()}
+function showApp(){$('login').style.display='none';$('app').classList.add('v');if(usr){$('av').src=usr.picture||'';$('av-m').src=usr.picture||'';$('greet').innerHTML=`${t('welcome')}, <b>${esc(usr.name)}</b>`}document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow='0 0 0 2px var(--ac)');loadDash();loadCatsAPI();loadTeamFull();loadTemplates();initMiniCal();loadNotifCount();initPush();loadEmailPrefs()}
 let _gClientId='';
 async function googleRedirectLogin(){if(!_gClientId){const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d.client_id}const redir=location.origin+'/api/v1/auth/google/callback';const u='https://accounts.google.com/o/oauth2/v2/auth?client_id='+encodeURIComponent(_gClientId)+'&redirect_uri='+encodeURIComponent(redir)+'&response_type=code&scope=openid%20email%20profile&prompt=select_account';location.href=u}
 window.onload=async()=>{if(await checkSession()){showApp();return}
@@ -1136,7 +1177,7 @@ const hp=new URLSearchParams(location.search);if(hp.get('session_token')){try{co
 try{const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d.client_id;if(d.client_id&&typeof google!=='undefined'&&google.accounts){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'});setTimeout(()=>{if(!$('g-btn').querySelector('iframe')&&!$('g-btn').querySelector('div[role]')){$('g-btn-fallback').style.display='flex'}},2000)}else{$('g-btn-fallback').style.display='flex'}}catch{$('g-btn-fallback').style.display='flex';$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt();if(p==='settings')loadSettingsPage()}
+function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt();if(p==='settings')loadSettingsPage();if(p==='templates')loadTemplates()}
 function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let tCats=[];
@@ -1335,7 +1376,7 @@ function onMtGroupChange(preselSg){
   if(preselSg)sgSel.value=preselSg;
 }
 
-async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}
+async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length){try{const _td=await _r.json();if(_td&&_td.id){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}}catch(e){console.warn('Checklist add:',e)}window._pendingChecklist=null}}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}
 async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash();loadGrps()}}
 
 // ═══ GROUP MANAGER ═══
@@ -2262,6 +2303,29 @@ async function saveRec(){const id=$('rc-id').value,title=$('rc-title').value.tri
 async function deleteRec(){const id=$('rc-id').value;if(!id||!confirm('Delete this recurring task?'))return;try{await fetch(A+'/recurring/'+id,{method:'DELETE',headers:hdr()});closeRecModal();loadRecurring()}catch{alert('Delete failed')}}
 async function toggleRec(id){try{await fetch(A+'/recurring/'+id+'/toggle',{method:'POST',headers:hdr()});loadRecurring()}catch{}}
 
+// ═══ TASK TEMPLATES ═══
+let allTmpls=[];
+async function loadTemplates(){try{const d=await(await fetch(A+'/templates',{headers:hdr()})).json();allTmpls=d.templates||[];renderTmplList();populateTmplSelect()}catch{allTmpls=[]}}
+function renderTmplList(){const el=$('tmpl-list');if(!el)return;if(!allTmpls.length){el.innerHTML='<div class="empty">'+t('noTemplates')+'</div>';return}el.innerHTML=allTmpls.map(tp=>{const cl=(tp.checklist||[]).length;return`<div class="tr" onclick="openTmplModal(allTmpls.find(x=>x.id===${tp.id}))" style="cursor:pointer"><div class="pb" style="background:${tp.color}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">${tp.icon||'📋'} ${esc(tp.name)}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${esc(tp.title_template)}${tp.category?' · '+esc(tp.category):''}${tp.assignee_name?' · '+esc(tp.assignee_name):''}${cl?' · '+cl+' items':''}${tp.due_offset_hours?' · '+tp.due_offset_hours+'h':''}</div></div><span class="badge" style="background:${tp.color}1a;color:${tp.color}">${tp.use_count||0}x</span><button class="btn p" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();useTemplate(${tp.id})">\u26a1 Use</button></div>`}).join('')}
+function resolveVars(s){if(!s)return s;const now=new Date(),days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];return s.replace(/\{date\}/g,now.toLocaleDateString()).replace(/\{user\}/g,usr?.name||'User').replace(/\{weekday\}/g,days[now.getDay()]).replace(/\{title\}/g,'')}
+async function useTemplate(tmplId){const tp=allTmpls.find(x=>x.id===tmplId);if(!tp)return;fetch(A+'/templates/'+tmplId+'/use',{method:'POST',headers:hdr()});let dueDate=null;if(tp.due_offset_hours){const d=new Date(Date.now()+tp.due_offset_hours*3600000);dueDate=d.toISOString().slice(0,16)}openModal('task',{title:resolveVars(tp.title_template),description:tp.description_text||'',priority:tp.priority||'medium',status:tp.status||'todo',assignee:tp.assignee_name||'',category:tp.category||'',subcategory:tp.subcategory||'',due_date:dueDate,group_id:tp.group_id,subgroup_id:tp.subgroup_id});window._pendingChecklist=tp.checklist||[]}
+function populateTmplSelect(){const sel=$('mt-tmpl');if(!sel)return;sel.innerHTML='<option value="">'+t('noneOption')+'</option>'+allTmpls.map(tp=>`<option value="${tp.id}">${tp.icon} ${esc(tp.name)}</option>`).join('')}
+function applyTemplate(v){if(!v)return;useTemplate(parseInt(v))}
+function toggleQC(){const dd=$('qc-dropdown');const vis=dd.style.display!=='none';dd.style.display=vis?'none':'block';if(!vis){dd.innerHTML=allTmpls.length?allTmpls.map(tp=>`<div style="padding:6px 10px;cursor:pointer;border-radius:6px;font-size:11px;display:flex;align-items:center;gap:6px" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''" onclick="toggleQC();useTemplate(${tp.id})"><span>${tp.icon}</span><span style="flex:1">${esc(tp.name)}</span><span style="font-size:9px;color:var(--mt)">${tp.use_count||0}x</span></div>`).join(''):'<div style="padding:8px;font-size:11px;color:var(--mt)">'+t('noTemplates')+'</div>'}}
+document.addEventListener('click',e=>{const qc=$('qc-wrap');if(qc&&!qc.contains(e.target)){const dd=$('qc-dropdown');if(dd)dd.style.display='none'}});
+let tmplChecklist=[];
+function openTmplModal(data){$('modal-tmpl').classList.add('v');$('tt-id').value=data?.id||'';$('tt-name').value=data?.name||'';$('tt-title').value=data?.title_template||'';$('tt-desc').value=data?.description_text||'';$('tt-prio').value=data?.priority||'medium';$('tt-status').value=data?.status||'todo';$('tt-assign').value=data?.assignee_name||'';$('tt-offset').value=data?.due_offset_hours||'';$('tt-icon').value=data?.icon||'📋';$('tt-color').value=data?.color||'#3b82f6';populateTtCatSelect(data?.category||'',data?.subcategory||'');populateTtGroups(data);tmplChecklist=(data?.checklist||[]).map(c=>({title:c.title,assignee_name:c.assignee_name||''}));renderTmplChecklist();$('modal-tmpl-title').textContent=data?.id?t('editTemplate'):t('newTemplate');$('tt-del').style.display=data?.id?'block':'none';$('tt-team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`).join('').replace(/undefined/g,'')}
+function closeTmplModal(){$('modal-tmpl').classList.remove('v')}
+function populateTtCatSelect(pc,ps){const s=$('tt-cat');s.innerHTML='<option value="">-- Select --</option>'+tCats.map(c=>`<option value="${c.name}"${c.name===pc?' selected':''}>${c.icon||''} ${c.name}</option>`).join('');onTtCatChange(ps)}
+function onTtCatChange(ps){const cat=$('tt-cat').value;const s=$('tt-sub');s.innerHTML='<option value="">-- Select --</option>';if(cat&&catSubMap[cat])s.innerHTML+=catSubMap[cat].map(x=>`<option value="${x}"${x===ps?' selected':''}>${x}</option>`).join('')}
+function populateTtGroups(data){const s=$('tt-group');s.innerHTML='<option value="">-- None --</option>'+tGroups.map(g=>`<option value="${g.id}"${data&&data.group_id==g.id?' selected':''}>${g.icon||''} ${g.name}</option>`).join('');onTtGroupChange(data?.subgroup_id)}
+function onTtGroupChange(psg){const gid=$('tt-group').value;const s=$('tt-subgroup');s.innerHTML='<option value="">-- None --</option>';if(!gid)return;const g=tGroups.find(x=>x.id==gid);if(g&&g.subgroups)s.innerHTML+=g.subgroups.map(sg=>`<option value="${sg.id}"${sg.id==psg?' selected':''}>${sg.name}</option>`).join('')}
+function renderTmplChecklist(){$('tt-checklist').innerHTML=tmplChecklist.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0"><span style="font-size:10px;color:var(--mt)">☐</span><span style="flex:1;font-size:11px">${esc(c.title)}</span><button class="btn" style="padding:2px 6px;font-size:9px" onclick="rmTmplCheck(${i})">x</button></div>`).join('')}
+function addTmplCheckItem(){const inp=$('tt-cl-new');const v=inp.value.trim();if(!v)return;tmplChecklist.push({title:v,assignee_name:''});inp.value='';renderTmplChecklist()}
+function rmTmplCheck(i){tmplChecklist.splice(i,1);renderTmplChecklist()}
+async function saveTmpl(){const id=$('tt-id').value,name=$('tt-name').value.trim(),title_template=$('tt-title').value.trim();if(!name||!title_template){alert('Name and title template are required');return}const body={name,title_template,description_text:$('tt-desc').value||null,priority:$('tt-prio').value,status:$('tt-status').value,assignee_name:$('tt-assign').value||null,category:$('tt-cat').value||null,subcategory:$('tt-sub').value||null,due_offset_hours:$('tt-offset').value?parseInt($('tt-offset').value):null,group_id:$('tt-group').value?parseInt($('tt-group').value):null,subgroup_id:$('tt-subgroup').value?parseInt($('tt-subgroup').value):null,icon:$('tt-icon').value||'📋',color:$('tt-color').value||'#3b82f6',checklist:tmplChecklist.length?tmplChecklist:null};try{if(id)await fetch(A+'/templates/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else await fetch(A+'/templates',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeTmplModal();loadTemplates()}catch{alert('Failed')}}
+async function deleteTmpl(){const id=$('tt-id').value;if(!id||!confirm('Delete this template?'))return;try{await fetch(A+'/templates/'+id,{method:'DELETE',headers:hdr()});closeTmplModal();loadTemplates()}catch{alert('Delete failed')}}
+
 // ═══ ANALYTICS ═══
 let chartInstances={};
 async function loadAnalytics(startDate,endDate){
@@ -2502,7 +2566,7 @@ let curLang='en';
 const I18N={
   en:{
     // Sidebar nav labels
-    home:'Home',board:'Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Remind',aiChat:'AI Chat',calendarNav:'Calendar',recurringNav:'Recurring',analyticsNav:'Analytics',
+    home:'Home',board:'Board',tasks:'Tasks',team:'Team',msgs:'Messages',remind:'Remind',aiChat:'AI Chat',calendarNav:'Calendar',recurringNav:'Recurring',templatesNav:'Templates',analyticsNav:'Analytics',
     // Page headers
     dashboard:'Dashboard',taskBoard:'Task Board',tasksPage:'Tasks',teamMembers:'Team Members',messagesPage:'Messages',remindersPage:'Reminders',aiAssistant:'AI Assistant',calendarPage:'Calendar',recurringTasks:'Recurring Tasks',analyticsPage:'Analytics',
     // Subtitles / descriptions
@@ -2614,6 +2678,8 @@ const I18N={
     pushNotifTitle:'Push Notifications',pushNotifSub:'Browser push notification settings',
     enablePush:'Enable browser push notifications',sendTestPush:'Send Test Push',
     aboutTitle:'About',aboutUser:'User',aboutEmail:'Email',aboutLang:'Language',aboutVersion:'Version',
+    // Templates
+    templatesNav:'Templates',templatesPage:'Task Templates',templatesSub:'Reusable presets for quick task creation',newTemplate:'+ New Template',editTemplate:'Edit Template',templateName:'Template Name',titleTemplate:'Title Template',variablesHint:'Variables: {date}, {user}, {weekday}, {title}',dueOffset:'Due In (hours)',templateIcon:'Icon',defaultChecklist:'Default Checklist',useTemplate:'Use Template',quickCreate:'Quick Create',noTemplates:'No templates yet. Create one above.',
     // Gantt Chart
     ganttChart:'Gantt Chart',ganttSub:'Visual timeline with task dependencies',ganttNav:'Gantt',
     // Offline
@@ -2622,7 +2688,7 @@ const I18N={
     analyzing:'Analyzing',analyzeBtn:'Analyze',momBtn:'📋 MoM',momTitle:'📋 Meeting Minutes Processor',momUploadStep:'Step 1: Upload Meeting Minutes',momUploadDesc:'Upload a PDF, Word, or Excel file. AI will extract action items automatically.',momProcess:'🤖 Process with AI',momAnalyzing:'Analyzing meeting minutes...',momAnalyzingDesc:'Extracting action items, deadlines, and assignments',momItemsFound:'items found',momNoItems:'No action items found in this document.',momSelectAll:'Select All',momDeselectAll:'Deselect All',momType:'Type',momTypeTask:'Task',momTypeReminder:'Reminder',momTypeEvent:'Event',unassigned:'Unassigned',momNoneSelected:'Please select at least one item.',momCreating:'Creating',momCreateAll:'🚀 Create Selected Items',momUploadAnother:'Upload Another',momProcessAnother:'Process Another',momViewTasks:'View Tasks',momComplete:'Items Created Successfully!',momCreatedCount:'Created',newChat:'💭 New Chat',newChatStarted:'New conversation started. How can I help you?'
   },
   kh:{
-    home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',analyticsNav:'វិភាគ',
+    home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',templatesNav:'គំរូ',analyticsNav:'វិភាគ',
     dashboard:'ផ្ទាំងគ្រប់គ្រង',taskBoard:'ក្តារភារកិច្ច',tasksPage:'ភារកិច្ច',teamMembers:'សមាជិកក្រុម',messagesPage:'សារ',remindersPage:'ការរំលឹក',aiAssistant:'AI ជំនួយការ',calendarPage:'ប្រតិទិន',recurringTasks:'ភារកិច្ចដដែលៗ',analyticsPage:'វិភាគ',
     telegramMsgs:'សារក្រុម Telegram',scheduledNotifs:'ការជូនដំណឹងដែលបានកំណត់',aiSub:'ជជែកជាមួយ Claude Opus 4.6 · English & ខ្មែរ · អាចផ្ទុកឯកសារ',dragCards:'អូសកាតដើម្បីប្តូរស្ថានភាព',taskTemplates:'គំរូភារកិច្ចដែលបង្កើតដោយស្វ័យប្រវត្តិតាមកាលវិភាគ',analyticsSub:'និន្នាការបញ្ចប់ភារកិច្ច និងសមត្ថភាពក្រុម',
     loginTitle:'AI ជំនួយការផ្ទាល់ខ្លួន',loginSub:'ចូលដោយប្រើគណនី Google របស់អ្នកដើម្បីចូលផ្ទាំងគ្រប់គ្រង។',signInGoogle:'ចូលដោយ Google',

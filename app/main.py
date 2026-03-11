@@ -30,6 +30,7 @@ from app.models.task_dependency import TaskDependency  # noqa: ensure table crea
 from app.models.push_subscription import PushSubscription  # noqa: ensure table creation
 from app.models.email_preference import EmailPreference  # noqa: ensure table creation
 from app.models.system_setting import SystemSetting  # noqa: ensure table creation
+from app.models.task_template import TaskTemplate  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -366,6 +367,53 @@ async def lifespan(app: FastAPI):
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_system_settings_key ON system_settings(key)'))
             logger.info('System settings migration checked')
 
+            # -- Task Templates migration (Phase 20) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_templates (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL UNIQUE,
+                    description_text TEXT,
+                    icon VARCHAR(10) DEFAULT '📋',
+                    color VARCHAR(7) DEFAULT '#3b82f6',
+                    title_template VARCHAR(500) NOT NULL,
+                    priority VARCHAR(50) DEFAULT 'medium',
+                    status VARCHAR(50) DEFAULT 'todo',
+                    category VARCHAR(100),
+                    subcategory VARCHAR(100),
+                    assignee_name VARCHAR(255),
+                    label VARCHAR(100),
+                    due_offset_hours INTEGER,
+                    group_id INTEGER,
+                    subgroup_id INTEGER,
+                    checklist_json TEXT,
+                    is_builtin BOOLEAN DEFAULT FALSE,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    sort_order INTEGER DEFAULT 0,
+                    use_count INTEGER DEFAULT 0,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_templates_active ON task_templates(is_active)'))
+            logger.info('Task templates migration checked')
+
+            # Seed default templates if table is empty
+            tmpl_count = await conn.execute(text("SELECT COUNT(*) FROM task_templates"))
+            if tmpl_count.scalar() == 0:
+                seed_templates = [
+                    ("Meeting Follow-Up", "📨", "#3b82f6", "Follow up: {title}", "Follow up on action items from the meeting.", "high", "todo", 24, '[{"title":"Review meeting notes"},{"title":"Send summary email"},{"title":"Schedule next meeting"}]'),
+                    ("Weekly Report", "📝", "#22c55e", "Weekly Report - {date}", "Prepare and submit the weekly progress report.", "medium", "todo", 168, '[{"title":"Collect team updates"},{"title":"Compile statistics"},{"title":"Write summary"},{"title":"Submit to management"}]'),
+                    ("Bug Fix", "🐛", "#ef4444", "Fix: {title}", "Investigate and resolve the reported bug.", "high", "todo", 48, '[{"title":"Reproduce the issue"},{"title":"Identify root cause"},{"title":"Implement fix"},{"title":"Test fix"},{"title":"Deploy"}]'),
+                    ("Document Review", "📄", "#a855f7", "Review: {title}", "Review the document and provide feedback.", "medium", "todo", 72, '[{"title":"Read document thoroughly"},{"title":"Add comments"},{"title":"Prepare feedback summary"}]'),
+                    ("New Initiative", "🚀", "#f97316", "{title}", "Plan and launch a new initiative or project.", "high", "todo", 168, '[{"title":"Define scope and objectives"},{"title":"Identify stakeholders"},{"title":"Create timeline"},{"title":"Assign team members"},{"title":"Kick-off meeting"}]'),
+                ]
+                for i, (name, icon, color, title_tmpl, desc, prio, status, offset, checklist) in enumerate(seed_templates):
+                    await conn.execute(text(
+                        "INSERT INTO task_templates (name, icon, color, title_template, description_text, priority, status, due_offset_hours, checklist_json, is_builtin, sort_order) "
+                        "VALUES (:name, :icon, :color, :title_tmpl, :desc, :prio, :status, :offset, :checklist, TRUE, :sort)"
+                    ), {"name": name, "icon": icon, "color": color, "title_tmpl": title_tmpl, "desc": desc, "prio": prio, "status": status, "offset": offset, "checklist": checklist, "sort": i})
+                logger.info("Seeded 5 default task templates")
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 
@@ -419,6 +467,7 @@ app.add_middleware(
 # Register routes
 from app.api.notification_api import notification_router, notification_public_router  # noqa
 from app.api.settings_api import settings_router  # noqa
+from app.api.template_api import router as template_router  # noqa
 app.include_router(router)
 app.include_router(calendar_router)
 app.include_router(recurring_router)
@@ -431,6 +480,7 @@ app.include_router(auth_router)
 app.include_router(notification_router)
 app.include_router(notification_public_router)
 app.include_router(settings_router)
+app.include_router(template_router)
 
 
 @app.get("/")
