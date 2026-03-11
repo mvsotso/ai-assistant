@@ -5,6 +5,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 
+// Conditional import: web uses GIS JS interop, mobile uses stub
+import 'gis_auth_stub.dart' if (dart.library.js_interop) 'gis_auth_web.dart';
+
 class AuthService {
   static const _storage = FlutterSecureStorage();
   static const _tokenKey = 'session_token';
@@ -29,33 +32,36 @@ class AuthService {
 
   static Future<Map<String, dynamic>?> signIn() async {
     try {
-      // Fetch client ID from backend
       final clientId = await _getClientId();
       if (clientId == null) return null;
 
-      // Initialize GoogleSignIn with the fetched client ID
-      _googleSignIn ??= GoogleSignIn(
-        scopes: ['email', 'profile'],
-        clientId: kIsWeb ? clientId : null,
-        serverClientId: kIsWeb ? null : clientId,
-      );
-
-      final account = await _googleSignIn!.signIn();
-      if (account == null) return null;
-
-      final auth = await account.authentication;
-
-      // On web, signIn() returns an access token (not an ID token)
-      // On mobile, it returns an ID token
       String? credential;
+
       if (kIsWeb) {
-        credential = auth.accessToken;
+        // On web: use GIS JS interop directly (avoids People API 403)
+        credential = await requestGISAccessToken(clientId);
       } else {
+        // On mobile: use google_sign_in package
+        _googleSignIn ??= GoogleSignIn(
+          scopes: ['email', 'profile'],
+          serverClientId: clientId,
+        );
+        final account = await _googleSignIn!.signIn();
+        if (account == null) return null;
+        final auth = await account.authentication;
         credential = auth.idToken ?? auth.accessToken;
       }
-      if (credential == null) return null;
 
-      // Verify with backend (backend accepts both ID tokens and access tokens)
+      if (credential == null) return null;
+      return await _verifyWithBackend(credential);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Send credential (ID token or access token) to backend for verification.
+  static Future<Map<String, dynamic>?> _verifyWithBackend(String credential) async {
+    try {
       final response = await http.post(
         Uri.parse(ApiConfig.authVerify),
         headers: {'Content-Type': 'application/json'},
@@ -72,38 +78,8 @@ class AuthService {
         }));
         return data;
       }
-      return null;
-    } catch (e) {
-      if (kIsWeb) {
-        // On web, People API 403 may throw — try to recover
-        // by checking if we have an authenticated account
-        try {
-          final account = _googleSignIn?.currentUser;
-          if (account != null) {
-            final auth = await account.authentication;
-            final accessToken = auth.accessToken;
-            if (accessToken != null) {
-              final response = await http.post(
-                Uri.parse(ApiConfig.authVerify),
-                headers: {'Content-Type': 'application/json'},
-                body: jsonEncode({'credential': accessToken}),
-              );
-              if (response.statusCode == 200) {
-                final data = jsonDecode(response.body);
-                await _storage.write(key: _tokenKey, value: data['token']);
-                await _storage.write(key: _userKey, value: jsonEncode({
-                  'email': data['email'],
-                  'name': data['name'],
-                  'picture': data['picture'],
-                }));
-                return data;
-              }
-            }
-          }
-        } catch (_) {}
-      }
-      return null;
-    }
+    } catch (_) {}
+    return null;
   }
 
   static Future<void> signOut() async {
