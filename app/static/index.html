@@ -1560,7 +1560,7 @@ function onMtGroupChange(preselSg){
   if(preselSg)sgSel.value=preselSg;
 }
 
-async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length||dgPendingLink){try{const _td=await _r.json();if(_td&&_td.id){if(window._pendingChecklist){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}if(dgPendingLink){await fetch(A+'/tasks/'+_td.id+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:dgPendingLink})});dgPendingLink=null;if(curPage==='depgraph')loadDepGraph()}}}catch(e){console.warn('Post-create:',e)}window._pendingChecklist=null}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}
+async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length||dgPendingLink){try{const _td=await _r.json();if(_td&&_td.id){if(window._pendingChecklist){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}if(dgPendingLink){await fetch(A+'/tasks/'+_td.id+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:dgPendingLink})});dgPendingLink=null;if(curPage==='depgraph')loadDepGraph()}}}catch(e){console.warn('Post-create:',e)}window._pendingChecklist=null}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}}
 async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash();loadGrps()}}
 
 // ═══ GROUP MANAGER ═══
@@ -3582,6 +3582,308 @@ function applyLang(){
   // Update active page mobile title
   const activeP=document.querySelector('.nb.a');
   if(activeP&&$('mobile-title')){const pk=activeP.dataset.p;if(pk&&PT[pk])$('mobile-title').textContent=PT[pk]}
+}
+
+// ═══ PHASE 25: SAVED REPORTS ═══
+async function loadSavedReports(){
+  try{
+    const r=await fetch(A+'/reports',{headers:hdr()});
+    if(!r.ok)return;
+    const reports=await r.json();
+    const el=$('saved-reports-list');
+    if(!el)return;
+    if(!reports.length){el.innerHTML='<div style="color:var(--mt);padding:8px">No saved reports yet.</div>';return}
+    el.innerHTML=reports.map(rp=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid var(--bd)">
+      <div><strong>${esc(rp.name)}</strong> <span style="color:var(--mt);font-size:10px">(${rp.report_type})</span>
+      ${rp.schedule&&rp.schedule!=='none'?`<span style="background:var(--as);color:var(--ac);padding:1px 6px;border-radius:8px;font-size:9px;margin-left:4px">${rp.schedule}</span>`:''}
+      ${rp.description?`<div style="color:var(--mt);font-size:10px;margin-top:2px">${esc(rp.description)}</div>`:''}</div>
+      <div style="display:flex;gap:4px">
+        <button class="btn" onclick="runReport(${rp.id})" style="padding:3px 8px;font-size:10px">▶ Run</button>
+        <button class="btn" onclick="deleteReport(${rp.id})" style="padding:3px 8px;font-size:10px;color:var(--rd)">✕</button>
+      </div>
+    </div>`).join('');
+  }catch(e){console.warn('loadSavedReports error',e)}
+}
+function showReportBuilder(){
+  $('rb-id').value='';$('rb-name').value='';$('rb-desc').value='';$('rb-type').value='status_summary';
+  $('rb-start').value='';$('rb-end').value='';$('rb-category').value='';$('rb-assignee').value='';
+  $('rb-schedule').value='none';$('rb-recipients').value='';
+  $('report-builder-modal').style.display='flex';
+}
+function closeReportBuilder(){$('report-builder-modal').style.display='none'}
+async function saveReport(){
+  const name=$('rb-name').value.trim();
+  if(!name){alert('Report name is required');return}
+  const body={name,description:$('rb-desc').value.trim(),report_type:$('rb-type').value,
+    filters:{start_date:$('rb-start').value||null,end_date:$('rb-end').value||null,category:$('rb-category').value.trim()||null,assignee:$('rb-assignee').value.trim()||null},
+    schedule:$('rb-schedule').value,recipients:$('rb-recipients').value.split(',').map(s=>s.trim()).filter(Boolean)};
+  try{
+    const r=await fetch(A+'/reports',{method:'POST',headers:hdr(),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('Save failed');
+    closeReportBuilder();loadSavedReports();showToast('Report saved!');
+  }catch(e){alert('Failed to save report: '+e.message)}
+}
+let lastReportData=null;
+async function runReport(id){
+  try{
+    showToast('Generating report...');
+    const r=await fetch(A+'/reports/'+id+'/run',{headers:hdr()});
+    if(!r.ok)throw new Error('Run failed');
+    const data=await r.json();
+    lastReportData=data;
+    $('report-results-title').textContent=data.name||'Report Results';
+    renderReportTable(data);
+    $('report-results-modal').style.display='flex';
+  }catch(e){alert('Failed to run report: '+e.message)}
+}
+function renderReportTable(data){
+  const el=$('report-results-content');
+  if(!data||!data.data){el.innerHTML='<div>No data</div>';return}
+  const rows=data.data;
+  if(Array.isArray(rows)&&rows.length>0){
+    const keys=Object.keys(rows[0]);
+    el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr>${keys.map(k=>`<th style="padding:6px 8px;border-bottom:2px solid var(--bd);text-align:left;color:var(--mt)">${esc(k)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(row=>`<tr>${keys.map(k=>`<td style="padding:5px 8px;border-bottom:1px solid var(--bd)">${esc(String(row[k]??''))}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+  }else if(typeof rows==='object'){
+    el.innerHTML=Object.entries(rows).map(([k,v])=>`<div style="padding:4px 0"><strong>${esc(k)}:</strong> ${esc(String(v))}</div>`).join('');
+  }else{el.innerHTML='<div>'+esc(String(rows))+'</div>'}
+}
+function exportCurrentReport(){
+  if(!lastReportData||!lastReportData.data)return;
+  const rows=lastReportData.data;
+  if(!Array.isArray(rows)||!rows.length)return;
+  const keys=Object.keys(rows[0]);
+  const csv=[keys.join(','),...rows.map(r=>keys.map(k=>'"'+(String(r[k]??'').replace(/"/g,'""'))+'"').join(','))].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(lastReportData.name||'report')+'.csv';a.click();
+}
+async function deleteReport(id){
+  if(!confirm('Delete this report?'))return;
+  try{await fetch(A+'/reports/'+id,{method:'DELETE',headers:hdr()});loadSavedReports();showToast('Report deleted')}catch(e){alert('Delete failed')}
+}
+
+// ═══ PHASE 26: WORKFLOW AUTOMATION ═══
+async function loadWorkflowRules(){
+  try{
+    const r=await fetch(A+'/workflows',{headers:hdr()});
+    if(!r.ok)return;
+    const rules=await r.json();
+    const el=$('workflow-rules-list');
+    if(!el)return;
+    if(!rules.length){el.innerHTML='<div style="color:var(--mt);padding:8px">No automation rules configured.</div>';return}
+    el.innerHTML=rules.map(w=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid var(--bd);opacity:${w.is_active?1:0.5}">
+      <div><strong>${esc(w.name)}</strong> <span style="color:var(--mt);font-size:10px">When: ${w.trigger} → ${w.action_type}</span>
+      ${!w.is_active?'<span style="color:var(--rd);font-size:9px;margin-left:4px">(disabled)</span>':''}</div>
+      <div style="display:flex;gap:4px">
+        <button class="btn" onclick="toggleWorkflow(${w.id},${!w.is_active})" style="padding:3px 8px;font-size:10px">${w.is_active?'⏸ Pause':'▶ Enable'}</button>
+        <button class="btn" onclick="deleteWorkflow(${w.id})" style="padding:3px 8px;font-size:10px;color:var(--rd)">✕</button>
+      </div>
+    </div>`).join('');
+  }catch(e){console.warn('loadWorkflowRules error',e)}
+}
+function showWorkflowBuilder(){
+  $('wf-name').value='';$('wf-trigger').value='task_created';$('wf-cond-priority').value='';
+  $('wf-cond-category').value='';$('wf-action').value='auto_assign';$('wf-config-value').value='';
+  $('workflow-builder-modal').style.display='flex';
+}
+function toggleWfActionConfig(){/* placeholder for dynamic config UI */}
+async function saveWorkflow(){
+  const name=$('wf-name').value.trim();
+  if(!name){alert('Rule name is required');return}
+  const cond={};
+  const prio=$('wf-cond-priority').value.trim();if(prio)cond.priority=prio;
+  const cat=$('wf-cond-category').value.trim();if(cat)cond.category=cat;
+  const body={name,trigger:$('wf-trigger').value,condition:cond,action_type:$('wf-action').value,
+    action_config:{value:$('wf-config-value').value.trim()}};
+  try{
+    const r=await fetch(A+'/workflows',{method:'POST',headers:hdr(),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('Save failed');
+    $('workflow-builder-modal').style.display='none';loadWorkflowRules();showToast('Automation rule saved!');
+  }catch(e){alert('Failed to save rule: '+e.message)}
+}
+async function toggleWorkflow(id,enable){
+  try{await fetch(A+'/workflows/'+id,{method:'PATCH',headers:hdr(),body:JSON.stringify({is_active:enable})});loadWorkflowRules()}catch(e){alert('Toggle failed')}
+}
+async function deleteWorkflow(id){
+  if(!confirm('Delete this automation rule?'))return;
+  try{await fetch(A+'/workflows/'+id,{method:'DELETE',headers:hdr()});loadWorkflowRules();showToast('Rule deleted')}catch(e){alert('Delete failed')}
+}
+
+// ═══ PHASE 27: FILE MANAGEMENT ═══
+async function loadTaskFiles(taskId){
+  const el=$('task-files-list');
+  if(!el)return;
+  try{
+    const r=await fetch(A+'/tasks/'+taskId+'/files',{headers:hdr()});
+    if(!r.ok){el.innerHTML='';return}
+    const files=await r.json();
+    if(!files.length){el.innerHTML='<div style="color:var(--mt);font-size:11px;padding:4px">No files attached.</div>';return}
+    el.innerHTML=files.map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--bd)">
+      <div style="font-size:11px"><span style="margin-right:4px">📎</span><strong>${esc(f.original_filename)}</strong>
+      <span style="color:var(--mt);font-size:9px">(${(f.file_size/1024).toFixed(1)} KB)</span>
+      ${f.ai_summary?`<div style="color:var(--mt);font-size:10px;margin-top:2px">AI: ${esc(f.ai_summary.substring(0,100))}...</div>`:''}</div>
+      <div style="display:flex;gap:3px">
+        <a href="${A}/files/${f.id}/download" class="btn" style="padding:2px 6px;font-size:9px;text-decoration:none" target="_blank">📥</a>
+        <button class="btn" onclick="analyzeFile(${f.id})" style="padding:2px 6px;font-size:9px">🤖</button>
+        <button class="btn" onclick="deleteTaskFile(${f.id},${f.task_id||taskId})" style="padding:2px 6px;font-size:9px;color:var(--rd)">✕</button>
+      </div>
+    </div>`).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--rd);font-size:10px">Error loading files</div>'}
+}
+async function uploadTaskFile(taskId){
+  const input=document.createElement('input');input.type='file';input.accept='*/*';
+  input.onchange=async()=>{
+    const file=input.files[0];if(!file)return;
+    if(file.size>25*1024*1024){alert('File too large (max 25MB)');return}
+    const fd=new FormData();fd.append('file',file);fd.append('task_id',taskId);
+    try{
+      showToast('Uploading...');
+      const r=await fetch(A+'/files/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
+      if(!r.ok)throw new Error('Upload failed');
+      loadTaskFiles(taskId);showToast('File uploaded!');
+    }catch(e){alert('Upload failed: '+e.message)}
+  };input.click();
+}
+async function analyzeFile(fileId){
+  try{
+    showToast('Analyzing with AI...');
+    const r=await fetch(A+'/files/'+fileId+'/analyze',{method:'POST',headers:hdr()});
+    if(!r.ok)throw new Error('Analysis failed');
+    const data=await r.json();
+    showToast('Analysis complete');
+    alert('AI Analysis:\n\n'+(data.ai_summary||'No summary available'));
+  }catch(e){alert('Analysis failed: '+e.message)}
+}
+async function deleteTaskFile(fileId,taskId){
+  if(!confirm('Delete this file?'))return;
+  try{await fetch(A+'/files/'+fileId,{method:'DELETE',headers:hdr()});loadTaskFiles(taskId);showToast('File deleted')}catch(e){alert('Delete failed')}
+}
+
+// ═══ PHASE 28: TIME TRACKING ═══
+let timerInterval=null;let timerStartTime=null;let activeTimerTaskId=null;
+async function loadTaskTime(taskId){
+  const el=$('task-time-logs');
+  if(!el)return;
+  try{
+    const r=await fetch(A+'/tasks/'+taskId+'/time',{headers:hdr()});
+    if(!r.ok){el.innerHTML='';return}
+    const data=await r.json();
+    const logs=data.logs||[];const totalMin=data.total_minutes||0;
+    const timerEl=$('timer-display');
+    if(timerEl)timerEl.textContent=formatDuration(totalMin);
+    // Check for running timer
+    const running=logs.find(l=>l.is_running);
+    if(running){activeTimerTaskId=taskId;timerStartTime=new Date(running.started_at);startTimerDisplay()}
+    if(!logs.length){el.innerHTML='<div style="color:var(--mt);font-size:10px">No time logged yet.</div>';return}
+    el.innerHTML=logs.map(l=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bd);font-size:10px">
+      <span>${l.is_running?'🔴 Running':formatDuration(l.duration_minutes||0)} ${l.description?'- '+esc(l.description):''}</span>
+      <span style="color:var(--mt)">${l.started_at?new Date(l.started_at).toLocaleDateString():''}</span>
+    </div>`).join('');
+  }catch(e){console.warn('loadTaskTime error',e)}
+}
+function formatDuration(mins){
+  if(!mins||mins<0)return '0m';
+  const h=Math.floor(mins/60);const m=Math.round(mins%60);
+  return h>0?h+'h '+m+'m':m+'m';
+}
+async function toggleTimer(taskId){
+  if(activeTimerTaskId===taskId&&timerInterval){
+    // Stop timer
+    try{
+      await fetch(A+'/tasks/'+taskId+'/timer/stop',{method:'POST',headers:hdr()});
+      clearInterval(timerInterval);timerInterval=null;activeTimerTaskId=null;timerStartTime=null;
+      loadTaskTime(taskId);showToast('Timer stopped');
+    }catch(e){alert('Stop timer failed')}
+  }else{
+    // Start timer
+    try{
+      const r=await fetch(A+'/tasks/'+taskId+'/timer/start',{method:'POST',headers:hdr()});
+      if(!r.ok)throw new Error('Start failed');
+      activeTimerTaskId=taskId;timerStartTime=new Date();startTimerDisplay();showToast('Timer started');
+    }catch(e){alert('Start timer failed: '+e.message)}
+  }
+}
+function startTimerDisplay(){
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(!timerStartTime)return;
+    const diff=Math.floor((Date.now()-timerStartTime.getTime())/60000);
+    const el=$('timer-display');if(el)el.textContent='⏱ '+formatDuration(diff);
+  },1000);
+}
+async function showManualTimeLog(taskId){
+  const mins=prompt('Enter time in minutes:');
+  if(!mins||isNaN(Number(mins)))return;
+  const desc=prompt('Description (optional):');
+  try{
+    await fetch(A+'/tasks/'+taskId+'/time',{method:'POST',headers:hdr(),body:JSON.stringify({duration_minutes:Number(mins),description:desc||''})});
+    loadTaskTime(taskId);showToast('Time logged');
+  }catch(e){alert('Failed to log time')}
+}
+
+// ═══ PHASE 29: COLLABORATION ═══
+let ws=null;
+function initWebSocket(){
+  if(!token||ws)return;
+  try{
+    const wsUrl=(location.protocol==='https:'?'wss://':'ws://')+location.host+'/api/v1/ws?token='+token;
+    ws=new WebSocket(wsUrl);
+    ws.onmessage=(e)=>{
+      try{
+        const msg=JSON.parse(e.data);
+        if(msg.type==='task_updated'){showToast('Task updated: '+(msg.task_title||'#'+msg.task_id))}
+        else if(msg.type==='notification'){showToast(msg.message||'New notification')}
+      }catch(err){}
+    };
+    ws.onclose=()=>{ws=null;setTimeout(()=>{if(token)initWebSocket()},5000)};
+    ws.onerror=()=>{ws=null};
+  }catch(e){console.warn('WebSocket init error',e)}
+}
+async function toggleWatch(taskId){
+  try{
+    const watching=await isWatching(taskId);
+    const method=watching?'DELETE':'POST';
+    await fetch(A+'/tasks/'+taskId+'/watch',{method,headers:hdr()});
+    updateWatchButton(taskId,!watching);
+    showToast(watching?'Unwatched':'Watching task');
+  }catch(e){console.warn('toggleWatch error',e)}
+}
+async function isWatching(taskId){
+  try{
+    const r=await fetch(A+'/tasks/'+taskId+'/watchers',{headers:hdr()});
+    if(!r.ok)return false;
+    const data=await r.json();
+    const me=currentUser;
+    return data.some(w=>w.user_email===me);
+  }catch(e){return false}
+}
+function updateWatchButton(taskId,watching){
+  const btn=$('watch-btn');
+  if(btn){btn.textContent=watching?'👁 Watching':'👁 Watch';btn.style.opacity=watching?1:0.6}
+}
+async function loadWatchStatus(taskId){
+  const watching=await isWatching(taskId);
+  updateWatchButton(taskId,watching);
+}
+async function loadActivityFeed(){
+  const el=$('activity-feed-list');
+  if(!el)return;
+  try{
+    const r=await fetch(A+'/activity?limit=20',{headers:hdr()});
+    if(!r.ok){el.innerHTML='<div style="color:var(--mt)">Unable to load activity feed.</div>';return}
+    const activities=await r.json();
+    if(!activities.length){el.innerHTML='<div style="color:var(--mt)">No recent activity.</div>';return}
+    el.innerHTML=activities.map(a=>{
+      const time=a.created_at?new Date(a.created_at).toLocaleString():''
+      return `<div style="padding:4px 0;border-bottom:1px solid var(--bd)">
+        <span style="color:var(--ac)">${esc(a.user_email||'System')}</span>
+        <span>${esc(a.action||'')} ${a.entity_type||''} #${a.entity_id||''}</span>
+        <span style="color:var(--mt);font-size:9px;margin-left:4px">${time}</span>
+      </div>`
+    }).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--mt)">Error loading activity.</div>'}
 }
 </script>
 
