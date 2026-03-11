@@ -1,7 +1,7 @@
 """
 Task model — collaborative task management with assignments.
 """
-from sqlalchemy import Column, Integer, BigInteger, String, Text, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, String, Text, DateTime, Enum, ForeignKey, Float
 from sqlalchemy.sql import func
 from app.core.database import Base
 import enum

@@ -7,6 +7,7 @@ from sqlalchemy import select, func as sqlfunc, desc, distinct
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta, timezone
+import logging
 
 from app.core.database import get_db
 from app.bot.handlers import bot_handlers
