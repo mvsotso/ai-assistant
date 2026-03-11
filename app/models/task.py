@@ -47,6 +47,10 @@ class Task(Base):
     source_chat_id = Column(BigInteger, nullable=True)
     source_message_id = Column(BigInteger, nullable=True)
 
+    # Multi-assignee: working group or department assignment
+    assigned_group_id = Column(Integer, ForeignKey("working_groups.id", ondelete="SET NULL"), nullable=True)
+    assigned_department = Column(String(255), nullable=True)
+
     due_date = Column(DateTime(timezone=True), nullable=True)
     estimated_hours = Column(Float, nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)

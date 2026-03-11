@@ -36,6 +36,8 @@ from app.models.workflow_rule import WorkflowRule  # noqa: ensure table creation
 from app.models.task_file import TaskFile  # noqa: ensure table creation
 from app.models.time_log import TimeLog  # noqa: ensure table creation
 from app.models.collaboration import TaskWatcher, ActivityLog  # noqa: ensure table creation
+from app.models.working_group import WorkingGroup, WorkingGroupMember  # noqa: ensure table creation
+from app.models.task_assignee import TaskAssignee  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -540,6 +542,64 @@ async def lifespan(app: FastAPI):
                 ("tasks", "last_modified_by", "ALTER TABLE tasks ADD COLUMN last_modified_by VARCHAR(255)"),
             ]
             for table, col, sql in collab_cols:
+                result = await conn.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name=:tbl AND column_name=:col"
+                ).bindparams(tbl=table, col=col))
+                if not result.fetchall():
+                    await conn.execute(text(sql))
+                    logger.info(f'Added {col} column to {table} table')
+
+            # ── Working Groups migration ──
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS working_groups (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    description TEXT,
+                    icon VARCHAR(10) DEFAULT '👥',
+                    color VARCHAR(7) DEFAULT '#3b82f6',
+                    creator_email VARCHAR(255),
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS working_group_members (
+                    id SERIAL PRIMARY KEY,
+                    group_id INTEGER NOT NULL REFERENCES working_groups(id) ON DELETE CASCADE,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    role VARCHAR(20) DEFAULT 'member',
+                    joined_at TIMESTAMPTZ DEFAULT NOW(),
+                    CONSTRAINT uq_wg_member UNIQUE (group_id, user_id)
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_wg_members_group ON working_group_members(group_id)'))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_wg_members_user ON working_group_members(user_id)'))
+            logger.info('Working groups migration checked')
+
+            # ── Task Assignees migration ──
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_assignees (
+                    id SERIAL PRIMARY KEY,
+                    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    role VARCHAR(20) DEFAULT 'contributor',
+                    assigned_at TIMESTAMPTZ DEFAULT NOW(),
+                    assigned_by VARCHAR(255),
+                    CONSTRAINT uq_task_assignee UNIQUE (task_id, user_id)
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_assignees_task ON task_assignees(task_id)'))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_assignees_user ON task_assignees(user_id)'))
+            logger.info('Task assignees migration checked')
+
+            # Add assigned_group_id and assigned_department to tasks
+            assign_cols = [
+                ("tasks", "assigned_group_id", "ALTER TABLE tasks ADD COLUMN assigned_group_id INTEGER REFERENCES working_groups(id) ON DELETE SET NULL"),
+                ("tasks", "assigned_department", "ALTER TABLE tasks ADD COLUMN assigned_department VARCHAR(255)"),
+            ]
+            for table, col, sql in assign_cols:
                 result = await conn.execute(text(
                     "SELECT column_name FROM information_schema.columns "
                     "WHERE table_name=:tbl AND column_name=:col"

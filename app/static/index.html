@@ -429,6 +429,22 @@ input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;padding:4px;opacity:.7}
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
+/* ── Multi-Assignee ── */
+.multi-assign{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;min-height:36px;align-items:center;cursor:text}
+.multi-assign:focus-within{border-color:var(--ac)}
+.multi-assign input{border:none;background:none;outline:none;color:var(--tx);font-size:12px;flex:1;min-width:80px;padding:2px 0;font-family:'DM Sans',sans-serif}
+.assign-tag{display:inline-flex;align-items:center;gap:3px;background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:2px 8px;font-size:10px;color:var(--tx);white-space:nowrap}
+.assign-tag.lead{border-color:var(--ac);background:var(--as)}
+.assign-tag .role-b{font-size:8px;font-weight:700;padding:1px 4px;border-radius:4px;color:#fff;cursor:pointer}
+.assign-tag .role-b.lead{background:var(--ac)}.assign-tag .role-b.contributor{background:var(--gn)}.assign-tag .role-b.reviewer{background:var(--pp)}
+.assign-tag .rm{cursor:pointer;opacity:.5;font-size:11px;margin-left:2px}.assign-tag .rm:hover{opacity:1;color:var(--rd)}
+.assign-dd{position:absolute;top:100%;left:0;right:0;background:var(--cd);border:1px solid var(--bd);border-radius:8px;max-height:160px;overflow-y:auto;z-index:50;display:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.assign-dd.v{display:block}
+.assign-dd-item{padding:6px 10px;font-size:11px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.assign-dd-item:hover{background:var(--sf)}
+.assign-dd-item .dept{font-size:9px;color:var(--mt)}
+.wg-card{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:6px}
+.wg-card:hover{border-color:var(--ac)}
 </style>
 </head>
 <body>
@@ -1003,6 +1019,20 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
           </div>
         </div>
       </div>
+      <!-- Working Groups Card -->
+      <div class="settings-card">
+        <div class="settings-card-hdr">
+          <div class="settings-icon" style="background:linear-gradient(135deg,rgba(168,85,247,.15),rgba(59,130,246,.15));">&#128101;</div>
+          <div>
+            <h3 data-i18n="workingGroups">Working Groups</h3>
+            <div style="font-size:11px;color:var(--mt);margin-top:2px" data-i18n="workingGroupsSub">Team groupings for task assignment</div>
+          </div>
+          <button class="btn p" onclick="showWGBuilder()" style="padding:4px 10px;font-size:10px;margin-left:auto">+ <span data-i18n="newGroup">New Group</span></button>
+        </div>
+        <div class="settings-card-body">
+          <div id="wg-list" style="display:flex;flex-direction:column;gap:6px">Loading...</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1027,13 +1057,16 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 <div class="fg"><label data-i18n="priority">Priority</label><select class="inp" id="mt-prio"><option value="low" data-i18n="low">Low</option><option value="medium" selected data-i18n="medium">Medium</option><option value="high" data-i18n="high">High</option><option value="urgent" data-i18n="urgent">Urgent</option></select></div>
 <div class="fg"><label data-i18n="status">Status</label><select class="inp" id="mt-status"><option value="todo" data-i18n="todo">To Do</option><option value="in_progress" data-i18n="inProgress">In Progress</option><option value="review" data-i18n="review">Review</option><option value="done" data-i18n="done">Done</option></select></div>
-<div class="fg"><label data-i18n="assignee">Assignee</label><input class="inp" id="mt-assign" placeholder="Name..." data-i18n-ph="phName" list="team-dl"></div>
+<div class="fg" style="grid-column:span 2"><label data-i18n="assignees">Assignees</label>
+<div style="position:relative"><div class="multi-assign" id="mt-assign-wrap" onclick="$('mt-assign-input').focus()"><div id="mt-assign-tags"></div><input id="mt-assign-input" placeholder="Add assignee..." oninput="filterAssigneeDD(this.value)" onfocus="filterAssigneeDD(this.value)" autocomplete="off"></div><div class="assign-dd" id="mt-assign-dd"></div></div>
+<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap"><select class="inp" id="mt-assign-wg" onchange="assignWorkingGroup(this.value);this.value=''" style="width:auto;font-size:10px;padding:3px 8px"><option value="">🏢 Working Group...</option></select><select class="inp" id="mt-assign-dept" onchange="assignDepartment(this.value);this.value=''" style="width:auto;font-size:10px;padding:3px 8px"><option value="">🏛️ Department...</option></select></div>
+</div>
 <div class="fg"><label data-i18n="dueDate">Due Date</label><input class="inp" id="mt-due" type="datetime-local"></div>
 <div class="fg"><label data-i18n="category">Category</label><select class="inp" id="mt-cat" onchange="onMtCatChange()"><option value="">— Select —</option></select></div>
 <div class="fg"><label data-i18n="subcategory">Subcategory</label><select class="inp" id="mt-sub"><option value="">— Select —</option></select></div>
 <div class="fg"><label data-i18n="group">Group</label><select class="inp" id="mt-group" onchange="onMtGroupChange()"><option value="" data-i18n="noneOption">— None —</option></select></div>
 <div class="fg"><label data-i18n="subGroup">Sub-Group</label><select class="inp" id="mt-subgroup"><option value="" data-i18n="noneOption">— None —</option></select></div>
-</div><datalist id="team-dl"></datalist><input type="hidden" id="mt-id" value="">
+</div><input type="hidden" id="mt-id" value=""><input type="hidden" id="mt-assign" value="">
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeModal('task')" data-i18n="cancel">Cancel</button><button class="btn d" id="mt-del" onclick="deleteTask()" style="display:none" data-i18n="delete">Delete</button><button class="btn p" onclick="saveTask()" data-i18n="save">Save</button></div></div></div>
 <!-- Reminder Modal -->
 <div class="modal-overlay" id="modal-remind"><div class="modal"><h3 data-i18n="newReminder">New Reminder</h3>
@@ -1362,7 +1395,7 @@ function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
 function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt();if(p==='settings')loadSettingsPage();if(p==='templates')loadTemplates()
   if(p==='depgraph')loadDepGraph()}
-function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}}
+function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('');taskAssignees=data?.assignees?data.assignees.map(a=>({user_id:a.user_id,name:a.name||'User',role:a.role||'contributor'})):[];if(!taskAssignees.length&&data?.assignee){const tm=teamMembers.find(m=>((m.first_name||'')+' '+(m.last_name||'')).trim()===data.assignee||(m.first_name||'')===data.assignee);if(tm)taskAssignees=[{user_id:tm.id,name:data.assignee,role:'lead'}]}renderAssigneeTags();populateWGDropdown();populateDeptDropdown()}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let tCats=[];
 let catSubMap={};
@@ -1470,7 +1503,7 @@ try{if(evtFile&&!id){
 async function deleteEvent(){const id=$('me-id').value;if(!id||!confirm('Delete this event?'))return;$('me-del').textContent='Deleting...';$('me-del').disabled=true;try{await fetch(A+'/calendar/events/'+id,{method:'DELETE',headers:hdr()});closeEventModal();loadCalEvents()}catch{alert('Delete failed')}$('me-del').textContent='Delete';$('me-del').disabled=false}
 // ═══ Board/Tasks/Team/Messages/Reminders/Chat ═══
 let _bTasks={};
-async function loadBoard(){try{const r=await fetch(A+'/board',{headers:hdr()});const d=await r.json();const b=d.board;_bTasks={};const cols=[{k:'todo',t:t('boardTodo'),i:'📋'},{k:'in_progress',t:t('boardActive'),i:'🔄'},{k:'review',t:t('boardReview'),i:'👀'},{k:'done',t:t('boardDone'),i:'✅'}];$('board').innerHTML=cols.map(c=>{const ts=b[c.k]||[];ts.forEach(t=>_bTasks[t.id]=t);return`<div class="bc"><div class="bh"><span>${c.i}</span>${c.t}<span class="badge" style="background:var(--sf);color:var(--mt)">${ts.length}</span></div><div class="bl" data-status="${c.k}" ondragover="event.preventDefault()" ondrop="dropTask(event,'${c.k}')">${ts.length?ts.slice(0,20).map(t=>`<div class="bk" draggable="true" ondragstart="event.dataTransfer.setData('id','${t.id}')" onclick="openModal('task',_bTasks[${parseInt(t.id)||0}])" style="border-left-color:${PC[t.priority]||PC.medium}"><div class="bk-t">${esc(t.title)}</div><div class="bk-m"><span>${esc(t.assignee||'?')}</span>${t.category?`<span class="badge" style="background:var(--as);color:var(--ac)">${esc(t.category)}</span>`:''}${dueBadge(t)}<span class="badge" style="background:${PB[t.priority]};color:${PC[t.priority]}">${t.priority}</span></div></div>`).join(''):'<div class="empty">'+I18N[curLang].noTasks+'</div>'}</div></div>`}).join('')}catch{$('board').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
+async function loadBoard(){try{const r=await fetch(A+'/board',{headers:hdr()});const d=await r.json();const b=d.board;_bTasks={};const cols=[{k:'todo',t:t('boardTodo'),i:'📋'},{k:'in_progress',t:t('boardActive'),i:'🔄'},{k:'review',t:t('boardReview'),i:'👀'},{k:'done',t:t('boardDone'),i:'✅'}];$('board').innerHTML=cols.map(c=>{const ts=b[c.k]||[];ts.forEach(t=>_bTasks[t.id]=t);return`<div class="bc"><div class="bh"><span>${c.i}</span>${c.t}<span class="badge" style="background:var(--sf);color:var(--mt)">${ts.length}</span></div><div class="bl" data-status="${c.k}" ondragover="event.preventDefault()" ondrop="dropTask(event,'${c.k}')">${ts.length?ts.slice(0,20).map(t=>`<div class="bk" draggable="true" ondragstart="event.dataTransfer.setData('id','${t.id}')" onclick="openModal('task',_bTasks[${parseInt(t.id)||0}])" style="border-left-color:${PC[t.priority]||PC.medium}"><div class="bk-t">${esc(t.title)}</div><div class="bk-m"><span>${typeof getAssigneeInitials==='function'?getAssigneeInitials(t):esc(t.assignee||'?')}</span>${t.category?`<span class="badge" style="background:var(--as);color:var(--ac)">${esc(t.category)}</span>`:''}${dueBadge(t)}<span class="badge" style="background:${PB[t.priority]};color:${PC[t.priority]}">${t.priority}</span></div></div>`).join(''):'<div class="empty">'+I18N[curLang].noTasks+'</div>'}</div></div>`}).join('')}catch{$('board').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
 async function dropTask(e,s){const id=e.dataTransfer.getData('id');if(id){await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({status:s})});loadBoard()}}
 
 // ═══ TASK GROUPS ═══
@@ -1530,7 +1563,7 @@ function renderTL(){
     const gb=getGrpBadge(t);
     const as=actionStats[String(t.id)];
     const progHtml=as&&as.total>0?`<div class="task-prog"><div class="task-prog-bar"><div class="task-prog-fill" style="width:${as.progress}%"></div></div><span class="task-prog-text">${as.done}/${as.total}</span></div>`:'';
-    return`<div class="tr" onclick="openTD(${parseInt(t.id)||0})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${dn?'text-decoration:line-through;opacity:.5':''}">${esc(t.title)}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${esc(t.assignee||I18N[curLang].unassigned)}${gb}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div></div>${progHtml}${getDepBadges(t.id)}${dueBadge(t)}<span class="badge" style="background:${pb};color:${pc}">${t.priority}</span><select class="sel" onclick="event.stopPropagation()" onchange="chStatus(${parseInt(t.id)||0},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>${I18N[curLang].todo}</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>${I18N[curLang].active}</option><option value="review" ${t.status==='review'?'selected':''}>${I18N[curLang].review}</option><option value="done" ${t.status==='done'?'selected':''}>${I18N[curLang].done}</option></select><button class="tmv" onclick="event.stopPropagation();openAssign(${parseInt(t.id)||0})" title="Move to group">📂</button></div>`
+    return`<div class="tr" onclick="openTD(${parseInt(t.id)||0})"><div class="pb" style="background:${pc}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${dn?'text-decoration:line-through;opacity:.5':''}">${esc(t.title)}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${typeof getAssigneeDisplay==='function'?getAssigneeDisplay(t):esc(t.assignee||I18N[curLang].unassigned)}${gb}${t.due_date?' · Due '+new Date(t.due_date).toLocaleDateString():''}</div></div>${progHtml}${getDepBadges(t.id)}${dueBadge(t)}<span class="badge" style="background:${pb};color:${pc}">${t.priority}</span><select class="sel" onclick="event.stopPropagation()" onchange="chStatus(${parseInt(t.id)||0},this.value)"><option value="todo" ${t.status==='todo'?'selected':''}>${I18N[curLang].todo}</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>${I18N[curLang].active}</option><option value="review" ${t.status==='review'?'selected':''}>${I18N[curLang].review}</option><option value="done" ${t.status==='done'?'selected':''}>${I18N[curLang].done}</option></select><button class="tmv" onclick="event.stopPropagation();openAssign(${parseInt(t.id)||0})" title="Move to group">📂</button></div>`
   }).join(''):'<div class="empty">'+I18N[curLang].noTasks+'</div>';
 }
 
@@ -1560,7 +1593,7 @@ function onMtGroupChange(preselSg){
   if(preselSg)sgSel.value=preselSg;
 }
 
-async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length||dgPendingLink){try{const _td=await _r.json();if(_td&&_td.id){if(window._pendingChecklist){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}if(dgPendingLink){await fetch(A+'/tasks/'+_td.id+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:dgPendingLink})});dgPendingLink=null;if(curPage==='depgraph')loadDepGraph()}}}catch(e){console.warn('Post-create:',e)}window._pendingChecklist=null}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}}
+async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null,assignees:taskAssignees.map(a=>({user_id:a.user_id,role:a.role})),assigned_group_id:$('mt-assign-wg')&&$('mt-assign-wg').value?parseInt($('mt-assign-wg').value):null,assigned_department:$('mt-assign-dept')&&$('mt-assign-dept').value||null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length||dgPendingLink){try{const _td=await _r.json();if(_td&&_td.id){if(window._pendingChecklist){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}if(dgPendingLink){await fetch(A+'/tasks/'+_td.id+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:dgPendingLink})});dgPendingLink=null;if(curPage==='depgraph')loadDepGraph()}}}catch(e){console.warn('Post-create:',e)}window._pendingChecklist=null}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}}
 async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash();loadGrps()}}
 
 // ═══ GROUP MANAGER ═══
@@ -1624,7 +1657,7 @@ async function openTD(taskId){
   let meta='';
   meta+=`<span class="td-meta-item">${SI[t.status]||'•'} ${t.status.replace('_',' ')}</span>`;
   meta+=`<span class="td-meta-item" style="border-color:${PC[t.priority]};color:${PC[t.priority]}">${t.priority}</span>`;
-  if(t.assignee)meta+=`<span class="td-meta-item">👤 ${t.assignee}</span>`;
+  if(t.assignees&&t.assignees.length){const names=t.assignees.map(a=>a.name+(a.role==='lead'?' (L)':a.role==='reviewer'?' (R)':'')).join(', ');meta+=`<span class="td-meta-item">👥 ${names}</span>`}else if(t.assignee)meta+=`<span class="td-meta-item">👤 ${t.assignee}</span>`;
   if(t.category)meta+=`<span class="td-meta-item">📁 ${t.category}</span>`;
   if(t.due_date){const _dd=new Date(t.due_date);const _ds=_dd.toLocaleDateString()+(_dd.getHours()||_dd.getMinutes()?' '+_dd.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'');meta+=`<span class="td-meta-item">📅 ${_ds}</span>`};
   $('td-meta').innerHTML=meta;
@@ -2898,7 +2931,8 @@ const I18N={
     // Offline
     offlineMode:'You are offline — changes will sync when reconnected',syncing:'Syncing offline changes...',syncComplete:'All changes synced!',pendingSync:'changes pending sync',
     // AI Analysis
-    analyzing:'Analyzing',analyzeBtn:'Analyze',analyzeAllBtn:'Analyze All',momBtn:'📋 MoM',momTitle:'📋 Meeting Minutes Processor',momUploadStep:'Step 1: Upload Meeting Minutes',momUploadDesc:'Upload a PDF, Word, or Excel file. AI will extract action items automatically.',momProcess:'🤖 Process with AI',momAnalyzing:'Analyzing meeting minutes...',momAnalyzingDesc:'Extracting action items, deadlines, and assignments',momItemsFound:'items found',momNoItems:'No action items found in this document.',momSelectAll:'Select All',momDeselectAll:'Deselect All',momType:'Type',momTypeTask:'Task',momTypeReminder:'Reminder',momTypeEvent:'Event',unassigned:'Unassigned',momNoneSelected:'Please select at least one item.',momCreating:'Creating',momCreateAll:'🚀 Create Selected Items',momUploadAnother:'Upload Another',momProcessAnother:'Process Another',momViewTasks:'View Tasks',momComplete:'Items Created Successfully!',momCreatedCount:'Created',newChat:'💭 New Chat',newChatStarted:'New conversation started. How can I help you?'
+    analyzing:'Analyzing',analyzeBtn:'Analyze',analyzeAllBtn:'Analyze All',momBtn:'📋 MoM',momTitle:'📋 Meeting Minutes Processor',momUploadStep:'Step 1: Upload Meeting Minutes',momUploadDesc:'Upload a PDF, Word, or Excel file. AI will extract action items automatically.',momProcess:'🤖 Process with AI',momAnalyzing:'Analyzing meeting minutes...',momAnalyzingDesc:'Extracting action items, deadlines, and assignments',momItemsFound:'items found',momNoItems:'No action items found in this document.',momSelectAll:'Select All',momDeselectAll:'Deselect All',momType:'Type',momTypeTask:'Task',momTypeReminder:'Reminder',momTypeEvent:'Event',unassigned:'Unassigned',momNoneSelected:'Please select at least one item.',momCreating:'Creating',momCreateAll:'🚀 Create Selected Items',momUploadAnother:'Upload Another',momProcessAnother:'Process Another',momViewTasks:'View Tasks',momComplete:'Items Created Successfully!',momCreatedCount:'Created',newChat:'💭 New Chat',newChatStarted:'New conversation started. How can I help you?',
+    assignees:'Assignees',workingGroups:'Working Groups',workingGroupsSub:'Team groupings for task assignment',assignGroup:'Assign Group',assignDept:'Assign Department',leadRole:'Lead',contributorRole:'Contributor',reviewerRole:'Reviewer',assignedToMe:'Assigned to Me',addMember:'Add Member',groupMembers:'Group Members',newGroup:'New Group'
   },
   kh:{
     home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',templatesNav:'គំរូ',depGraphNav:'ក្រាហ្វពឹងអាស្រ័យ',aiPrioritize:'AI កំណត់អាទិភាព',aiPrioResults:'លទ្ឋផលកំណត់អាទិភាព AI',applyPriorities:'អនុវត្តអាទិភាព',workloadRec:'អំណើណំបន្ទុកការងារ',depGraphTitle:'ក្រាហ្វភាពពឹងអាស្រ័យ',depGraphSub:'ការមើលភាពពឹងអាស្រ័យភារកិច្ចអន្តរកម្ម',dgNewTask:'ភារកិច្ចថ្មី',dgNewLinked:'ភារកិច្ចភ្ជាប់ថ្មី',dgLinkMode:'របៀបភ្ជាប់',analyticsNav:'វិភាគ',
@@ -2944,7 +2978,8 @@ const I18N={
     emailPrefsTitle:'ការជូនដំណឹងអ៊ីមែល',emailNotifications:'ការជូនដំណឹងអ៊ីមែល',emailTaskAssigned:'ការងារត្រូវបានតែងតាំង',emailStatusChange:'ការផ្លាស់ប្តូរស្ថានភាព',emailReminder:'ការរំលឹក',emailDailySummary:'សង្ខេបប្រចាំថ្ងៃ',savePrefs:'រក្សាទុក',emailPrefsSaved:'បានរក្សាទុកការកំណត់អ៊ីមែល',emailEnabled:'បើកអ៊ីមែល',emailDisabled:'បិដអ៊ីមែល',
     settingsNav:'ការកំណត់',manageUsers:'គ្រប់គ្រងអ្នកប្រើប្រាស់',allowedEmails:'អាសយដ្ឋានអ៊ីមែលដែលអនុញ្ញាត',allowedEmailsSub:'គ្រប់គ្រងអ្នកដែលអាចចូលផ្ទាំងគ្រប់គ្រង',addEmail:'បន្ថែម',settingsPage:'ការកំណត់',settingsSub:'កំណត់អ៊ីមែល ការជូនដំណឹង និងប្រព័ន្ធ',smtpConfig:'ការកំណត់ SMTP',smtpConfigSub:'ការកំណត់ម៉ាស៊ីនអ៊ីមែល',smtpHost:'ម៉ាស៊ីន SMTP',smtpPort:'លេខគេ',smtpUsername:'អ្តកប្រើប្រាស់',smtpPassword:'ពាក្យសម្ងាត់',smtpFromEmail:'អ៊ីមែលផ្ញើ',smtpFromName:'ឈ្មោះផ្ញើ',smtpTls:'ប្រើ TLS (ការដែណាំ)',appPassHint:'សម្រាប់ Gmail ប្រើ App Password',saveSettings:'រក្សាទុកការកំណត់',sendTestEmail:'ផ្ញើអ៊ីមែលសាកល្បង',smtpSaved:'បានរក្សាទុក SMTP',emailPrefsPageTitle:'ការកំណត់ជូនដំណឹងអ៊ីមែល',emailPrefsSub:'ជ្រើសរើសអ៊ីមែលណាមួយ',masterEmailToggle:'បើកជូនដំណឹងអ៊ីមែល',pushNotifTitle:'ការជូនដំណឹង Push',pushNotifSub:'ការកំណត់ការជូនដំណឹង Push',enablePush:'បើកការជូនដំណឹង Push',sendTestPush:'ផ្ញើ Push សាកល្បង',aboutTitle:'អំពី',aboutUser:'អ្តកប្រើ',aboutEmail:'អ៊ីមែល',aboutLang:'ភាសា',aboutVersion:'កំណែរ',
     offlineMode:'អ្នកនៅក្រៅបណ្ដាញ — ការផ្លាស់ប្ដូរនឹងធ្វើសមកាលកម្មពេលតភ្ជាប់ឡើងវិញ',syncing:'កំពុងធ្វើសមកាលកម្ម...',syncComplete:'បានធ្វើសមកាលកម្មទាំងអស់!',pendingSync:'ការផ្លាស់ប្តូរកំពុងរង់ចាំ',
-    analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ',analyzeAllBtn:'វិភាគទាំងអស់',momBtn:'📋 កំណត់ហេតុ',momTitle:'📋 កំណត់ហេតុប្រជុំ',momUploadStep:'ជំហាន ១: ផ្ទុកកំណត់ហេតុ',momUploadDesc:'ផ្ទុក PDF Word ឬ Excel។ AI នឹងស្រង់ចេញសកម្មភាពដោយស្វ័យប្រវត្តិ។',momProcess:'🤖 ដំណើរការជាមួយ AI',momAnalyzing:'កំពុងវិភាគកំណត់ហេតុ...',momAnalyzingDesc:'កំពុងស្រង់ចេញសកម្មភាព',momItemsFound:'រកឃើញ',momNoItems:'គ្មានសកម្មភាពរកឃើញ។',momSelectAll:'ជ្រើសទាំងអស់',momDeselectAll:'មិនជ្រើសទាំងអស់',momType:'ប្រភេទ',momTypeTask:'ភារកិច្ច',momTypeReminder:'ការរំលឹក',momTypeEvent:'ព្រឹត្តិការណ៍',unassigned:'មិនបានកំណត់',momNoneSelected:'សូមជ្រើសយ៉ាងហោចណាស់មួយ។',momCreating:'កំពុងបង្កើត',momCreateAll:'🚀 បង្កើតសកម្មភាព',momUploadAnother:'ផ្ទុកផ្សេងទៀត',momProcessAnother:'ដំណើរការផ្សេងទៀត',momViewTasks:'មើលភារកិច្ច',momComplete:'បានបង្កើតសកម្មភាពដោយជោគជ័យ!',momCreatedCount:'បានបង្កើត',newChat:'💭 ការសនតនាថ្មី',newChatStarted:'ការសនតនាថ្មីបានចាប់ផ្តើម។ តើខ្ញុំអាចជួយអ្វី?'
+    analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ',analyzeAllBtn:'វិភាគទាំងអស់',momBtn:'📋 កំណត់ហេតុ',momTitle:'📋 កំណត់ហេតុប្រជុំ',momUploadStep:'ជំហាន ១: ផ្ទុកកំណត់ហេតុ',momUploadDesc:'ផ្ទុក PDF Word ឬ Excel។ AI នឹងស្រង់ចេញសកម្មភាពដោយស្វ័យប្រវត្តិ។',momProcess:'🤖 ដំណើរការជាមួយ AI',momAnalyzing:'កំពុងវិភាគកំណត់ហេតុ...',momAnalyzingDesc:'កំពុងស្រង់ចេញសកម្មភាព',momItemsFound:'រកឃើញ',momNoItems:'គ្មានសកម្មភាពរកឃើញ។',momSelectAll:'ជ្រើសទាំងអស់',momDeselectAll:'មិនជ្រើសទាំងអស់',momType:'ប្រភេទ',momTypeTask:'ភារកិច្ច',momTypeReminder:'ការរំលឹក',momTypeEvent:'ព្រឹត្តិការណ៍',unassigned:'មិនបានកំណត់',momNoneSelected:'សូមជ្រើសយ៉ាងហោចណាស់មួយ។',momCreating:'កំពុងបង្កើត',momCreateAll:'🚀 បង្កើតសកម្មភាព',momUploadAnother:'ផ្ទុកផ្សេងទៀត',momProcessAnother:'ដំណើរការផ្សេងទៀត',momViewTasks:'មើលភារកិច្ច',momComplete:'បានបង្កើតសកម្មភាពដោយជោគជ័យ!',momCreatedCount:'បានបង្កើត',newChat:'💭 ការសនតនាថ្មី',newChatStarted:'ការសនតនាថ្មីបានចាប់ផ្តើម។ តើខ្ញុំអាចជួយអ្វី?',
+    assignees:'អ្នកតតួលខុសត្រូវ',workingGroups:'ក្រុមការងារ',workingGroupsSub:'ក្រុមសម្រាប់ផ្តល់ភារកិច្ច',assignGroup:'ផ្តល់តៅក្រុម',assignDept:'ផ្តល់តៅផ្នែក',leadRole:'ប្រធាន',contributorRole:'អ្នករួមចំណែក',reviewerRole:'អ្នកពិនិត្យ',assignedToMe:'ផ្តល់ឱ្យខ្ញុំ',addMember:'បន្ថែមសមាជិក',groupMembers:'សមាជិកក្រុម',newGroup:'ក្រុមថ្មី'
   }
 };
 // Helper: get translated string
@@ -3106,6 +3141,7 @@ async function loadSettingsPage(){
     $('set-about-email').textContent=usr.email||'-';
     $('set-about-lang').textContent=curLang==='kh'?'Khmer':'English'
   }
+  if(typeof loadWorkingGroups==='function')loadWorkingGroups();
 }
 async function saveSmtpSettings(){
   const btn=$('btn-save-smtp');btn.disabled=true;btn.textContent='Saving...';
@@ -3885,6 +3921,212 @@ async function loadActivityFeed(){
     }).join('');
   }catch(e){el.innerHTML='<div style="color:var(--mt)">Error loading activity.</div>'}
 }
+
+// ═══ PHASE 30: MULTI-ASSIGNEE & WORKING GROUPS ═══
+let taskAssignees=[];
+let workingGroups=[];
+
+function renderAssigneeTags(){
+  const el=$('mt-assign-tags');if(!el)return;
+  el.innerHTML=taskAssignees.map(a=>{
+    const rc=a.role==='lead'?'var(--ac)':a.role==='reviewer'?'var(--or)':'var(--mt)';
+    return'<span class="assign-tag'+(a.role==='lead'?' lead':'')+'" data-uid="'+a.user_id+'"><span>'+esc(a.name||'User #'+a.user_id)+'</span><select class="role-b" style="background:'+rc+'" onchange="changeAssigneeRole('+a.user_id+',this.value)" onclick="event.stopPropagation()"><option value="lead"'+(a.role==='lead'?' selected':'')+'>L</option><option value="contributor"'+(a.role==='contributor'?' selected':'')+'>C</option><option value="reviewer"'+(a.role==='reviewer'?' selected':'')+'>R</option></select><span class="assign-x" onclick="removeAssignee('+a.user_id+')">&times;</span></span>'
+  }).join('');
+  const lead=taskAssignees.find(a=>a.role==='lead');
+  $('mt-assign').value=lead?lead.name:'';
+}
+
+function addAssignee(userId,name,role){
+  if(taskAssignees.find(a=>a.user_id===userId))return;
+  if(!taskAssignees.length||role==='lead'){
+    taskAssignees.forEach(a=>{if(a.role==='lead')a.role='contributor'});
+    role='lead';
+  }
+  taskAssignees.push({user_id:userId,name:name,role:role||'contributor'});
+  renderAssigneeTags();
+  $('mt-assign-input').value='';
+  $('mt-assign-dd').style.display='none';
+}
+
+function removeAssignee(userId){
+  const wasLead=taskAssignees.find(a=>a.user_id===userId&&a.role==='lead');
+  taskAssignees=taskAssignees.filter(a=>a.user_id!==userId);
+  if(wasLead&&taskAssignees.length)taskAssignees[0].role='lead';
+  renderAssigneeTags();
+}
+
+function changeAssigneeRole(userId,newRole){
+  if(newRole==='lead')taskAssignees.forEach(a=>{if(a.role==='lead')a.role='contributor'});
+  const a=taskAssignees.find(x=>x.user_id===userId);
+  if(a)a.role=newRole;
+  renderAssigneeTags();
+}
+
+function filterAssigneeDD(q){
+  const dd=$('mt-assign-dd');if(!dd)return;
+  const existing=new Set(taskAssignees.map(a=>a.user_id));
+  const matches=teamMembers.filter(m=>{
+    if(existing.has(m.id))return false;
+    const name=(m.first_name||'')+' '+(m.last_name||'');
+    return !q||name.toLowerCase().includes(q.toLowerCase());
+  }).slice(0,8);
+  if(!matches.length){dd.style.display='none';return}
+  dd.innerHTML=matches.map(m=>{
+    const nm=((m.first_name||'')+' '+(m.last_name||'')).trim();
+    const dept=m.department?' <span style="color:var(--mt);font-size:9px">('+esc(m.department)+')</span>':'';
+    return'<div class="assign-dd-item" onmousedown="addAssignee('+m.id+',&quot;'+esc(nm)+'&quot;,&quot;contributor&quot;)">'+esc(nm)+dept+'</div>'
+  }).join('');
+  dd.style.display='block';
+}
+
+function assignWorkingGroup(gid){
+  if(!gid)return;
+  fetch(A+'/working-groups/'+gid+'/members',{headers:hdr()}).then(r=>r.json()).then(d=>{
+    const members=d.members||[];
+    members.forEach((m,i)=>{
+      const nm=((m.first_name||'')+' '+(m.last_name||'User #'+m.user_id)).trim();
+      addAssignee(m.user_id,nm,i===0?'lead':'contributor');
+    });
+  }).catch(e=>console.warn('assignWG:',e));
+}
+
+function assignDepartment(dept){
+  if(!dept)return;
+  const deptMembers=teamMembers.filter(m=>m.department===dept);
+  deptMembers.forEach((m,i)=>{
+    const nm=((m.first_name||'')+' '+(m.last_name||'')).trim();
+    addAssignee(m.id,nm,i===0?'lead':'contributor');
+  });
+}
+
+document.addEventListener('click',function(e){
+  const dd=$('mt-assign-dd');
+  if(dd&&!e.target.closest('#mt-assign-wrap')&&!e.target.closest('.assign-dd'))dd.style.display='none';
+});
+
+// ═══ Working Groups CRUD ═══
+async function loadWorkingGroups(){
+  try{
+    const r=await fetch(A+'/working-groups',{headers:hdr()});
+    const d=await r.json();
+    workingGroups=d.groups||[];
+    const el=$('wg-list');
+    if(!el)return;
+    if(!workingGroups.length){el.innerHTML='<div style="color:var(--mt);padding:8px;font-size:11px">No working groups yet.</div>';return}
+    el.innerHTML=workingGroups.map(g=>'<div class="wg-card" style="border-left:3px solid '+(g.color||'#3b82f6')+'"><div style="flex:1"><strong>'+(g.icon||'\u{1F465}')+' '+esc(g.name)+'</strong>'+(g.description?'<div style="font-size:10px;color:var(--mt)">'+esc(g.description)+'</div>':'')+'<div style="font-size:10px;color:var(--mt);margin-top:2px">'+(g.member_count||0)+' members</div></div><div style="display:flex;gap:4px"><button class="btn" onclick="showWGBuilder('+g.id+')" style="padding:3px 8px;font-size:10px">\u270F\uFE0F</button><button class="btn" onclick="deleteWorkingGroup('+g.id+')" style="padding:3px 8px;font-size:10px;color:var(--rd)">\u2715</button></div></div>').join('');
+    populateWGDropdown();
+  }catch(e){console.warn('loadWG:',e)}
+}
+
+function populateWGDropdown(){
+  const sel=$('mt-assign-wg');if(!sel)return;
+  sel.innerHTML='<option value="">\u{1F3E2} Working Group...</option>'+workingGroups.map(g=>'<option value="'+g.id+'">'+(g.icon||'\u{1F465}')+' '+esc(g.name)+'</option>').join('');
+}
+
+function populateDeptDropdown(){
+  const sel=$('mt-assign-dept');if(!sel)return;
+  const depts=[...new Set(teamMembers.map(m=>m.department).filter(Boolean))];
+  sel.innerHTML='<option value="">\u{1F3DB}\uFE0F Department...</option>'+depts.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join('');
+}
+
+async function showWGBuilder(editId){
+  $('wg-id').value=editId||'';
+  $('wg-name').value='';$('wg-desc').value='';$('wg-icon').value='\u{1F465}';$('wg-color').value='#3b82f6';
+  $('wg-builder-title').textContent=editId?'Edit Working Group':'New Working Group';
+  $('wg-members-section').style.display=editId?'block':'none';
+  const addSel=$('wg-add-member');
+  addSel.innerHTML='<option value="">Select member...</option>'+teamMembers.map(m=>'<option value="'+m.id+'">'+((m.first_name||'')+' '+(m.last_name||'')).trim()+'</option>').join('');
+  if(editId){
+    try{
+      const g=workingGroups.find(x=>x.id===editId);
+      if(g){$('wg-name').value=g.name;$('wg-desc').value=g.description||'';$('wg-icon').value=g.icon||'\u{1F465}';$('wg-color').value=g.color||'#3b82f6'}
+      const r=await fetch(A+'/working-groups/'+editId+'/members',{headers:hdr()});
+      const d=await r.json();
+      renderWGMembers(editId,d.members||[]);
+    }catch(e){console.warn('loadWGEdit:',e)}
+  }
+  $('wg-builder-modal').style.display='flex';
+}
+
+function renderWGMembers(gid,members){
+  const el=$('wg-members-list');if(!el)return;
+  if(!members.length){el.innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">No members yet.</div>';return}
+  el.innerHTML=members.map(m=>{
+    const nm=((m.first_name||'')+' '+(m.last_name||'User #'+m.user_id)).trim();
+    return'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px">'+esc(nm)+' <span style="color:var(--mt);font-size:9px">('+( m.role||'member')+')</span></span><button class="btn" onclick="removeWGMember('+gid+','+m.user_id+')" style="padding:2px 6px;font-size:9px;color:var(--rd)">\u2715</button></div>'
+  }).join('');
+}
+
+async function saveWorkingGroup(){
+  const id=$('wg-id').value;
+  const body={name:$('wg-name').value.trim(),description:$('wg-desc').value.trim(),icon:$('wg-icon').value.trim()||'\u{1F465}',color:$('wg-color').value||'#3b82f6'};
+  if(!body.name){alert('Name required');return}
+  try{
+    if(id){
+      await fetch(A+'/working-groups/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
+    }else{
+      const r=await fetch(A+'/working-groups',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
+      const d=await r.json();
+      if(d.id){$('wg-id').value=d.id;$('wg-members-section').style.display='block';renderWGMembers(d.id,[])}
+    }
+    loadWorkingGroups();
+  }catch(e){console.warn('saveWG:',e)}
+}
+
+async function deleteWorkingGroup(id){
+  if(!confirm('Delete this working group?'))return;
+  try{await fetch(A+'/working-groups/'+id,{method:'DELETE',headers:hdr()});loadWorkingGroups()}catch(e){console.warn('delWG:',e)}
+}
+
+async function addWGMemberFromModal(){
+  const gid=$('wg-id').value;
+  const uid=$('wg-add-member').value;
+  if(!gid||!uid)return;
+  try{
+    await fetch(A+'/working-groups/'+gid+'/members',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({user_id:parseInt(uid),role:'member'})});
+    const r=await fetch(A+'/working-groups/'+gid+'/members',{headers:hdr()});
+    const d=await r.json();
+    renderWGMembers(parseInt(gid),d.members||[]);
+    $('wg-add-member').value='';
+    loadWorkingGroups();
+  }catch(e){console.warn('addWGMember:',e)}
+}
+
+async function removeWGMember(gid,uid){
+  try{
+    await fetch(A+'/working-groups/'+gid+'/members/'+uid,{method:'DELETE',headers:hdr()});
+    const r=await fetch(A+'/working-groups/'+gid+'/members',{headers:hdr()});
+    const d=await r.json();
+    renderWGMembers(gid,d.members||[]);
+    loadWorkingGroups();
+  }catch(e){console.warn('rmWGMember:',e)}
+}
+
+function getAssigneeDisplay(t){
+  if(t.assignees&&t.assignees.length>1){
+    const lead=t.assignees.find(a=>a.role==='lead');
+    const name=lead?lead.name:t.assignees[0].name;
+    return esc(name)+' <span style="background:var(--sf);padding:0 4px;border-radius:8px;font-size:9px">+'+(t.assignees.length-1)+'</span>';
+  }
+  if(t.assignees&&t.assignees.length===1)return esc(t.assignees[0].name);
+  return esc(t.assignee||I18N[curLang].unassigned);
+}
+
+function getAssigneeInitials(t){
+  if(t.assignees&&t.assignees.length){
+    const shown=t.assignees.slice(0,3);
+    let html=shown.map(a=>{
+      const parts=(a.name||'?').split(' ');
+      const ini=parts.map(p=>p[0]||'').join('').toUpperCase().slice(0,2);
+      const bg=a.role==='lead'?'var(--ac)':'var(--mt)';
+      return'<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:'+bg+';color:#fff;font-size:8px;font-weight:700;margin-right:-4px">'+ini+'</span>'
+    }).join('');
+    if(t.assignees.length>3)html+='<span style="font-size:8px;color:var(--mt);margin-left:6px">+'+(t.assignees.length-3)+'</span>';
+    return html;
+  }
+  return'<span style="font-size:10px;color:var(--mt)">'+esc(t.assignee||'?')+'</span>';
+}
+
 </script>
 
   <!-- Workflow Builder Modal -->
@@ -3940,6 +4182,49 @@ async function loadActivityFeed(){
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
           <button class="btn" onclick="$('workflow-builder-modal').style.display='none'">Cancel</button>
           <button class="btn p" onclick="saveWorkflow()">Save Rule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Working Group Builder Modal -->
+  <div id="wg-builder-modal" class="modal" style="display:none">
+    <div class="modal-c" style="max-width:520px">
+      <div class="modal-h">
+        <h3 id="wg-builder-title">New Working Group</h3>
+        <button class="modal-x" onclick="$('wg-builder-modal').style.display='none'">&times;</button>
+      </div>
+      <div class="modal-b" style="padding:16px">
+        <input type="hidden" id="wg-id">
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Group Name</label>
+          <input id="wg-name" class="inp" placeholder="e.g. IT Committee" style="width:100%">
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Description</label>
+          <input id="wg-desc" class="inp" placeholder="Optional description" style="width:100%">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label style="font-size:11px;color:var(--mt)">Icon</label>
+            <input id="wg-icon" class="inp" value="👥" style="width:100%">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--mt)">Color</label>
+            <input id="wg-color" class="inp" type="color" value="#3b82f6" style="width:100%;height:36px;padding:2px">
+          </div>
+        </div>
+        <div id="wg-members-section" style="display:none;margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Members</label>
+          <div id="wg-members-list" style="max-height:150px;overflow-y:auto;margin-top:4px"></div>
+          <div style="display:flex;gap:4px;margin-top:6px">
+            <select id="wg-add-member" class="inp" style="flex:1"><option value="">Select member...</option></select>
+            <button class="btn p" onclick="addWGMemberFromModal()" style="padding:4px 10px;font-size:10px">+ Add</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+          <button class="btn" onclick="$('wg-builder-modal').style.display='none'">Cancel</button>
+          <button class="btn p" onclick="saveWorkingGroup()">Save Group</button>
         </div>
       </div>
     </div>

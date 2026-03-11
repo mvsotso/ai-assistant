@@ -18,9 +18,12 @@ from app.models.message import Message
 from app.models.reminder import Reminder
 from app.models.audit_log import AuditLog
 from app.models.user import User
+from app.models.task_assignee import TaskAssignee
+from app.models.working_group import WorkingGroup, WorkingGroupMember
 from app.api.auth import require_auth, require_permission, verify_session_token
 from app.services.workflow_svc import workflow_service
 from app.services.collab_svc import collab_service
+from typing import List
 from fastapi.responses import StreamingResponse
 import asyncio
 
@@ -111,6 +114,11 @@ async def telegram_webhook(request: Request, db: AsyncSession = Depends(get_db))
 
 
 # ─── Task CRUD ───
+class AssigneeInput(BaseModel):
+    user_id: int
+    role: str = "contributor"  # lead, contributor, reviewer
+
+
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = None
@@ -124,6 +132,9 @@ class TaskCreate(BaseModel):
     group_id: Optional[int] = None
     subgroup_id: Optional[int] = None
     estimated_hours: Optional[float] = None
+    assignees: Optional[List[AssigneeInput]] = None
+    assigned_group_id: Optional[int] = None
+    assigned_department: Optional[str] = None
 
 
 class TaskUpdate(BaseModel):
@@ -139,9 +150,12 @@ class TaskUpdate(BaseModel):
     group_id: Optional[int] = None
     subgroup_id: Optional[int] = None
     estimated_hours: Optional[float] = None
+    assignees: Optional[List[AssigneeInput]] = None
+    assigned_group_id: Optional[int] = None
+    assigned_department: Optional[str] = None
 
 
-def _task_to_dict(t: Task) -> dict:
+def _task_to_dict(t: Task, assignees: list = None) -> dict:
     return {
         "id": t.id, "title": t.title, "description": t.description,
         "status": t.status.value, "priority": t.priority.value,
@@ -155,7 +169,92 @@ def _task_to_dict(t: Task) -> dict:
         "estimated_hours": getattr(t, "estimated_hours", None),
         "version": getattr(t, "version", 1),
         "last_modified_by": getattr(t, "last_modified_by", None),
+        "assignees": assignees or [],
+        "assigned_group_id": getattr(t, "assigned_group_id", None),
+        "assigned_department": getattr(t, "assigned_department", None),
     }
+
+
+async def _get_task_assignees(db: AsyncSession, task_id: int) -> list:
+    """Get all assignees for a task with user info."""
+    from sqlalchemy import select as sel
+    result = await db.execute(
+        sel(TaskAssignee, User)
+        .join(User, TaskAssignee.user_id == User.id)
+        .where(TaskAssignee.task_id == task_id)
+    )
+    return [{"user_id": ta.user_id,
+             "name": f"{u.first_name or ''} {u.last_name or ''}".strip() or "Unknown",
+             "role": ta.role,
+             "department": getattr(u, "department", None),
+             "assigned_at": ta.assigned_at.isoformat() if ta.assigned_at else None}
+            for ta, u in result.all()]
+
+
+async def _get_assignees_batch(db: AsyncSession, task_ids: list) -> dict:
+    """Batch-load assignees for multiple tasks."""
+    if not task_ids:
+        return {}
+    result = await db.execute(
+        select(TaskAssignee, User)
+        .join(User, TaskAssignee.user_id == User.id)
+        .where(TaskAssignee.task_id.in_(task_ids))
+    )
+    mapping = {}
+    for ta, u in result.all():
+        name = f"{u.first_name or ''} {u.last_name or ''}".strip() or "Unknown"
+        mapping.setdefault(ta.task_id, []).append({
+            "user_id": ta.user_id, "name": name, "role": ta.role,
+            "department": getattr(u, "department", None),
+            "assigned_at": ta.assigned_at.isoformat() if ta.assigned_at else None,
+        })
+    return mapping
+
+
+async def _sync_task_assignees(db: AsyncSession, task_id: int, assignees_input: list, assigned_by: str = None):
+    """Sync assignees for a task. Updates assignee_name to lead's name."""
+    from sqlalchemy import delete as sqldel
+    # Remove all existing
+    await db.execute(sqldel(TaskAssignee).where(TaskAssignee.task_id == task_id))
+    # Insert new
+    lead_name = None
+    for a in assignees_input:
+        ta = TaskAssignee(task_id=task_id, user_id=a.user_id, role=a.role, assigned_by=assigned_by)
+        db.add(ta)
+        if a.role == "lead":
+            user_result = await db.execute(select(User).where(User.id == a.user_id))
+            user = user_result.scalar_one_or_none()
+            if user:
+                lead_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+    # If no explicit lead, use first assignee
+    if not lead_name and assignees_input:
+        user_result = await db.execute(select(User).where(User.id == assignees_input[0].user_id))
+        user = user_result.scalar_one_or_none()
+        if user:
+            lead_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+    # Sync assignee_name to lead
+    if lead_name:
+        task_result = await db.execute(select(Task).where(Task.id == task_id))
+        task = task_result.scalar_one_or_none()
+        if task:
+            task.assignee_name = lead_name
+    return lead_name
+
+
+async def _expand_working_group(db: AsyncSession, group_id: int) -> list:
+    """Get all user IDs in a working group."""
+    result = await db.execute(
+        select(WorkingGroupMember.user_id).where(WorkingGroupMember.group_id == group_id)
+    )
+    return [row[0] for row in result.all()]
+
+
+async def _expand_department(db: AsyncSession, department: str) -> list:
+    """Get all user IDs in a department."""
+    result = await db.execute(
+        select(User.id).where(User.department == department, User.is_active == True)
+    )
+    return [row[0] for row in result.all()]
 
 
 async def log_audit(db, task_id: int, user_email: str, action: str, field: str = None, old_val: str = None, new_val: str = None):
@@ -167,10 +266,11 @@ async def log_audit(db, task_id: int, user_email: str, action: str, field: str =
 
 @limiter.limit("60/minute")
 @router.get("/tasks")
-async def list_tasks(request: Request, 
+async def list_tasks(request: Request,
     status: Optional[str] = None,
     category: Optional[str] = None,
     assignee: Optional[str] = None,
+    assigned_to_user_id: Optional[int] = None,
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
     _auth: dict = Depends(require_auth),
@@ -182,9 +282,14 @@ async def list_tasks(request: Request,
         query = query.where(Task.category == category)
     if assignee:
         query = query.where(Task.assignee_name == assignee)
+    if assigned_to_user_id:
+        query = query.where(Task.id.in_(
+            select(TaskAssignee.task_id).where(TaskAssignee.user_id == assigned_to_user_id)
+        ))
     result = await db.execute(query)
     tasks = list(result.scalars().all())
-    return {"tasks": [_task_to_dict(t) for t in tasks]}
+    assignee_map = await _get_assignees_batch(db, [t.id for t in tasks])
+    return {"tasks": [_task_to_dict(t, assignee_map.get(t.id, [])) for t in tasks]}
 
 
 @limiter.limit("30/minute")
@@ -217,6 +322,10 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
         task.group_id = body.group_id
     if body.subgroup_id:
         task.subgroup_id = body.subgroup_id
+    if body.assigned_group_id:
+        task.assigned_group_id = body.assigned_group_id
+    if body.assigned_department:
+        task.assigned_department = body.assigned_department
     if body.status and body.status != "todo":
         try:
             task.status = TaskStatus(body.status)
@@ -224,12 +333,30 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
             pass
     await db.flush()
     await db.refresh(task)
+
+    # Handle multi-assignee
+    email = _auth.get("email", "")
+    assignee_list = []
+    if body.assignees:
+        assignee_list = body.assignees
+    elif body.assigned_group_id:
+        user_ids = await _expand_working_group(db, body.assigned_group_id)
+        assignee_list = [AssigneeInput(user_id=uid, role="contributor") for uid in user_ids]
+    elif body.assigned_department:
+        user_ids = await _expand_department(db, body.assigned_department)
+        assignee_list = [AssigneeInput(user_id=uid, role="contributor") for uid in user_ids]
+
+    if assignee_list:
+        await _sync_task_assignees(db, task.id, assignee_list, email)
+        await db.flush()
+        await db.refresh(task)
+
     # Notification: task created
     from app.services.notification_svc import create_notification
     await create_notification(db, user_id=0, notif_type="task_created",
         title=f"New task: {task.title}", entity_id=task.id, entity_type="task")
     # Audit log: task created
-    await log_audit(db, task.id, _auth.get("email", ""), "created")
+    await log_audit(db, task.id, email, "created")
     # Email notification: task assigned (best-effort)
     if task.assignee_name:
         try:
@@ -247,7 +374,8 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
         await db.commit()
     except Exception:
         pass
-    return _task_to_dict(task)
+    task_assignees = await _get_task_assignees(db, task.id)
+    return _task_to_dict(task, task_assignees)
 
 
 @limiter.limit("30/minute")
@@ -290,11 +418,22 @@ async def update_task(request: Request, task_id: int, body: TaskUpdate, db: Asyn
     if body.group_id is not None: task.group_id = body.group_id
     if body.subgroup_id is not None: task.subgroup_id = body.subgroup_id
     if body.estimated_hours is not None: task.estimated_hours = body.estimated_hours
+    if body.assigned_group_id is not None: task.assigned_group_id = body.assigned_group_id or None
+    if body.assigned_department is not None: task.assigned_department = body.assigned_department or None
     if body.due_date is not None:
         try:
             task.due_date = datetime.fromisoformat(body.due_date.replace("Z", "+00:00"))
         except ValueError:
             pass
+    # Handle multi-assignee update
+    if body.assignees is not None:
+        await _sync_task_assignees(db, task_id, body.assignees, email)
+    elif body.assigned_group_id:
+        user_ids = await _expand_working_group(db, body.assigned_group_id)
+        await _sync_task_assignees(db, task_id, [AssigneeInput(user_id=uid, role="contributor") for uid in user_ids], email)
+    elif body.assigned_department:
+        user_ids = await _expand_department(db, body.assigned_department)
+        await _sync_task_assignees(db, task_id, [AssigneeInput(user_id=uid, role="contributor") for uid in user_ids], email)
     await db.flush()
     # Notification: status changed
     if body.status is not None:
@@ -329,7 +468,8 @@ async def update_task(request: Request, task_id: int, body: TaskUpdate, db: Asyn
         await db.commit()
     except Exception:
         pass
-    return _task_to_dict(task)
+    task_assignees = await _get_task_assignees(db, task_id)
+    return _task_to_dict(task, task_assignees)
 
 
 @limiter.limit("30/minute")
@@ -980,3 +1120,218 @@ async def mom_execute(request: Request,
         "failed": failed,
         "results": results,
     }
+
+
+# ═══ TASK ASSIGNEE ENDPOINTS ═══
+
+@limiter.limit("30/minute")
+@router.get("/tasks/{task_id}/assignees")
+async def get_task_assignees(request: Request, task_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    return await _get_task_assignees(db, task_id)
+
+
+@limiter.limit("30/minute")
+@router.post("/tasks/{task_id}/assignees")
+async def add_task_assignee(request: Request, task_id: int, body: AssigneeInput, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    task = await task_service.get_task_by_id(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    # Check if already assigned
+    existing = await db.execute(
+        select(TaskAssignee).where(TaskAssignee.task_id == task_id, TaskAssignee.user_id == body.user_id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="User already assigned")
+    email = _auth.get("email", "")
+    ta = TaskAssignee(task_id=task_id, user_id=body.user_id, role=body.role, assigned_by=email)
+    db.add(ta)
+    # If lead, sync assignee_name
+    if body.role == "lead":
+        user_r = await db.execute(select(User).where(User.id == body.user_id))
+        user = user_r.scalar_one_or_none()
+        if user:
+            task.assignee_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+    await db.commit()
+    await log_audit(db, task_id, email, "updated", "assignee_added", "", str(body.user_id))
+    return await _get_task_assignees(db, task_id)
+
+
+@limiter.limit("30/minute")
+@router.delete("/tasks/{task_id}/assignees/{user_id}")
+async def remove_task_assignee(request: Request, task_id: int, user_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    from sqlalchemy import delete as sqldel
+    result = await db.execute(
+        sqldel(TaskAssignee).where(TaskAssignee.task_id == task_id, TaskAssignee.user_id == user_id)
+    )
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Assignee not found")
+    email = _auth.get("email", "")
+    await log_audit(db, task_id, email, "updated", "assignee_removed", str(user_id), "")
+    await db.commit()
+    return await _get_task_assignees(db, task_id)
+
+
+@limiter.limit("15/minute")
+@router.post("/tasks/{task_id}/assign-group")
+async def assign_working_group(request: Request, task_id: int, body: dict, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """Assign all members of a working group to a task."""
+    task = await task_service.get_task_by_id(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    group_id = body.get("group_id")
+    if not group_id:
+        raise HTTPException(status_code=400, detail="group_id required")
+    user_ids = await _expand_working_group(db, group_id)
+    if not user_ids:
+        raise HTTPException(status_code=404, detail="No members in group")
+    email = _auth.get("email", "")
+    assignees = [AssigneeInput(user_id=uid, role="contributor") for uid in user_ids]
+    await _sync_task_assignees(db, task_id, assignees, email)
+    task.assigned_group_id = group_id
+    await db.commit()
+    return await _get_task_assignees(db, task_id)
+
+
+@limiter.limit("15/minute")
+@router.post("/tasks/{task_id}/assign-department")
+async def assign_department(request: Request, task_id: int, body: dict, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """Assign all members of a department to a task."""
+    task = await task_service.get_task_by_id(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    department = body.get("department")
+    if not department:
+        raise HTTPException(status_code=400, detail="department required")
+    user_ids = await _expand_department(db, department)
+    if not user_ids:
+        raise HTTPException(status_code=404, detail="No members in department")
+    email = _auth.get("email", "")
+    assignees = [AssigneeInput(user_id=uid, role="contributor") for uid in user_ids]
+    await _sync_task_assignees(db, task_id, assignees, email)
+    task.assigned_department = department
+    await db.commit()
+    return await _get_task_assignees(db, task_id)
+
+
+# ═══ WORKING GROUP ENDPOINTS ═══
+
+class WGCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    icon: str = "👥"
+    color: str = "#3b82f6"
+
+
+class WGUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class WGMemberInput(BaseModel):
+    user_id: int
+    role: str = "member"  # leader / member
+
+
+@limiter.limit("60/minute")
+@router.get("/working-groups")
+async def list_working_groups(request: Request, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    result = await db.execute(select(WorkingGroup).order_by(WorkingGroup.name))
+    groups = list(result.scalars().all())
+    # Get member counts
+    out = []
+    for g in groups:
+        mc = await db.execute(
+            select(sqlfunc.count(WorkingGroupMember.id)).where(WorkingGroupMember.group_id == g.id)
+        )
+        count = mc.scalar() or 0
+        out.append({
+            "id": g.id, "name": g.name, "description": g.description,
+            "icon": g.icon, "color": g.color, "is_active": g.is_active,
+            "member_count": count,
+            "created_at": g.created_at.isoformat() if g.created_at else None,
+        })
+    return out
+
+
+@limiter.limit("15/minute")
+@router.post("/working-groups")
+async def create_working_group(request: Request, body: WGCreate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    wg = WorkingGroup(name=body.name, description=body.description, icon=body.icon,
+                      color=body.color, creator_email=_auth.get("email", ""))
+    db.add(wg)
+    await db.commit()
+    await db.refresh(wg)
+    return {"id": wg.id, "name": wg.name, "icon": wg.icon, "color": wg.color}
+
+
+@limiter.limit("15/minute")
+@router.patch("/working-groups/{wg_id}")
+async def update_working_group(request: Request, wg_id: int, body: WGUpdate, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    result = await db.execute(select(WorkingGroup).where(WorkingGroup.id == wg_id))
+    wg = result.scalar_one_or_none()
+    if not wg:
+        raise HTTPException(status_code=404, detail="Working group not found")
+    if body.name is not None: wg.name = body.name
+    if body.description is not None: wg.description = body.description
+    if body.icon is not None: wg.icon = body.icon
+    if body.color is not None: wg.color = body.color
+    if body.is_active is not None: wg.is_active = body.is_active
+    await db.commit()
+    return {"id": wg.id, "name": wg.name, "icon": wg.icon, "is_active": wg.is_active}
+
+
+@limiter.limit("15/minute")
+@router.delete("/working-groups/{wg_id}")
+async def delete_working_group(request: Request, wg_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    from sqlalchemy import delete as sqldel
+    result = await db.execute(sqldel(WorkingGroup).where(WorkingGroup.id == wg_id))
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Working group not found")
+    await db.commit()
+    return {"deleted": True}
+
+
+@limiter.limit("60/minute")
+@router.get("/working-groups/{wg_id}/members")
+async def list_wg_members(request: Request, wg_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    result = await db.execute(
+        select(WorkingGroupMember, User)
+        .join(User, WorkingGroupMember.user_id == User.id)
+        .where(WorkingGroupMember.group_id == wg_id)
+    )
+    return [{"user_id": m.user_id,
+             "name": f"{u.first_name or ''} {u.last_name or ''}".strip() or "Unknown",
+             "department": getattr(u, "department", None),
+             "role": m.role,
+             "joined_at": m.joined_at.isoformat() if m.joined_at else None}
+            for m, u in result.all()]
+
+
+@limiter.limit("15/minute")
+@router.post("/working-groups/{wg_id}/members")
+async def add_wg_member(request: Request, wg_id: int, body: WGMemberInput, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    existing = await db.execute(
+        select(WorkingGroupMember).where(WorkingGroupMember.group_id == wg_id, WorkingGroupMember.user_id == body.user_id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Member already in group")
+    m = WorkingGroupMember(group_id=wg_id, user_id=body.user_id, role=body.role)
+    db.add(m)
+    await db.commit()
+    return {"success": True}
+
+
+@limiter.limit("15/minute")
+@router.delete("/working-groups/{wg_id}/members/{user_id}")
+async def remove_wg_member(request: Request, wg_id: int, user_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    from sqlalchemy import delete as sqldel
+    result = await db.execute(
+        sqldel(WorkingGroupMember).where(WorkingGroupMember.group_id == wg_id, WorkingGroupMember.user_id == user_id)
+    )
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Member not found")
+    await db.commit()
+    return {"deleted": True}
