@@ -34,6 +34,7 @@ body{background:var(--bg);font-family:'DM Sans','Noto Sans Khmer',sans-serif;col
 .nb .l{font-size:7px;font-weight:600}
 .av{width:30px;height:30px;border-radius:8px;margin-top:auto;margin-bottom:8px;border:2px solid var(--bd);flex-shrink:0}
 .lo{width:40px;height:24px;border-radius:6px;border:none;background:var(--rs);color:var(--rd);font-size:9px;cursor:pointer;margin-bottom:12px;font-weight:600;flex-shrink:0}
+.mobile-only{display:none}
 .mobile-hdr{display:none;position:fixed;top:0;left:0;right:0;height:52px;background:var(--sf);border-bottom:1px solid var(--bd);z-index:40;align-items:center;padding:0 12px;gap:10px}
 .hamburger{width:36px;height:36px;border:none;background:transparent;color:var(--tx);font-size:20px;cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center}
 .hamburger:hover{background:var(--as)}
@@ -294,7 +295,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .role-card .role-acts button:hover{color:var(--ac);background:rgba(255,255,255,.04)}
 .role-card .role-acts .del:hover{color:var(--rd)}
 @media(max-width:768px){
-  .mobile-hdr{display:flex}.sb{transform:translateX(-100%)}.sb.open{transform:translateX(0)}.sb-overlay.open{display:block}
+  .mobile-only{display:inline-flex}.mobile-hdr{display:flex}.sb{transform:translateX(-100%)}.sb.open{transform:translateX(0)}.sb-overlay.open{display:block}
   .mn{margin-left:0;padding:12px;padding-top:64px;max-height:none;min-height:100vh}
   .g2{grid-template-columns:1fr}.row{gap:8px}.sc{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:12px 10px}.sc-v{font-size:22px}
   .bc{min-width:100%}#board{flex-direction:column}.ch-c{height:calc(100vh - 140px)}.ch-b{max-width:90%}
@@ -846,7 +847,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
         <h2 style="margin:0">&#9881;&#65039; <span data-i18n="settingsPage">Settings</span></h2>
         <div class="st" style="margin:4px 0 0" data-i18n="settingsSub">Configure email, notifications, and system preferences</div>
       </div>
-      <button class="btn" onclick="nav('dashboard')" style="gap:4px">&#10005; <span data-i18n="close">Close</span></button>
+      <button class="btn mobile-only" onclick="nav('dash')" style="gap:4px">&#10005; <span data-i18n="close">Close</span></button>
     </div>
 
     <div class="settings-grid">
