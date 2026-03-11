@@ -201,3 +201,17 @@ async def send_daily_summary_email(db: AsyncSession, to_email: str, summary_text
     <p style="margin-top:24px;"><a href="https://aia.rikreay24.com" style="display:inline-block;background:#8b5cf6;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Open Dashboard</a></p>
     """
     await send_email(to_email, "Daily Summary - AI Assistant", _build_html("Daily Summary", body))
+
+
+async def send_generic_email(db: AsyncSession, to_email: str, subject: str, html_content: str):
+    """Send a generic email with HTML content (used for scheduled reports)."""
+    if not to_email:
+        return
+    prefs = await _get_email_prefs(db, to_email)
+    if prefs and not prefs.email_enabled:
+        return
+    body = f"""
+    <div style="color:#cbd5e1;font-size:14px;line-height:1.6;">{html_content}</div>
+    <p style="margin-top:24px;"><a href="https://aia.rikreay24.com" style="display:inline-block;background:#8b5cf6;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;">Open Dashboard</a></p>
+    """
+    await send_email(to_email, subject, _build_html(subject, body))

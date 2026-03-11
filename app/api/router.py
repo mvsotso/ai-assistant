@@ -18,6 +18,8 @@ from app.models.reminder import Reminder
 from app.models.audit_log import AuditLog
 from app.models.user import User
 from app.api.auth import require_auth, require_permission, verify_session_token
+from app.services.workflow_svc import workflow_service
+from app.services.collab_svc import collab_service
 from fastapi.responses import StreamingResponse
 import asyncio
 
@@ -120,6 +122,7 @@ class TaskCreate(BaseModel):
     due_date: Optional[str] = None  # ISO date string
     group_id: Optional[int] = None
     subgroup_id: Optional[int] = None
+    estimated_hours: Optional[float] = None
 
 
 class TaskUpdate(BaseModel):
@@ -134,6 +137,7 @@ class TaskUpdate(BaseModel):
     due_date: Optional[str] = None
     group_id: Optional[int] = None
     subgroup_id: Optional[int] = None
+    estimated_hours: Optional[float] = None
 
 
 def _task_to_dict(t: Task) -> dict:
@@ -147,6 +151,9 @@ def _task_to_dict(t: Task) -> dict:
         "due_date": t.due_date.isoformat() if t.due_date else None,
         "completed_at": t.completed_at.isoformat() if t.completed_at else None,
         "created_at": t.created_at.isoformat() if t.created_at else None,
+        "estimated_hours": getattr(t, "estimated_hours", None),
+        "version": getattr(t, "version", 1),
+        "last_modified_by": getattr(t, "last_modified_by", None),
     }
 
 
@@ -203,6 +210,8 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
         task.category = body.category
     if body.subcategory:
         task.subcategory = body.subcategory
+    if body.estimated_hours is not None:
+        task.estimated_hours = body.estimated_hours
     if body.group_id:
         task.group_id = body.group_id
     if body.subgroup_id:
@@ -231,6 +240,12 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
         except Exception:
             pass
     await broadcast_event("task_updated", {"action": "created", "task_id": task.id, "title": task.title})
+    # Evaluate workflow rules
+    try:
+        await workflow_service.evaluate_rules(db, "task_created", task)
+        await db.commit()
+    except Exception:
+        pass
     return _task_to_dict(task)
 
 
@@ -273,6 +288,7 @@ async def update_task(request: Request, task_id: int, body: TaskUpdate, db: Asyn
     if body.label is not None: task.label = body.label
     if body.group_id is not None: task.group_id = body.group_id
     if body.subgroup_id is not None: task.subgroup_id = body.subgroup_id
+    if body.estimated_hours is not None: task.estimated_hours = body.estimated_hours
     if body.due_date is not None:
         try:
             task.due_date = datetime.fromisoformat(body.due_date.replace("Z", "+00:00"))
@@ -300,6 +316,18 @@ async def update_task(request: Request, task_id: int, body: TaskUpdate, db: Asyn
     except Exception:
         pass
     await broadcast_event("task_updated", {"action": "updated", "task_id": task.id, "title": task.title})
+
+    # Log activity and notify watchers
+    try:
+        email = _auth.get("email", "")
+        await collab_service.log_activity(db, "task", task_id, "updated", email, {"title": task.title})
+        await collab_service.notify_watchers(db, task_id, "updated", email, task.title)
+        # Increment version
+        task.version = (getattr(task, 'version', 1) or 1) + 1
+        task.last_modified_by = email
+        await db.commit()
+    except Exception:
+        pass
     return _task_to_dict(task)
 
 
@@ -746,6 +774,9 @@ async def ai_prioritize(request: Request, body: PrioritizeRequest, db: AsyncSess
         "priority": t.priority.value, "assignee": t.assignee_name or "Unassigned",
         "due_date": t.due_date.isoformat() if t.due_date else None,
         "created_at": t.created_at.isoformat() if t.created_at else None,
+        "estimated_hours": getattr(t, "estimated_hours", None),
+        "version": getattr(t, "version", 1),
+        "last_modified_by": getattr(t, "last_modified_by", None),
         "category": t.category,
     } for t in tasks]
     workload = {}

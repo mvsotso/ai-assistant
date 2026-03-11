@@ -573,7 +573,19 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     <div id="tmpl-list"></div>
   </div>
 
-    <!-- Gantt Chart Page -->
+    
+    <!-- Automation Rules Section -->
+    <div class="cd" id="automation-section" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0">&#9881;&#65039; <span data-i18n="automationRules">Automation Rules</span></h3>
+        <button class="btn p" onclick="showWorkflowBuilder()" style="padding:5px 14px;font-size:11px">+ New Rule</button>
+      </div>
+      <div id="workflow-rules-list" style="font-size:12px;color:var(--mt)">Loading...</div>
+    </div>
+
+  </div>
+
+  <!-- Gantt Chart Page -->
   <div id="pg-gantt" class="pg">
     <h2>📈 <span data-i18n="ganttChart">Gantt Chart</span></h2>
     <div class="st" data-i18n="ganttSub">Visual timeline with task dependencies</div>
@@ -698,6 +710,106 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
         <button class="btn p" onclick="generateInsights()" id="btn-insights" style="padding:5px 14px;font-size:11px" data-i18n="generateInsights">Generate AI Insights</button>
       </div>
       <div id="analytics-insights" style="font-size:12px;line-height:1.8;color:var(--tx)"></div>
+    </div>
+
+    <!-- Activity Feed Section -->
+    <div class="cd" id="activity-feed-section" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0">📝 <span data-i18n="activityFeed">Activity Feed</span></h3>
+        <button class="btn" onclick="loadActivityFeed()" style="padding:4px 10px;font-size:10px">🔄 Refresh</button>
+      </div>
+      <div id="activity-feed-list" style="max-height:300px;overflow-y:auto;font-size:12px;color:var(--mt)">Loading...</div>
+    </div>
+
+    <!-- Saved Reports Section -->
+    <div class="cd" id="reports-section" style="margin-top:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0">📋 <span data-i18n="savedReports">Saved Reports</span></h3>
+        <button class="btn p" onclick="showReportBuilder()" style="padding:5px 14px;font-size:11px">+ <span data-i18n="newReport">New Report</span></button>
+      </div>
+      <div id="saved-reports-list" style="font-size:12px;color:var(--mt)">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Report Builder Modal -->
+  <div id="report-builder-modal" class="modal" style="display:none">
+    <div class="modal-c" style="max-width:520px">
+      <div class="modal-h">
+        <h3 id="report-builder-title">📋 New Report</h3>
+        <button class="modal-x" onclick="closeReportBuilder()">&times;</button>
+      </div>
+      <div class="modal-b" style="padding:16px">
+        <input type="hidden" id="rb-id">
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Report Name</label>
+          <input id="rb-name" class="inp" placeholder="e.g. Weekly Status Report" style="width:100%">
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Description</label>
+          <input id="rb-desc" class="inp" placeholder="Optional description" style="width:100%">
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Report Type</label>
+          <select id="rb-type" class="inp" style="width:100%">
+            <option value="status_summary">Status Summary</option>
+            <option value="team_workload">Team Workload</option>
+            <option value="completion_trend">Completion Trend</option>
+            <option value="category_breakdown">Category Breakdown</option>
+          </select>
+        </div>
+        <div class="g2" style="margin-bottom:10px">
+          <div>
+            <label style="font-size:11px;color:var(--mt)">Start Date</label>
+            <input type="date" id="rb-start" class="inp" style="width:100%">
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--mt)">End Date</label>
+            <input type="date" id="rb-end" class="inp" style="width:100%">
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Category Filter</label>
+          <input id="rb-category" class="inp" placeholder="Optional" style="width:100%">
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Assignee Filter</label>
+          <input id="rb-assignee" class="inp" placeholder="Optional" style="width:100%">
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Schedule</label>
+          <select id="rb-schedule" class="inp" style="width:100%">
+            <option value="none">No Schedule (manual only)</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly (Monday)</option>
+            <option value="monthly">Monthly (1st)</option>
+          </select>
+        </div>
+        <div style="margin-bottom:10px" id="rb-recipients-wrap">
+          <label style="font-size:11px;color:var(--mt)">Email Recipients (comma-separated)</label>
+          <input id="rb-recipients" class="inp" placeholder="email1@example.com, email2@example.com" style="width:100%">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+          <button class="btn" onclick="closeReportBuilder()">Cancel</button>
+          <button class="btn p" onclick="saveReport()">Save Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Results Modal -->
+  <div id="report-results-modal" class="modal" style="display:none">
+    <div class="modal-c" style="max-width:700px">
+      <div class="modal-h">
+        <h3 id="report-results-title">Report Results</h3>
+        <button class="modal-x" onclick="$('report-results-modal').style.display='none'">&times;</button>
+      </div>
+      <div class="modal-b" style="padding:16px">
+        <div id="report-results-content" style="font-size:12px;overflow-x:auto"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+          <button class="btn" onclick="exportCurrentReport()">📥 Export CSV</button>
+          <button class="btn" onclick="$('report-results-modal').style.display='none'">Close</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2429,7 +2541,7 @@ async function deleteTmpl(){const id=$('tt-id').value;if(!id||!confirm('Delete t
 
 // ═══ ANALYTICS ═══
 let chartInstances={};
-async function loadAnalytics(startDate,endDate){
+async function loadAnalytics(startDate,endDate){loadSavedReports();try{loadWorkflowRules();}catch(e){}try{loadActivityFeed();}catch(e){}try{initWebSocket();}catch(e){}
   try{
     let dashUrl=A+'/dashboard';
     const params=[];
@@ -3472,5 +3584,64 @@ function applyLang(){
   if(activeP&&$('mobile-title')){const pk=activeP.dataset.p;if(pk&&PT[pk])$('mobile-title').textContent=PT[pk]}
 }
 </script>
+
+  <!-- Workflow Builder Modal -->
+  <div id="workflow-builder-modal" class="modal" style="display:none">
+    <div class="modal-c" style="max-width:520px">
+      <div class="modal-h">
+        <h3 id="wf-builder-title">New Automation Rule</h3>
+        <button class="modal-x" onclick="$('workflow-builder-modal').style.display='none'">&times;</button>
+      </div>
+      <div class="modal-b" style="padding:16px">
+        <input type="hidden" id="wf-id">
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Rule Name</label>
+          <input id="wf-name" class="inp" placeholder="e.g. Auto-assign urgent tasks" style="width:100%">
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Trigger</label>
+          <select id="wf-trigger" class="inp" style="width:100%">
+            <option value="task_created">Task Created</option>
+            <option value="task_overdue">Task Overdue (24h+)</option>
+            <option value="status_changed">Status Changed</option>
+            <option value="priority_changed">Priority Changed</option>
+          </select>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Condition: Priority (optional)</label>
+          <select id="wf-cond-priority" class="inp" style="width:100%">
+            <option value="">Any</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Condition: Category (optional)</label>
+          <input id="wf-cond-category" class="inp" placeholder="e.g. IT & Systems" style="width:100%">
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Action</label>
+          <select id="wf-action" class="inp" style="width:100%" onchange="toggleWfActionConfig()">
+            <option value="auto_assign">Auto-Assign</option>
+            <option value="set_deadline">Set Deadline</option>
+            <option value="escalate">Escalate Priority</option>
+            <option value="notify">Send Notification</option>
+            <option value="change_status">Change Status</option>
+          </select>
+        </div>
+        <div id="wf-action-config" style="margin-bottom:10px">
+          <label style="font-size:11px;color:var(--mt)">Action Config</label>
+          <input id="wf-config-value" class="inp" placeholder="Assignee name / hours / status" style="width:100%">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+          <button class="btn" onclick="$('workflow-builder-modal').style.display='none'">Cancel</button>
+          <button class="btn p" onclick="saveWorkflow()">Save Rule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

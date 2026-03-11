@@ -31,6 +31,11 @@ from app.models.push_subscription import PushSubscription  # noqa: ensure table 
 from app.models.email_preference import EmailPreference  # noqa: ensure table creation
 from app.models.system_setting import SystemSetting  # noqa: ensure table creation
 from app.models.task_template import TaskTemplate  # noqa: ensure table creation
+from app.models.saved_report import SavedReport  # noqa: ensure table creation
+from app.models.workflow_rule import WorkflowRule  # noqa: ensure table creation
+from app.models.task_file import TaskFile  # noqa: ensure table creation
+from app.models.time_log import TimeLog  # noqa: ensure table creation
+from app.models.collaboration import TaskWatcher, ActivityLog  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -414,6 +419,135 @@ async def lifespan(app: FastAPI):
                     ), {"name": name, "icon": icon, "color": color, "title_tmpl": title_tmpl, "desc": desc, "prio": prio, "status": status, "offset": offset, "checklist": checklist, "sort": i})
                 logger.info("Seeded 5 default task templates")
 
+
+            # -- Saved Reports migration (Phase 25) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS saved_reports (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL,
+                    description TEXT,
+                    report_type VARCHAR(50) NOT NULL DEFAULT 'status_summary',
+                    filters_json TEXT,
+                    schedule VARCHAR(20) DEFAULT 'none',
+                    recipients_json TEXT,
+                    last_run_at TIMESTAMPTZ,
+                    creator_email VARCHAR(255),
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_saved_reports_active ON saved_reports(is_active)'))
+            logger.info('Saved reports migration checked')
+
+
+            # -- Workflow Rules migration (Phase 26) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS workflow_rules (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL,
+                    trigger VARCHAR(50) NOT NULL,
+                    condition_json TEXT,
+                    action_type VARCHAR(50) NOT NULL,
+                    action_config_json TEXT,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    creator_email VARCHAR(255),
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_workflow_rules_active ON workflow_rules(is_active)'))
+            logger.info('Workflow rules migration checked')
+
+
+            # -- Task Files migration (Phase 27) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_files (
+                    id SERIAL PRIMARY KEY,
+                    task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+                    filename VARCHAR(500) NOT NULL,
+                    original_filename VARCHAR(500) NOT NULL,
+                    file_size BIGINT DEFAULT 0,
+                    mime_type VARCHAR(200),
+                    storage_path VARCHAR(1000) NOT NULL,
+                    uploader_email VARCHAR(255),
+                    description TEXT,
+                    ai_summary TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_files_task_id ON task_files(task_id)'))
+            logger.info('Task files migration checked')
+
+
+            # -- Time Logs migration (Phase 28) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS time_logs (
+                    id SERIAL PRIMARY KEY,
+                    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+                    user_email VARCHAR(255),
+                    description TEXT,
+                    started_at TIMESTAMPTZ,
+                    ended_at TIMESTAMPTZ,
+                    duration_minutes FLOAT DEFAULT 0,
+                    is_running BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_time_logs_task_id ON time_logs(task_id)'))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_time_logs_user ON time_logs(user_email)'))
+            logger.info('Time logs migration checked')
+
+            # Add estimated_hours to tasks
+            est_check = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='tasks' AND column_name='estimated_hours'"
+            ))
+            if not est_check.fetchall():
+                await conn.execute(text("ALTER TABLE tasks ADD COLUMN estimated_hours FLOAT"))
+                logger.info('Added estimated_hours column to tasks')
+
+
+            # -- Collaboration migration (Phase 29) --
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_watchers (
+                    id SERIAL PRIMARY KEY,
+                    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+                    user_email VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    CONSTRAINT uq_task_watcher UNIQUE (task_id, user_email)
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_task_watchers_task ON task_watchers(task_id)'))
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS activity_logs (
+                    id SERIAL PRIMARY KEY,
+                    entity_type VARCHAR(50) NOT NULL,
+                    entity_id INTEGER,
+                    action VARCHAR(50) NOT NULL,
+                    user_email VARCHAR(255),
+                    details_json TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_activity_logs_created ON activity_logs(created_at DESC)'))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_activity_logs_entity ON activity_logs(entity_type, entity_id)'))
+            logger.info('Collaboration migration checked')
+
+            # Add version and last_modified_by to tasks
+            collab_cols = [
+                ("tasks", "version", "ALTER TABLE tasks ADD COLUMN version INTEGER DEFAULT 1"),
+                ("tasks", "last_modified_by", "ALTER TABLE tasks ADD COLUMN last_modified_by VARCHAR(255)"),
+            ]
+            for table, col, sql in collab_cols:
+                result = await conn.execute(text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name=:tbl AND column_name=:col"
+                ).bindparams(tbl=table, col=col))
+                if not result.fetchall():
+                    await conn.execute(text(sql))
+                    logger.info(f'Added {col} column to {table} table')
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 
@@ -469,7 +603,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
@@ -477,6 +611,11 @@ app.add_middleware(
 from app.api.notification_api import notification_router, notification_public_router  # noqa
 from app.api.settings_api import settings_router  # noqa
 from app.api.template_api import router as template_router  # noqa
+from app.api.report_api import router as report_router  # noqa
+from app.api.workflow_api import router as workflow_router  # noqa
+from app.api.file_api import router as file_router  # noqa
+from app.api.time_api import router as time_router  # noqa
+from app.api.collab_api import router as collab_router  # noqa
 app.include_router(router)
 app.include_router(calendar_router)
 app.include_router(recurring_router)
@@ -490,6 +629,11 @@ app.include_router(notification_router)
 app.include_router(notification_public_router)
 app.include_router(settings_router)
 app.include_router(template_router)
+app.include_router(report_router)
+app.include_router(workflow_router)
+app.include_router(file_router)
+app.include_router(time_router)
+app.include_router(collab_router)
 
 
 @app.get("/")

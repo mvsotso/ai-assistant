@@ -51,6 +51,14 @@ celery_app.conf.beat_schedule = {
         "task": "app.worker.generate_recurring_tasks",
         "schedule": crontab(hour=18, minute=0),  # 1:00 AM ICT = 6:00 PM UTC
     },
+    "send-scheduled-reports": {
+        "task": "app.worker.send_scheduled_reports",
+        "schedule": crontab(hour=0, minute=0),  # 7:00 AM ICT = 0:00 UTC
+    },
+    "check-auto-escalation": {
+        "task": "app.worker.check_auto_escalation",
+        "schedule": 14400.0,  # Every 4 hours
+    },
 }
 
 
@@ -337,3 +345,109 @@ def generate_recurring_tasks():
         )
 
     run_async(_generate())
+
+
+@celery_app.task(name="app.worker.send_scheduled_reports")
+def send_scheduled_reports():
+    """Send scheduled reports via email."""
+    from app.core.database import async_session
+    from app.models.saved_report import SavedReport
+    from app.services.report_svc import report_service
+    from sqlalchemy import select
+    import json
+
+    async def _send():
+        async with async_session() as db:
+            now = datetime.now(timezone.utc)
+            day_of_week = now.weekday()  # 0=Monday
+            day_of_month = now.day
+
+            result = await db.execute(
+                select(SavedReport).where(
+                    SavedReport.is_active == True,
+                    SavedReport.schedule != "none",
+                )
+            )
+            reports = result.scalars().all()
+            sent = 0
+
+            for report in reports:
+                try:
+                    should_send = False
+                    if report.schedule == "daily":
+                        should_send = True
+                    elif report.schedule == "weekly" and day_of_week == 0:  # Monday
+                        should_send = True
+                    elif report.schedule == "monthly" and day_of_month == 1:
+                        should_send = True
+
+                    if not should_send:
+                        continue
+
+                    # Generate report
+                    filters = json.loads(report.filters_json) if report.filters_json else {}
+                    data = await report_service.generate_report(db, report.report_type, filters)
+                    html_content = report_service.export_html(data)
+
+                    # Get recipients
+                    recipients = json.loads(report.recipients_json) if report.recipients_json else []
+                    if not recipients and report.creator_email:
+                        recipients = [report.creator_email]
+
+                    # Send email to each recipient
+                    for email in recipients:
+                        try:
+                            from app.services.email_svc import send_generic_email
+                            await send_generic_email(
+                                db, email,
+                                f"Scheduled Report: {report.name}",
+                                html_content,
+                            )
+                        except Exception as email_err:
+                            logger.debug(f"Report email to {email} skipped: {email_err}")
+
+                    report.last_run_at = now
+                    sent += 1
+                    logger.info(f"Sent scheduled report: {report.name}")
+
+                except Exception as e:
+                    logger.error(f"Failed to send report {report.id}: {e}")
+
+            await db.commit()
+            logger.info(f"Scheduled reports: {sent} sent")
+
+    run_async(_send())
+
+
+@celery_app.task(name="app.worker.check_auto_escalation")
+def check_auto_escalation():
+    """Check for overdue tasks and trigger escalation workflow rules."""
+    from app.core.database import async_session
+    from app.models.task import Task, TaskStatus
+    from app.services.workflow_svc import workflow_service
+    from sqlalchemy import select
+
+    async def _check():
+        async with async_session() as db:
+            now = datetime.now(timezone.utc)
+            threshold = now - timedelta(hours=24)
+
+            # Find tasks overdue > 24h that aren't done
+            result = await db.execute(
+                select(Task).where(
+                    Task.due_date < threshold,
+                    Task.status.in_([TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW]),
+                )
+            )
+            overdue_tasks = result.scalars().all()
+
+            for task in overdue_tasks:
+                try:
+                    await workflow_service.evaluate_rules(db, "task_overdue", task)
+                except Exception as e:
+                    logger.error(f"Escalation check failed for task {task.id}: {e}")
+
+            await db.commit()
+            logger.info(f"Auto-escalation check: {len(overdue_tasks)} overdue tasks evaluated")
+
+    run_async(_check())

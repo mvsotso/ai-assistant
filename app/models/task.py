@@ -48,9 +48,12 @@ class Task(Base):
     source_message_id = Column(BigInteger, nullable=True)
 
     due_date = Column(DateTime(timezone=True), nullable=True)
+    estimated_hours = Column(Float, nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    version = Column(Integer, default=1)
+    last_modified_by = Column(String(255), nullable=True)
 
     def __repr__(self):
         return f"<Task(id={self.id}, title={self.title[:30]}, status={self.status})>"

@@ -567,4 +567,75 @@ Return ONLY valid JSON (no markdown):
 
 
 # Singleton
+
+    async def suggest_assignee(self, task_title: str, task_category: str = None,
+                                task_priority: str = "medium", team_workload: dict = None) -> str:
+        """Use AI to suggest the best assignee for a task."""
+        workload_str = ", ".join(f"{name}: {count} active tasks" for name, count in (team_workload or {}).items())
+        prompt = f"""Based on the following task and team workload, suggest the BEST team member to assign this task to.
+Consider workload balance and likely expertise.
+
+Task: {task_title}
+Category: {task_category or 'General'}
+Priority: {task_priority}
+
+Team workload:
+{workload_str}
+
+Respond with ONLY the team member's name, nothing else."""
+
+        try:
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=50,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text.strip()
+        except Exception as e:
+            logger.error(f"AI suggest assignee error: {e}")
+            return ""
+
+    async def suggest_deadline(self, task_title: str, task_priority: str = "medium",
+                                avg_completion_days: float = 3.0) -> str:
+        """Use AI to suggest a deadline for a task."""
+        from datetime import datetime, timezone, timedelta
+        prompt = f"""Suggest an appropriate deadline for this task. Consider the priority and average completion time.
+
+Task: {task_title}
+Priority: {task_priority}
+Average completion time: {avg_completion_days} days
+
+Respond with ONLY the number of days from now (e.g., "3" for 3 days). Nothing else."""
+
+        try:
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=20,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            days_str = response.content[0].text.strip()
+            days = int(''.join(c for c in days_str if c.isdigit()) or '3')
+            deadline = datetime.now(timezone.utc) + timedelta(days=max(1, days))
+            return deadline.isoformat()
+        except Exception as e:
+            logger.error(f"AI suggest deadline error: {e}")
+            from datetime import datetime, timezone, timedelta
+            return (datetime.now(timezone.utc) + timedelta(days=3)).isoformat()
+
+
+
+    async def analyze_content(self, content: str, prompt: str) -> str:
+        """Analyze text content with a given prompt."""
+        try:
+            response = self.client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=500,
+                messages=[{"role": "user", "content": f"{prompt}\n\n{content}"}],
+            )
+            return response.content[0].text.strip()
+        except Exception as e:
+            logger.error(f"AI analyze content error: {e}")
+            return "Analysis not available"
+
+
 ai_engine = AIEngine()
