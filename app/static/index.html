@@ -1074,7 +1074,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <div class="fg"><label data-i18n="status">Status</label><select class="inp" id="mt-status"><option value="todo" data-i18n="todo">To Do</option><option value="in_progress" data-i18n="inProgress">In Progress</option><option value="review" data-i18n="review">Review</option><option value="done" data-i18n="done">Done</option></select></div>
 <div class="fg" style="grid-column:span 2"><label data-i18n="assignees">Assignees</label>
 <div style="position:relative"><div class="multi-assign" id="mt-assign-wrap" onclick="$('mt-assign-input').focus()"><div id="mt-assign-tags"></div><input id="mt-assign-input" placeholder="Add assignee..." oninput="filterAssigneeDD(this.value)" onfocus="filterAssigneeDD(this.value)" autocomplete="off"></div><div class="assign-dd" id="mt-assign-dd"></div></div>
-<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap"><select class="inp" id="mt-assign-wg" onchange="assignWorkingGroup(this.value);this.value=''" style="width:auto;font-size:10px;padding:3px 8px"><option value="">🏢 Working Group...</option></select><select class="inp" id="mt-assign-dept" onchange="assignDepartment(this.value);this.value=''" style="width:auto;font-size:10px;padding:3px 8px"><option value="">🏛️ Department...</option></select></div>
+<div style="margin-top:6px"><div id="mt-wg-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px"></div><div style="display:flex;gap:4px;flex-wrap:wrap"><select class="inp" id="mt-assign-wg" onchange="addTaskWG(this.value);this.value=''" style="width:auto;font-size:10px;padding:3px 8px"><option value="">🏢 + Working Group...</option></select><select class="inp" id="mt-assign-dept" onchange="assignDepartment(this.value);this.value=''" style="width:auto;font-size:10px;padding:3px 8px"><option value="">🏛️ Department...</option></select></div></div>
 </div>
 <div class="fg"><label data-i18n="dueDate">Due Date</label><input class="inp" id="mt-due" type="datetime-local"></div>
 <div class="fg"><label data-i18n="category">Category</label><select class="inp" id="mt-cat" onchange="onMtCatChange()"><option value="">— Select —</option></select></div>
@@ -1411,7 +1411,7 @@ function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 function nav(p){if(p==='templates'){p='tasks';setTimeout(()=>switchTasksTab('templates'),50)}
 document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull();if(typeof loadWorkingGroups==='function')loadWorkingGroups()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt();if(p==='settings')loadSettingsPage()
   if(p==='depgraph')loadDepGraph()}
-function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('');taskAssignees=data?.assignees?data.assignees.map(a=>({user_id:a.user_id,name:a.name||'User',role:a.role||'contributor'})):[];if(!taskAssignees.length&&data?.assignee){const tm=teamMembers.find(m=>((m.first_name||'')+' '+(m.last_name||'')).trim()===data.assignee||(m.first_name||'')===data.assignee);if(tm)taskAssignees=[{user_id:tm.id,name:data.assignee,role:'lead'}]}renderAssigneeTags();populateWGDropdown();populateDeptDropdown()}}
+function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('');taskAssignees=data?.assignees?data.assignees.map(a=>({user_id:a.user_id,name:a.name||'User',role:a.role||'contributor'})):[];if(!taskAssignees.length&&data?.assignee){const tm=teamMembers.find(m=>((m.first_name||'')+' '+(m.last_name||'')).trim()===data.assignee||(m.first_name||'')===data.assignee);if(tm)taskAssignees=[{user_id:tm.id,name:data.assignee,role:'lead'}]}renderAssigneeTags();taskWGs=data?.assigned_groups?data.assigned_groups.map(g=>({id:g.id,name:g.name,icon:g.icon||'\u{1F465}',color:g.color||'#3b82f6'})):[];renderWGTags();populateWGDropdown();populateDeptDropdown()}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
 let tCats=[];
 let catSubMap={};
@@ -1609,7 +1609,7 @@ function onMtGroupChange(preselSg){
   if(preselSg)sgSel.value=preselSg;
 }
 
-async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null,assignees:taskAssignees.map(a=>({user_id:a.user_id,role:a.role})),assigned_group_id:$('mt-assign-wg')&&$('mt-assign-wg').value?parseInt($('mt-assign-wg').value):null,assigned_department:$('mt-assign-dept')&&$('mt-assign-dept').value||null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length||dgPendingLink){try{const _td=await _r.json();if(_td&&_td.id){if(window._pendingChecklist){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}if(dgPendingLink){await fetch(A+'/tasks/'+_td.id+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:dgPendingLink})});dgPendingLink=null;if(curPage==='depgraph')loadDepGraph()}}}catch(e){console.warn('Post-create:',e)}window._pendingChecklist=null}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}}
+async function saveTask(){const id=$('mt-id').value,body={title:$('mt-title').value,description:$('mt-desc').value,priority:$('mt-prio').value,status:$('mt-status').value,assignee_name:$('mt-assign').value||null,due_date:$('mt-due').value||null,category:$('mt-cat').value||null,subcategory:$('mt-sub').value||null,group_id:$('mt-group').value?parseInt($('mt-group').value):null,subgroup_id:$('mt-subgroup').value?parseInt($('mt-subgroup').value):null,assignees:taskAssignees.map(a=>({user_id:a.user_id,role:a.role})),assigned_group_ids:taskWGs.map(g=>g.id),assigned_department:$('mt-assign-dept')&&$('mt-assign-dept').value||null};if(!body.title){alert('Title required');return}if(id)await fetch(A+'/tasks/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});else{const _r=await fetch(A+'/tasks',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});if(window._pendingChecklist&&window._pendingChecklist.length||dgPendingLink){try{const _td=await _r.json();if(_td&&_td.id){if(window._pendingChecklist){for(const _ci of window._pendingChecklist){await fetch(A+'/tasks/'+_td.id+'/actions',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({title:_ci.title,assignee_name:_ci.assignee_name||null})})}}if(dgPendingLink){await fetch(A+'/tasks/'+_td.id+'/dependencies',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({depends_on_id:dgPendingLink})});dgPendingLink=null;if(curPage==='depgraph')loadDepGraph()}}}catch(e){console.warn('Post-create:',e)}window._pendingChecklist=null}closeModal('task');loadTasks();loadBoard();loadDash();loadCatsAPI();loadGrps()}}
 async function deleteTask(){const id=$('mt-id').value;if(id&&confirm('Delete?')){await fetch(A+'/tasks/'+id,{method:'DELETE',headers:hdr()});closeModal('task');loadTasks();loadBoard();loadDash();loadGrps()}}
 
 // ═══ GROUP MANAGER ═══
@@ -3999,6 +3999,7 @@ async function loadActivityFeed(){
 
 // ═══ PHASE 30: MULTI-ASSIGNEE & WORKING GROUPS ═══
 let taskAssignees=[];
+let taskWGs=[];  // selected working groups for current task
 let workingGroups=[];
 
 function renderAssigneeTags(){
@@ -4054,16 +4055,29 @@ function filterAssigneeDD(q){
   dd.style.display='block';
 }
 
-function assignWorkingGroup(gid){
+function addTaskWG(gid){
   if(!gid)return;
+  gid=parseInt(gid);
+  if(taskWGs.find(g=>g.id===gid))return;
+  const wg=workingGroups.find(g=>g.id===gid);
+  if(!wg)return;
+  taskWGs.push({id:wg.id,name:wg.name,icon:wg.icon||'\u{1F465}',color:wg.color||'#3b82f6'});
+  renderWGTags();
+  // Also expand members into individual assignees
   fetch(A+'/working-groups/'+gid+'/members',{headers:hdr()}).then(r=>r.json()).then(d=>{
-    const members=d.members||[];
-    members.forEach((m,i)=>{
+    (d.members||[]).forEach((m,i)=>{
       const nm=((m.first_name||'')+' '+(m.last_name||'User #'+m.user_id)).trim();
-      addAssignee(m.user_id,nm,i===0?'lead':'contributor');
+      addAssignee(m.user_id,nm,i===0&&!taskAssignees.find(a=>a.role==='lead')?'lead':'contributor');
     });
-  }).catch(e=>console.warn('assignWG:',e));
+  }).catch(e=>console.warn('addTaskWG:',e));
 }
+function removeTaskWG(gid){taskWGs=taskWGs.filter(g=>g.id!==gid);renderWGTags()}
+function renderWGTags(){
+  const el=$('mt-wg-tags');if(!el)return;
+  el.innerHTML=taskWGs.map(g=>'<span class="assign-tag" style="border-left:3px solid '+(g.color||'#3b82f6')+';background:var(--cd)">'+(g.icon||'\u{1F465}')+' '+esc(g.name)+'<span class="assign-x" onclick="removeTaskWG('+g.id+')">&times;</span></span>').join('');
+}
+// Legacy alias
+function assignWorkingGroup(gid){addTaskWG(gid)}
 
 function assignDepartment(dept){
   if(!dept)return;

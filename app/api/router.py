@@ -20,6 +20,7 @@ from app.models.audit_log import AuditLog
 from app.models.user import User
 from app.models.task_assignee import TaskAssignee
 from app.models.working_group import WorkingGroup, WorkingGroupMember
+from app.models.task_working_group import TaskWorkingGroup
 from app.api.auth import require_auth, require_permission, verify_session_token
 from app.services.workflow_svc import workflow_service
 from app.services.collab_svc import collab_service
@@ -133,7 +134,8 @@ class TaskCreate(BaseModel):
     subgroup_id: Optional[int] = None
     estimated_hours: Optional[float] = None
     assignees: Optional[List[AssigneeInput]] = None
-    assigned_group_id: Optional[int] = None
+    assigned_group_id: Optional[int] = None  # legacy single group
+    assigned_group_ids: Optional[List[int]] = None  # multi-group
     assigned_department: Optional[str] = None
 
 
@@ -151,11 +153,12 @@ class TaskUpdate(BaseModel):
     subgroup_id: Optional[int] = None
     estimated_hours: Optional[float] = None
     assignees: Optional[List[AssigneeInput]] = None
-    assigned_group_id: Optional[int] = None
+    assigned_group_id: Optional[int] = None  # legacy single group
+    assigned_group_ids: Optional[List[int]] = None  # multi-group
     assigned_department: Optional[str] = None
 
 
-def _task_to_dict(t: Task, assignees: list = None) -> dict:
+def _task_to_dict(t: Task, assignees: list = None, assigned_groups: list = None) -> dict:
     return {
         "id": t.id, "title": t.title, "description": t.description,
         "status": t.status.value, "priority": t.priority.value,
@@ -171,6 +174,8 @@ def _task_to_dict(t: Task, assignees: list = None) -> dict:
         "last_modified_by": getattr(t, "last_modified_by", None),
         "assignees": assignees or [],
         "assigned_group_id": getattr(t, "assigned_group_id", None),
+        "assigned_group_ids": [g["id"] for g in (assigned_groups or [])],
+        "assigned_groups": assigned_groups or [],
         "assigned_department": getattr(t, "assigned_department", None),
     }
 
@@ -257,6 +262,47 @@ async def _expand_department(db: AsyncSession, department: str) -> list:
     return [row[0] for row in result.all()]
 
 
+async def _get_task_groups(db: AsyncSession, task_id: int) -> list:
+    """Get all working groups assigned to a task."""
+    result = await db.execute(
+        select(TaskWorkingGroup, WorkingGroup)
+        .join(WorkingGroup, TaskWorkingGroup.group_id == WorkingGroup.id)
+        .where(TaskWorkingGroup.task_id == task_id)
+    )
+    return [{"id": wg.id, "name": wg.name, "icon": wg.icon, "color": wg.color}
+            for twg, wg in result.all()]
+
+
+async def _get_groups_batch(db: AsyncSession, task_ids: list) -> dict:
+    """Batch-load working groups for multiple tasks."""
+    if not task_ids:
+        return {}
+    result = await db.execute(
+        select(TaskWorkingGroup, WorkingGroup)
+        .join(WorkingGroup, TaskWorkingGroup.group_id == WorkingGroup.id)
+        .where(TaskWorkingGroup.task_id.in_(task_ids))
+    )
+    mapping = {}
+    for twg, wg in result.all():
+        mapping.setdefault(twg.task_id, []).append({
+            "id": wg.id, "name": wg.name, "icon": wg.icon, "color": wg.color,
+        })
+    return mapping
+
+
+async def _sync_task_groups(db: AsyncSession, task_id: int, group_ids: list):
+    """Sync working groups for a task."""
+    from sqlalchemy import delete as sqldel
+    await db.execute(sqldel(TaskWorkingGroup).where(TaskWorkingGroup.task_id == task_id))
+    for gid in group_ids:
+        db.add(TaskWorkingGroup(task_id=task_id, group_id=gid))
+    # Also set legacy assigned_group_id to first group for backward compat
+    task_result = await db.execute(select(Task).where(Task.id == task_id))
+    task = task_result.scalar_one_or_none()
+    if task:
+        task.assigned_group_id = group_ids[0] if group_ids else None
+
+
 async def log_audit(db, task_id: int, user_email: str, action: str, field: str = None, old_val: str = None, new_val: str = None):
     """Record a task audit log entry."""
     entry = AuditLog(task_id=task_id, user_email=user_email, action=action,
@@ -288,8 +334,10 @@ async def list_tasks(request: Request,
         ))
     result = await db.execute(query)
     tasks = list(result.scalars().all())
-    assignee_map = await _get_assignees_batch(db, [t.id for t in tasks])
-    return {"tasks": [_task_to_dict(t, assignee_map.get(t.id, [])) for t in tasks]}
+    task_ids = [t.id for t in tasks]
+    assignee_map = await _get_assignees_batch(db, task_ids)
+    groups_map = await _get_groups_batch(db, task_ids)
+    return {"tasks": [_task_to_dict(t, assignee_map.get(t.id, []), groups_map.get(t.id, [])) for t in tasks]}
 
 
 @limiter.limit("30/minute")
@@ -351,6 +399,12 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
         await db.flush()
         await db.refresh(task)
 
+    # Handle multi-group assignment
+    group_ids = body.assigned_group_ids or ([body.assigned_group_id] if body.assigned_group_id else [])
+    if group_ids:
+        await _sync_task_groups(db, task.id, group_ids)
+        await db.flush()
+
     # Notification: task created
     from app.services.notification_svc import create_notification
     await create_notification(db, user_id=0, notif_type="task_created",
@@ -375,7 +429,8 @@ async def create_task(request: Request, body: TaskCreate, db: AsyncSession = Dep
     except Exception:
         pass
     task_assignees = await _get_task_assignees(db, task.id)
-    return _task_to_dict(task, task_assignees)
+    task_groups = await _get_task_groups(db, task.id)
+    return _task_to_dict(task, task_assignees, task_groups)
 
 
 @limiter.limit("30/minute")
@@ -434,6 +489,9 @@ async def update_task(request: Request, task_id: int, body: TaskUpdate, db: Asyn
     elif body.assigned_department:
         user_ids = await _expand_department(db, body.assigned_department)
         await _sync_task_assignees(db, task_id, [AssigneeInput(user_id=uid, role="contributor") for uid in user_ids], email)
+    # Handle multi-group update
+    if body.assigned_group_ids is not None:
+        await _sync_task_groups(db, task_id, body.assigned_group_ids)
     await db.flush()
     # Notification: status changed
     if body.status is not None:
@@ -469,7 +527,8 @@ async def update_task(request: Request, task_id: int, body: TaskUpdate, db: Asyn
     except Exception:
         pass
     task_assignees = await _get_task_assignees(db, task_id)
-    return _task_to_dict(task, task_assignees)
+    task_groups = await _get_task_groups(db, task_id)
+    return _task_to_dict(task, task_assignees, task_groups)
 
 
 @limiter.limit("30/minute")

@@ -38,6 +38,7 @@ from app.models.time_log import TimeLog  # noqa: ensure table creation
 from app.models.collaboration import TaskWatcher, ActivityLog  # noqa: ensure table creation
 from app.models.working_group import WorkingGroup, WorkingGroupMember  # noqa: ensure table creation
 from app.models.task_assignee import TaskAssignee  # noqa: ensure table creation
+from app.models.task_working_group import TaskWorkingGroup  # noqa: ensure table creation
 
 settings = get_settings()
 
@@ -607,6 +608,20 @@ async def lifespan(app: FastAPI):
                 if not result.fetchall():
                     await conn.execute(text(sql))
                     logger.info(f'Added {col} column to {table} table')
+
+            # Task Working Groups junction table (multi-group assignment)
+            await conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS task_working_groups (
+                    id SERIAL PRIMARY KEY,
+                    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+                    group_id INTEGER NOT NULL REFERENCES working_groups(id) ON DELETE CASCADE,
+                    assigned_at TIMESTAMPTZ DEFAULT NOW(),
+                    CONSTRAINT uq_task_working_group UNIQUE (task_id, group_id)
+                )
+            """))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_twg_task ON task_working_groups(task_id)'))
+            await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_twg_group ON task_working_groups(group_id)'))
+            logger.info('Task working groups migration checked')
 
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
