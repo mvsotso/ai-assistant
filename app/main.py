@@ -623,6 +623,10 @@ async def lifespan(app: FastAPI):
             await conn.execute(text('CREATE INDEX IF NOT EXISTS idx_twg_group ON task_working_groups(group_id)'))
             logger.info('Task working groups migration checked')
 
+            # Expand working_groups.icon column from VARCHAR(10) to VARCHAR(32) for SVG icon IDs
+            await conn.execute(text("ALTER TABLE working_groups ALTER COLUMN icon TYPE VARCHAR(32)"))
+            logger.info('Working groups icon column expanded')
+
     except Exception as e:
         logger.warning(f"⚠️ Migration check: {e}")
 

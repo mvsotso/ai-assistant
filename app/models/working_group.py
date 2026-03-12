@@ -13,7 +13,7 @@ class WorkingGroup(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    icon = Column(String(10), default="👥")
+    icon = Column(String(32), default="👥")
     color = Column(String(7), default="#3b82f6")
     creator_email = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)

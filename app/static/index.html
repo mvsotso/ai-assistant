@@ -448,10 +448,11 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 .wg-card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:14px;transition:all .2s}
 .wg-card:hover{border-color:var(--ac);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .wg-icon-badge{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
-.wg-icon-picker{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:180px;overflow-y:auto;padding:6px;background:var(--bg);border:1px solid var(--bd);border-radius:8px}
-.wg-icon-opt{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .15s;background:var(--sf)}
-.wg-icon-opt:hover{background:var(--ac);transform:scale(1.15)}
-.wg-icon-opt.sel{border-color:var(--ac);background:rgba(99,102,241,.2);transform:scale(1.1)}
+.wg-icon-picker{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:220px;overflow-y:auto;padding:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px}
+.wg-icon-opt{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .15s;background:var(--sf);color:var(--tx)}
+.wg-icon-opt:hover{background:var(--ac);transform:scale(1.15);color:#fff}
+.wg-icon-opt.sel{border-color:var(--ac);background:rgba(99,102,241,.25);transform:scale(1.1);color:var(--ac)}
+.wg-icon-opt svg{width:100%;height:100%;padding:2px}
 </style>
 </head>
 <body>
@@ -4100,7 +4101,7 @@ function addTaskWG(gid){
 function removeTaskWG(gid){taskWGs=taskWGs.filter(g=>g.id!==gid);renderWGTags()}
 function renderWGTags(){
   const el=$('mt-wg-tags');if(!el)return;
-  el.innerHTML=taskWGs.map(g=>'<span class="assign-tag" style="border-left:3px solid '+(g.color||'#3b82f6')+';background:var(--cd)">'+(g.icon||'\u{1F465}')+' '+esc(g.name)+'<span class="assign-x" onclick="removeTaskWG('+g.id+')">&times;</span></span>').join('');
+  el.innerHTML=taskWGs.map(g=>'<span class="assign-tag" style="border-left:3px solid '+(g.color||'#3b82f6')+';background:var(--cd);display:inline-flex;align-items:center;gap:4px">'+wgIconHTML(g.icon,14)+' '+esc(g.name)+'<span class="assign-x" onclick="removeTaskWG('+g.id+')">&times;</span></span>').join('');
 }
 // Legacy alias
 function assignWorkingGroup(gid){addTaskWG(gid)}
@@ -4128,14 +4129,14 @@ async function loadWorkingGroups(){
     const el=$('wg-list');
     if(!el)return;
     if(!workingGroups.length){el.innerHTML='<div style="color:var(--mt);padding:8px;font-size:11px">No working groups yet.</div>';return}
-    el.innerHTML=workingGroups.map(g=>{const c=g.color||'#3b82f6';return'<div class="wg-card" style="border-left:3px solid '+c+'"><div class="wg-icon-badge" style="background:'+c+'22;color:'+c+'">'+(g.icon||'\u{1F465}')+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px;margin-bottom:2px">'+esc(g.name)+'</div>'+(g.description?'<div style="font-size:11px;color:var(--mt);line-height:1.4;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+esc(g.description)+'</div>':'')+'<div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span style="font-size:11px;color:var(--mt);display:flex;align-items:center;gap:3px">\u{1F464} '+(g.member_count||0)+' members</span></div></div><div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0"><button class="btn" onclick="showWGBuilder('+g.id+')" style="padding:4px 10px;font-size:10px">\u270F\uFE0F Edit</button><button class="btn" onclick="deleteWorkingGroup('+g.id+')" style="padding:4px 10px;font-size:10px;color:var(--rd)">\u2715 Delete</button></div></div>'}).join('');
+    el.innerHTML=workingGroups.map(g=>{const c=g.color||'#3b82f6';return'<div class="wg-card" style="border-left:3px solid '+c+'"><div class="wg-icon-badge" style="background:'+c+'22;color:'+c+'">'+wgIconHTML(g.icon,28)+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px;margin-bottom:2px">'+esc(g.name)+'</div>'+(g.description?'<div style="font-size:11px;color:var(--mt);line-height:1.4;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+esc(g.description)+'</div>':'')+'<div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span style="font-size:11px;color:var(--mt);display:flex;align-items:center;gap:3px">\u{1F464} '+(g.member_count||0)+' members</span></div></div><div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0"><button class="btn" onclick="showWGBuilder('+g.id+')" style="padding:4px 10px;font-size:10px">\u270F\uFE0F Edit</button><button class="btn" onclick="deleteWorkingGroup('+g.id+')" style="padding:4px 10px;font-size:10px;color:var(--rd)">\u2715 Delete</button></div></div>'}).join('');
     populateWGDropdown();
   }catch(e){console.warn('loadWG:',e)}
 }
 
 function populateWGDropdown(){
   const sel=$('mt-assign-wg');if(!sel)return;
-  sel.innerHTML='<option value="">\u{1F3E2} Working Group...</option>'+workingGroups.map(g=>'<option value="'+g.id+'">'+(g.icon||'\u{1F465}')+' '+esc(g.name)+'</option>').join('');
+  sel.innerHTML='<option value="">\u{1F3E2} Working Group...</option>'+workingGroups.map(g=>{const ic=(g.icon&&g.icon.startsWith('svg:'))?'\u{1F5A5}\uFE0F':g.icon||'\u{1F465}';return'<option value="'+g.id+'">'+ic+' '+esc(g.name)+'</option>'}).join('');
 }
 
 function populateDeptDropdown(){
@@ -4144,22 +4145,62 @@ function populateDeptDropdown(){
   sel.innerHTML='<option value="">\u{1F3DB}\uFE0F Department...</option>'+depts.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join('');
 }
 
-const WG_ICONS=[
+/* Custom SVG icons for professional working group logos */
+const WG_SVG={
+  'svg:database':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 5v6c0 1.66-4.03 3-9 3S3 12.66 3 11V5"/><path d="M21 11v6c0 1.66-4.03 3-9 3s-9-1.34-9-3v-6"/></svg>',
+  'svg:server':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1" fill="currentColor"/><circle cx="6" cy="18" r="1" fill="currentColor"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="18" x2="18" y2="18"/></svg>',
+  'svg:cloud-db':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><ellipse cx="13" cy="16" rx="4" ry="1.5"/><path d="M9 16v-2c0-.83 1.79-1.5 4-1.5s4 .67 4 1.5v2"/></svg>',
+  'svg:table':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>',
+  'svg:query':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg>',
+  'svg:shield':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+  'svg:network':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/><line x1="8" y1="19" x2="16" y2="19"/></svg>',
+  'svg:analytics':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>',
+  'svg:warehouse':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V8l9-5 9 5v13"/><rect x="7" y="13" width="4" height="8" rx="1"/><rect x="13" y="13" width="4" height="8" rx="1"/><line x1="7" y1="17" x2="11" y2="17"/><line x1="13" y1="17" x2="17" y2="17"/></svg>',
+  'svg:pipeline':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="18" y2="12"/><path d="M12 10V6"/><path d="M20 10V6"/><path d="M4 14v4"/></svg>',
+  'svg:key':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="5"/><line x1="11.5" y1="11.5" x2="21" y2="3"/><line x1="21" y1="3" x2="21" y2="8"/><line x1="16" y1="8" x2="21" y2="8"/></svg>',
+  'svg:lock':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>',
+  'svg:admin':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><path d="M16 3l2 2-4 4-2-2z"/></svg>',
+  'svg:team':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="7" r="3"/><path d="M14 21v-2a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v2"/><path d="M22 21v-2a3 3 0 0 0-2.18-2.89"/></svg>',
+  'svg:workflow':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="6" height="5" rx="1"/><rect x="16" y="3" width="6" height="5" rx="1"/><rect x="9" y="16" width="6" height="5" rx="1"/><path d="M5 8v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><line x1="12" y1="13" x2="12" y2="16"/></svg>',
+  'svg:api':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="8" height="12" rx="2"/><rect x="14" y="6" width="8" height="12" rx="2"/><line x1="10" y1="10" x2="14" y2="10"/><line x1="10" y1="14" x2="14" y2="14"/></svg>',
+  'svg:etl':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/><rect x="17" y="9" width="6" height="6" rx="1"/><path d="M7 12h2"/><path d="M15 12h2"/><path d="M4 9V6h16v3"/><path d="M4 15v3h16v-3"/></svg>',
+  'svg:monitor':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 16 21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg>',
+  'svg:storage':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="4" rx="8" ry="2.5"/><path d="M20 4v4c0 1.38-3.58 2.5-8 2.5S4 9.38 4 8V4"/><path d="M20 8v4c0 1.38-3.58 2.5-8 2.5S4 13.38 4 12V8"/><path d="M20 12v4c0 1.38-3.58 2.5-8 2.5S4 17.38 4 16v-4"/><path d="M20 16v3c0 1.38-3.58 2.5-8 2.5S4 20.38 4 19v-3"/></svg>',
+  'svg:backup':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="7" rx="7" ry="2.5"/><path d="M19 7v4c0 1.38-3.13 2.5-7 2.5S5 12.38 5 11V7"/><path d="M5 11v4c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-4"/><polyline points="1 17 1 21 5 21"/><polyline points="1 21 8 14"/></svg>',
+  'svg:report':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>',
+  'svg:gear':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  'svg:globe':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+  'svg:finance':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
+};
+const WG_SVG_KEYS=Object.keys(WG_SVG);
+const WG_EMOJIS=[
   '\u{1F465}','\u{1F464}','\u{1F4BC}','\u{1F3E2}','\u{1F3DB}\uFE0F','\u{1F4BB}','\u{1F5A5}\uFE0F','\u{1F4CA}',
   '\u{1F4C8}','\u{1F4C9}','\u{1F4DD}','\u{1F4CB}','\u{1F4C1}','\u{1F4C2}','\u{1F512}','\u{1F511}',
   '\u{1F6E1}\uFE0F','\u{2699}\uFE0F','\u{1F527}','\u{1F529}','\u{1F50D}','\u{1F4E1}','\u{1F310}','\u{2601}\uFE0F',
-  '\u{1F4B0}','\u{1F4B3}','\u{1F3AF}','\u{1F680}','\u{2B50}','\u{1F4A1}','\u{1F9E0}','\u{1F393}',
-  '\u{1F4DA}','\u{1F4D6}','\u{1F4E7}','\u{1F4AC}','\u{1F4DE}','\u{1F5C2}\uFE0F','\u{1F9F1}','\u{1F3D7}\uFE0F',
-  '\u{2696}\uFE0F','\u{1F3E5}','\u{1F9EA}','\u{1F52C}','\u{1F4F0}','\u{1F3A8}','\u{1F5BC}\uFE0F','\u{1F3AC}'
+  '\u{1F4B0}','\u{1F4B3}','\u{1F3AF}','\u{1F680}','\u{2B50}','\u{1F4A1}','\u{1F9E0}','\u{1F393}'
 ];
+/* All icons: SVG keys first, then emojis */
+const WG_ICONS=[...WG_SVG_KEYS,...WG_EMOJIS];
+
+/* Render any icon (SVG key or emoji) as HTML */
+function wgIconHTML(icon,size){
+  size=size||24;
+  if(icon&&WG_SVG[icon])return'<span style="display:inline-flex;width:'+size+'px;height:'+size+'px">'+WG_SVG[icon]+'</span>';
+  return'<span style="font-size:'+size+'px;line-height:1">'+(icon||'\u{1F465}')+'</span>';
+}
 
 function initWGIconPicker(selIcon){
   const grid=$('wg-icon-grid');if(!grid)return;
   const cur=selIcon||$('wg-icon').value||'\u{1F465}';
-  grid.innerHTML=WG_ICONS.map((ic,i)=>'<div class="wg-icon-opt'+(ic===cur?' sel':'')+'" data-idx="'+i+'">'+ic+'</div>').join('');
+  /* SVG section header + SVG icons, then emoji section */
+  let html='<div style="grid-column:1/-1;font-size:10px;color:var(--mt);font-weight:600;padding:2px 0;border-bottom:1px solid var(--bd);margin-bottom:2px">\u{1F5A5}\uFE0F Tech & Database</div>';
+  WG_SVG_KEYS.forEach((k,i)=>{html+='<div class="wg-icon-opt'+(k===cur?' sel':'')+'" data-idx="'+i+'" title="'+k.replace('svg:','')+'">'+wgIconHTML(k,20)+'</div>'});
+  html+='<div style="grid-column:1/-1;font-size:10px;color:var(--mt);font-weight:600;padding:2px 0;border-bottom:1px solid var(--bd);margin:4px 0 2px">\u{1F60A} General</div>';
+  WG_EMOJIS.forEach((e,i)=>{const idx=WG_SVG_KEYS.length+i;html+='<div class="wg-icon-opt'+(e===cur?' sel':'')+'" data-idx="'+idx+'">'+e+'</div>'});
+  grid.innerHTML=html;
   grid.onclick=function(e){
     const opt=e.target.closest('.wg-icon-opt');if(!opt)return;
-    const idx=parseInt(opt.dataset.idx);if(isNaN(idx))return;
+    const idx=parseInt(opt.dataset.idx);if(isNaN(idx)||idx>=WG_ICONS.length)return;
     $('wg-icon').value=WG_ICONS[idx];
     grid.querySelectorAll('.wg-icon-opt').forEach(o=>o.classList.remove('sel'));
     opt.classList.add('sel');
@@ -4171,7 +4212,7 @@ function updateWGIconPreview(){
   const icon=$('wg-icon').value||'\u{1F465}';
   const color=$('wg-color').value||'#3b82f6';
   const prev=$('wg-icon-preview');
-  if(prev){prev.textContent=icon;prev.style.background=color+'22'}
+  if(prev){prev.innerHTML=wgIconHTML(icon,28);prev.style.background=color+'22';prev.style.color=color}
 }
 
 let wgPendingMembers=[];
