@@ -2760,12 +2760,24 @@ function renderMd(text){
   return html;
 }
 function copyCode(id){const el=$(id);if(!el)return;navigator.clipboard.writeText(el.textContent).then(()=>{const btn=el.closest('.ch-code-block').querySelector('button');if(btn){const orig=btn.innerHTML;btn.innerHTML='✅ Copied!';setTimeout(()=>btn.innerHTML=orig,1500)}})}
-function copyMsg(btn){const bubble=btn.closest('.ch-b');if(!bubble)return;const clone=bubble.cloneNode(true);const actions=clone.querySelector('.ch-actions');if(actions)actions.remove();navigator.clipboard.writeText(clone.textContent.trim()).then(()=>{const orig=btn.innerHTML;btn.innerHTML='✅ Copied';setTimeout(()=>btn.innerHTML=orig,1500)})}
+function copyMsg(btn){const bubble=btn.closest('.ch-b');if(!bubble)return;let raw=bubble.dataset.raw;if(raw){raw=raw.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');navigator.clipboard.writeText(raw)}else{const clone=bubble.cloneNode(true);const actions=clone.querySelector('.ch-actions');if(actions)actions.remove();navigator.clipboard.writeText(clone.textContent.trim())}const orig=btn.innerHTML;btn.innerHTML='✅ Copied';setTimeout(()=>btn.innerHTML=orig,1500)}
 async function downloadDoc(btn,fmt){
   const bubble=btn.closest('.ch-b');if(!bubble)return;
-  const idx=[...document.querySelectorAll('#chm .ch-b.ch-a')].indexOf(bubble);
-  const aiMsgs=chatHistory.filter(h=>h.role==='assistant');
-  const content=aiMsgs[idx]?.content||bubble.textContent.trim();
+  // Get raw markdown from data attribute (preferred) or chatHistory fallback
+  let content=bubble.dataset.raw;
+  if(!content){
+    const idx=[...document.querySelectorAll('#chm .ch-b.ch-a[data-raw]')].indexOf(bubble);
+    const aiMsgs=chatHistory.filter(h=>h.role==='assistant');
+    content=aiMsgs[idx]?.content;
+  }
+  if(!content){
+    // Last resort: extract text but strip action button text
+    const clone=bubble.cloneNode(true);
+    const actions=clone.querySelector('.ch-actions');if(actions)actions.remove();
+    content=clone.textContent.trim();
+  }
+  // Decode HTML entities
+  content=content.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
   const tm=content.match(/^##?\s+(.+)$/m);
   const title=tm?tm[1].replace(/[^\w\s-]/g,'').trim():'Document';
   const orig=btn.innerHTML;
@@ -2783,7 +2795,8 @@ async function downloadDoc(btn,fmt){
 let aiMsgCounter=0;
 async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl"><div style="display:flex;align-items:center;gap:8px;color:var(--mt)"><span class="spin"></span>${chFile?'Processing file...':'Thinking...'}</div></div>`;c.scrollTop=c.scrollHeight;chatHistory.push({role:'user',content:dm});chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m,history:chatHistory.slice(-20)})})).json();$('chl').remove();const aiResp=d.response||'No response';chatHistory.push({role:'assistant',content:aiResp});const mid='ai-msg-'+(++aiMsgCounter);const hasStructured=aiResp.length>150&&(/^#{1,4}\s/m.test(aiResp)||/\n- /m.test(aiResp)||/\n\d+\.\s/m.test(aiResp)||/\*\*/m.test(aiResp));
 const dlBtns=hasStructured?'<button onclick="downloadDoc(this,\'docx\')" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#3b82f6;font-weight:600">📄 Download Word</button><button onclick="downloadDoc(this,\'pptx\')" style="background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.3);color:#a855f7;font-weight:600">📊 Download PowerPoint</button>':'';
-c.innerHTML+=`<div class="ch-b ch-a" id="${mid}">${renderMd(aiResp)}<div class="ch-actions"><button onclick="copyMsg(this)">📋 Copy</button>${dlBtns}<button onclick="retryAI()">🔄 Retry</button></div></div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">❌ Error: ${esc(e.message||'Failed')}</div>`}chL=false;c.scrollTop=c.scrollHeight}
+const escapedRaw=aiResp.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+c.innerHTML+=`<div class="ch-b ch-a" id="${mid}" data-raw="${escapedRaw}">${renderMd(aiResp)}<div class="ch-actions"><button onclick="copyMsg(this)">📋 Copy</button>${dlBtns}<button onclick="retryAI()">🔄 Retry</button></div></div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">❌ Error: ${esc(e.message||'Failed')}</div>`}chL=false;c.scrollTop=c.scrollHeight}
 function retryAI(){if(chatHistory.length<2)return;chatHistory.pop();const lastUser=chatHistory.pop();if(lastUser)$('chi').value=lastUser.content;const msgs=document.querySelectorAll('#chm .ch-b');if(msgs.length>=2){msgs[msgs.length-1].remove();msgs[msgs.length-2].remove()}sendAI()}
 function newChat(){chatHistory=[];aiMsgCounter=0;$('chm').innerHTML='<div class="ch-b ch-a" style="color:var(--mt)">'+t('newChatStarted')+'</div>'}
 // ── AI Suggestions ──
