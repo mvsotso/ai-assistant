@@ -573,22 +573,30 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
   </div>
 
   <div id="pg-team" class="pg">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <h2 style="margin:0" data-i18n="teamMembers">Team Members</h2>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0" data-i18n="team">Team</h2>
+      <div id="team-toolbar-members" style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn gm" onclick="openRoleMgr()" data-i18n="roles">🏷️ Roles</button>
         <button class="btn" onclick="openInviteModal()" data-i18n="inviteBtn">📨 Invite</button>
         <button class="btn" onclick="openBulkImportModal()" data-i18n="bulkImport">📥 Import</button>
         <button class="btn p" onclick="openMemberModal()" data-i18n="addMember">+ Add Member</button>
       </div>
-    </div>
-    <div id="team-list"></div>
-    <!-- Working Groups Section -->
-    <div style="margin-top:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div><h3 style="margin:0">👥 <span data-i18n="workingGroups">Working Groups</span></h3><div style="font-size:11px;color:var(--mt);margin-top:2px" data-i18n="workingGroupsSub">Team groupings for task assignment</div></div>
-        <button class="btn p" onclick="showWGBuilder()" style="padding:4px 10px;font-size:10px">+ <span data-i18n="newGroup">New Group</span></button>
+      <div id="team-toolbar-wg" style="display:none;gap:6px;flex-wrap:wrap">
+        <button class="btn p" onclick="showWGBuilder()">+ <span data-i18n="newGroup">New Group</span></button>
       </div>
+    </div>
+    <!-- Sub-tabs: Members | Working Groups -->
+    <div class="rm-tabs" style="margin-bottom:12px">
+      <div class="rm-tab active" onclick="switchTeamTab('members')" id="team-tab-members">👤 <span data-i18n="members">Members</span></div>
+      <div class="rm-tab" onclick="switchTeamTab('wg')" id="team-tab-wg">👥 <span data-i18n="workingGroups">Working Groups</span></div>
+    </div>
+    <!-- Tab: Members -->
+    <div id="team-content-members">
+      <div id="team-list"></div>
+    </div>
+    <!-- Tab: Working Groups -->
+    <div id="team-content-wg" style="display:none">
+      <div class="st" style="margin:0 0 12px" data-i18n="workingGroupsSub">Team groupings for task assignment</div>
       <div id="wg-list" style="display:flex;flex-direction:column;gap:6px">Loading...</div>
     </div>
   </div>
@@ -2520,6 +2528,14 @@ function switchTasksTab(tab){
   if(tab==='templates')loadTemplates();
   if(tab==='automation')loadWorkflowRules();
 }
+function switchTeamTab(tab){
+  ['members','wg'].forEach(t=>{
+    const tabEl=$('team-tab-'+t);if(tabEl)tabEl.classList.toggle('active',t===tab);
+    const content=$('team-content-'+t);if(content)content.style.display=t===tab?'block':'none';
+    const toolbar=$('team-toolbar-'+t);if(toolbar)toolbar.style.display=t===tab?'flex':'none';
+  });
+  if(tab==='wg'&&typeof loadWorkingGroups==='function')loadWorkingGroups();
+}
 function switchRmTab(tab){
   $('rm-tab-active').classList.toggle('active',tab==='active');
   $('rm-tab-history').classList.toggle('active',tab==='history');
@@ -2972,7 +2988,7 @@ const I18N={
     offlineMode:'You are offline — changes will sync when reconnected',syncing:'Syncing offline changes...',syncComplete:'All changes synced!',pendingSync:'changes pending sync',
     // AI Analysis
     analyzing:'Analyzing',analyzeBtn:'Analyze',analyzeAllBtn:'Analyze All',momBtn:'📋 MoM',momTitle:'📋 Meeting Minutes Processor',momUploadStep:'Step 1: Upload Meeting Minutes',momUploadDesc:'Upload a PDF, Word, or Excel file. AI will extract action items automatically.',momProcess:'🤖 Process with AI',momAnalyzing:'Analyzing meeting minutes...',momAnalyzingDesc:'Extracting action items, deadlines, and assignments',momItemsFound:'items found',momNoItems:'No action items found in this document.',momSelectAll:'Select All',momDeselectAll:'Deselect All',momType:'Type',momTypeTask:'Task',momTypeReminder:'Reminder',momTypeEvent:'Event',unassigned:'Unassigned',momNoneSelected:'Please select at least one item.',momCreating:'Creating',momCreateAll:'🚀 Create Selected Items',momUploadAnother:'Upload Another',momProcessAnother:'Process Another',momViewTasks:'View Tasks',momComplete:'Items Created Successfully!',momCreatedCount:'Created',newChat:'💭 New Chat',newChatStarted:'New conversation started. How can I help you?',
-    assignees:'Assignees',workingGroups:'Working Groups',workingGroupsSub:'Team groupings for task assignment',assignGroup:'Assign Group',assignDept:'Assign Department',leadRole:'Lead',contributorRole:'Contributor',reviewerRole:'Reviewer',assignedToMe:'Assigned to Me',addMember:'Add Member',groupMembers:'Group Members',newGroup:'New Group',newRule:'New Rule',automationRulesSub:'Auto-apply rules when tasks change'
+    assignees:'Assignees',workingGroups:'Working Groups',workingGroupsSub:'Team groupings for task assignment',assignGroup:'Assign Group',assignDept:'Assign Department',leadRole:'Lead',contributorRole:'Contributor',reviewerRole:'Reviewer',assignedToMe:'Assigned to Me',addMember:'Add Member',groupMembers:'Group Members',newGroup:'New Group',newRule:'New Rule',automationRulesSub:'Auto-apply rules when tasks change',members:'Members'
   },
   kh:{
     home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',templatesNav:'គំរូ',depGraphNav:'ក្រាហ្វពឹងអាស្រ័យ',aiPrioritize:'AI កំណត់អាទិភាព',aiPrioResults:'លទ្ឋផលកំណត់អាទិភាព AI',applyPriorities:'អនុវត្តអាទិភាព',workloadRec:'អំណើណំបន្ទុកការងារ',depGraphTitle:'ក្រាហ្វភាពពឹងអាស្រ័យ',depGraphSub:'ការមើលភាពពឹងអាស្រ័យភារកិច្ចអន្តរកម្ម',dgNewTask:'ភារកិច្ចថ្មី',dgNewLinked:'ភារកិច្ចភ្ជាប់ថ្មី',dgLinkMode:'របៀបភ្ជាប់',analyticsNav:'វិភាគ',
@@ -3019,7 +3035,7 @@ const I18N={
     settingsNav:'ការកំណត់',manageUsers:'គ្រប់គ្រងអ្នកប្រើប្រាស់',allowedEmails:'អាសយដ្ឋានអ៊ីមែលដែលអនុញ្ញាត',allowedEmailsSub:'គ្រប់គ្រងអ្នកដែលអាចចូលផ្ទាំងគ្រប់គ្រង',addEmail:'បន្ថែម',settingsPage:'ការកំណត់',settingsSub:'កំណត់អ៊ីមែល ការជូនដំណឹង និងប្រព័ន្ធ',smtpConfig:'ការកំណត់ SMTP',smtpConfigSub:'ការកំណត់ម៉ាស៊ីនអ៊ីមែល',smtpHost:'ម៉ាស៊ីន SMTP',smtpPort:'លេខគេ',smtpUsername:'អ្តកប្រើប្រាស់',smtpPassword:'ពាក្យសម្ងាត់',smtpFromEmail:'អ៊ីមែលផ្ញើ',smtpFromName:'ឈ្មោះផ្ញើ',smtpTls:'ប្រើ TLS (ការដែណាំ)',appPassHint:'សម្រាប់ Gmail ប្រើ App Password',saveSettings:'រក្សាទុកការកំណត់',sendTestEmail:'ផ្ញើអ៊ីមែលសាកល្បង',smtpSaved:'បានរក្សាទុក SMTP',emailPrefsPageTitle:'ការកំណត់ជូនដំណឹងអ៊ីមែល',emailPrefsSub:'ជ្រើសរើសអ៊ីមែលណាមួយ',masterEmailToggle:'បើកជូនដំណឹងអ៊ីមែល',pushNotifTitle:'ការជូនដំណឹង Push',pushNotifSub:'ការកំណត់ការជូនដំណឹង Push',enablePush:'បើកការជូនដំណឹង Push',sendTestPush:'ផ្ញើ Push សាកល្បង',aboutTitle:'អំពី',aboutUser:'អ្តកប្រើ',aboutEmail:'អ៊ីមែល',aboutLang:'ភាសា',aboutVersion:'កំណែរ',
     offlineMode:'អ្នកនៅក្រៅបណ្ដាញ — ការផ្លាស់ប្ដូរនឹងធ្វើសមកាលកម្មពេលតភ្ជាប់ឡើងវិញ',syncing:'កំពុងធ្វើសមកាលកម្ម...',syncComplete:'បានធ្វើសមកាលកម្មទាំងអស់!',pendingSync:'ការផ្លាស់ប្តូរកំពុងរង់ចាំ',
     analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ',analyzeAllBtn:'វិភាគទាំងអស់',momBtn:'📋 កំណត់ហេតុ',momTitle:'📋 កំណត់ហេតុប្រជុំ',momUploadStep:'ជំហាន ១: ផ្ទុកកំណត់ហេតុ',momUploadDesc:'ផ្ទុក PDF Word ឬ Excel។ AI នឹងស្រង់ចេញសកម្មភាពដោយស្វ័យប្រវត្តិ។',momProcess:'🤖 ដំណើរការជាមួយ AI',momAnalyzing:'កំពុងវិភាគកំណត់ហេតុ...',momAnalyzingDesc:'កំពុងស្រង់ចេញសកម្មភាព',momItemsFound:'រកឃើញ',momNoItems:'គ្មានសកម្មភាពរកឃើញ។',momSelectAll:'ជ្រើសទាំងអស់',momDeselectAll:'មិនជ្រើសទាំងអស់',momType:'ប្រភេទ',momTypeTask:'ភារកិច្ច',momTypeReminder:'ការរំលឹក',momTypeEvent:'ព្រឹត្តិការណ៍',unassigned:'មិនបានកំណត់',momNoneSelected:'សូមជ្រើសយ៉ាងហោចណាស់មួយ។',momCreating:'កំពុងបង្កើត',momCreateAll:'🚀 បង្កើតសកម្មភាព',momUploadAnother:'ផ្ទុកផ្សេងទៀត',momProcessAnother:'ដំណើរការផ្សេងទៀត',momViewTasks:'មើលភារកិច្ច',momComplete:'បានបង្កើតសកម្មភាពដោយជោគជ័យ!',momCreatedCount:'បានបង្កើត',newChat:'💭 ការសនតនាថ្មី',newChatStarted:'ការសនតនាថ្មីបានចាប់ផ្តើម។ តើខ្ញុំអាចជួយអ្វី?',
-    assignees:'អ្នកតតួលខុសត្រូវ',workingGroups:'ក្រុមការងារ',workingGroupsSub:'ក្រុមសម្រាប់ផ្តល់ភារកិច្ច',assignGroup:'ផ្តល់តៅក្រុម',assignDept:'ផ្តល់តៅផ្នែក',leadRole:'ប្រធាន',contributorRole:'អ្នករួមចំណែក',reviewerRole:'អ្នកពិនិត្យ',assignedToMe:'ផ្តល់ឱ្យខ្ញុំ',addMember:'បន្ថែមសមាជិក',groupMembers:'សមាជិកក្រុម',newGroup:'ក្រុមថ្មី',newRule:'ច្បាប់ថ្មី',automationRulesSub:'អនុវត្តច្បាប់ស្វ័យប្រវត្តិពេលភារកិច្ចផ្លាស់ប្តូរ'
+    assignees:'អ្នកតតួលខុសត្រូវ',workingGroups:'ក្រុមការងារ',workingGroupsSub:'ក្រុមសម្រាប់ផ្តល់ភារកិច្ច',assignGroup:'ផ្តល់តៅក្រុម',assignDept:'ផ្តល់តៅផ្នែក',leadRole:'ប្រធាន',contributorRole:'អ្នករួមចំណែក',reviewerRole:'អ្នកពិនិត្យ',assignedToMe:'ផ្តល់ឱ្យខ្ញុំ',addMember:'បន្ថែមសមាជិក',groupMembers:'សមាជិកក្រុម',newGroup:'ក្រុមថ្មី',newRule:'ច្បាប់ថ្មី',automationRulesSub:'អនុវត្តច្បាប់ស្វ័យប្រវត្តិពេលភារកិច្ចផ្លាស់ប្តូរ',members:'សមាជិក'
   }
 };
 // Helper: get translated string
