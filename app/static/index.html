@@ -4268,7 +4268,7 @@ let wgPendingMembers=[];
 async function showWGBuilder(editId){
   $('wg-id').value=editId||'';
   $('wg-name').value='';$('wg-desc').value='';$('wg-icon').value='\u{1F465}';$('wg-color').value='#3b82f6';
-  const _wgTitleSpan=$('wg-builder-title').querySelector('span');if(_wgTitleSpan)_wgTitleSpan.textContent=editId?'Edit Working Group':'New Working Group';
+  $('wg-builder-title').textContent=editId?'Edit Working Group':'New Working Group';
   wgPendingMembers=[];
   initWGIconPicker();
   const addSel=$('wg-add-member');
@@ -4304,7 +4304,7 @@ async function saveWorkingGroup(){
   try{
     if(id){
       await fetch(A+'/working-groups/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
-      const _us=$('wg-builder-title').querySelector('span');if(_us)_us.textContent='\u2705 Group Updated!';
+      $('wg-builder-title').textContent='\u2705 Group Updated!';
     }else{
       const r=await fetch(A+'/working-groups',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
       const d=await r.json();
@@ -4319,7 +4319,7 @@ async function saveWorkingGroup(){
         const mr=await fetch(A+'/working-groups/'+d.id+'/members',{headers:hdr()});
         const md=await mr.json();
         renderWGMembers(d.id,Array.isArray(md)?md:(md.members||[]));
-        const _cs=$('wg-builder-title').querySelector('span');if(_cs)_cs.textContent='\u2705 Group Created! Members saved.';
+        $('wg-builder-title').textContent='\u2705 Group Created! Members saved.';
       }
     }
     loadWorkingGroups();
@@ -4460,7 +4460,7 @@ function getAssigneeInitials(t){
 
   <!-- Working Group Builder Modal -->
   <div class="modal-overlay" id="wg-builder-modal" onclick="if(event.target===this)$('wg-builder-modal').classList.remove('v')"><div class="modal" style="max-width:520px">
-    <h3 id="wg-builder-title"><span data-i18n="newGroup">New Working Group</span><button class="modal-x" onclick="$('wg-builder-modal').classList.remove('v')">✕</button></h3>
+    <h3><span id="wg-builder-title" data-i18n="newGroup">New Working Group</span><button class="modal-x" onclick="$('wg-builder-modal').classList.remove('v')">✕</button></h3>
     <input type="hidden" id="wg-id">
     <div style="margin-bottom:10px">
       <label style="font-size:11px;color:var(--mt)" data-i18n="groupName">Group Name</label>
