@@ -464,7 +464,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
   <div class="sb-div"></div>
   <button class="nb" data-p="gantt" onclick="nav('gantt')"><span>📈</span><span class="l" data-i18n="ganttNav">Gantt</span></button>
   <button class="nb" data-p="recurring" onclick="nav('recurring')"><span>🔁</span><span class="l" data-i18n="recurringNav">Recurring</span></button>
-  <button class="nb" data-p="templates" onclick="nav('templates')"><span>📋</span><span class="l" data-i18n="templatesNav">Templates</span></button>
   <div class="sb-div"></div>
   <button class="nb" data-p="team" onclick="nav('team')"><span>👥</span><span class="l" data-i18n="team">Team</span></button>
   <button class="nb" data-p="msgs" onclick="nav('msgs')"><span>💬</span><span class="l" data-i18n="msgs">Messages</span></button>
@@ -506,11 +505,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     </div><div><div class="cd"><h3 data-i18n="recentTasks">Recent Tasks</h3><div id="rt"></div></div><div class="cd"><h3>⏰ <span data-i18n="upcomingDeadlines">Upcoming Deadlines</span></h3><div id="deadlines"></div></div></div></div><div id="od"></div></div>
   <div id="pg-board" class="pg"><h2 data-i18n="taskBoard">Task Board</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0" data-i18n="dragCards">Drag cards to change status</div><div style="display:flex;gap:6px"><button class="btn ex" onclick="exportCSV()" data-i18n="csv">📊 CSV</button><button class="btn ex" onclick="exportJSON()" data-i18n="json">📋 JSON</button></div></div><div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px" id="board"></div></div>
 
-  <!-- ═══ UPDATED TASKS PAGE WITH GROUPS ═══ -->
+  <!-- ═══ TASKS PAGE (Tasks + Templates + Automation) ═══ -->
   <div id="pg-tasks" class="pg">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
       <h2 style="margin:0" data-i18n="tasksPage">Tasks</h2>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <!-- Task-tab toolbar (shown per active tab) -->
+      <div id="tasks-toolbar-tasks" style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn ex" onclick="exportCSV()" data-i18n="csv">📊 CSV</button>
         <button class="btn ex" onclick="exportJSON()" data-i18n="json">📋 JSON</button>
         <button class="btn gm" onclick="openMomModal()" data-i18n="momBtn">📋 MoM</button>
@@ -520,30 +520,55 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
         <div style="position:relative;display:inline-block" id="qc-wrap"><button class="btn" onclick="toggleQC()" style="padding:6px 12px;font-size:11px">⚡ <span data-i18n="quickCreate">Quick Create</span></button><div id="qc-dropdown" style="display:none;position:absolute;right:0;top:100%;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:4px;z-index:20;min-width:220px;max-height:300px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div></div>
         <button class="btn p" onclick="openModal('task')" data-i18n="newTask">+ New Task</button>
       </div>
+      <div id="tasks-toolbar-templates" style="display:none;gap:6px;flex-wrap:wrap">
+        <button class="btn p" onclick="openTmplModal()" data-i18n="newTemplate">+ New Template</button>
+      </div>
+      <div id="tasks-toolbar-automation" style="display:none;gap:6px;flex-wrap:wrap">
+        <button class="btn p" onclick="showWorkflowBuilder()" style="padding:5px 14px;font-size:11px">+ <span data-i18n="newRule">New Rule</span></button>
+      </div>
     </div>
-    <!-- Group Tabs -->
-    <div class="gtabs-wrap"><div class="gtabs-scroll"><div class="gtabs" id="gtabs"></div></div></div>
-    <!-- SubGroup Chips -->
-    <div class="sg-chips" id="sg-chips" style="display:none"></div>
-    <!-- Status Filters -->
-    <div class="fl" id="tfl" style="margin-bottom:8px"></div>
-    <!-- Category Filters (existing) -->
-    <div class="fl" id="catfl"></div>
-    <!-- Task List -->
-    <div id="tl"></div>
-    <!-- AI Prioritization Results -->
-    <div id="ai-prio-results" class="cd" style="display:none;margin-top:12px;padding:16px;border:1px solid var(--bd);border-radius:12px;background:var(--sf)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <h3 style="margin:0;font-size:14px">🤖 <span data-i18n="aiPrioResults">AI Prioritization Results</span></h3>
-        <button class="btn" onclick="$('ai-prio-results').style.display='none'" style="padding:4px 10px;font-size:10px">✕</button>
+    <!-- Sub-tabs: Tasks | Templates | Automation -->
+    <div class="rm-tabs" style="margin-bottom:12px">
+      <div class="rm-tab active" onclick="switchTasksTab('tasks')" id="tasks-tab-tasks">☑️ <span data-i18n="tasks">Tasks</span></div>
+      <div class="rm-tab" onclick="switchTasksTab('templates')" id="tasks-tab-templates">📋 <span data-i18n="templatesNav">Templates</span></div>
+      <div class="rm-tab" onclick="switchTasksTab('automation')" id="tasks-tab-automation">⚙️ <span data-i18n="automationRules">Automation</span></div>
+    </div>
+    <!-- Tab: Tasks -->
+    <div id="tasks-content-tasks">
+      <!-- Group Tabs -->
+      <div class="gtabs-wrap"><div class="gtabs-scroll"><div class="gtabs" id="gtabs"></div></div></div>
+      <!-- SubGroup Chips -->
+      <div class="sg-chips" id="sg-chips" style="display:none"></div>
+      <!-- Status Filters -->
+      <div class="fl" id="tfl" style="margin-bottom:8px"></div>
+      <!-- Category Filters -->
+      <div class="fl" id="catfl"></div>
+      <!-- Task List -->
+      <div id="tl"></div>
+      <!-- AI Prioritization Results -->
+      <div id="ai-prio-results" class="cd" style="display:none;margin-top:12px;padding:16px;border:1px solid var(--bd);border-radius:12px;background:var(--sf)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <h3 style="margin:0;font-size:14px">🤖 <span data-i18n="aiPrioResults">AI Prioritization Results</span></h3>
+          <button class="btn" onclick="$('ai-prio-results').style.display='none'" style="padding:4px 10px;font-size:10px">✕</button>
+        </div>
+        <div id="ai-prio-summary" style="font-size:12px;color:var(--mt);margin-bottom:12px;padding:8px;background:var(--cd);border-radius:8px"></div>
+        <div id="ai-prio-list" style="display:flex;flex-direction:column;gap:4px"></div>
+        <div id="ai-prio-workload" style="margin-top:12px"></div>
+        <div style="display:flex;gap:6px;margin-top:10px">
+          <button class="btn p" onclick="applyAIPriorities()" style="font-size:11px">✅ <span data-i18n="applyPriorities">Apply Priorities</span></button>
+          <button class="btn" onclick="$('ai-prio-results').style.display='none'" style="font-size:11px">Dismiss</button>
+        </div>
       </div>
-      <div id="ai-prio-summary" style="font-size:12px;color:var(--mt);margin-bottom:12px;padding:8px;background:var(--cd);border-radius:8px"></div>
-      <div id="ai-prio-list" style="display:flex;flex-direction:column;gap:4px"></div>
-      <div id="ai-prio-workload" style="margin-top:12px"></div>
-      <div style="display:flex;gap:6px;margin-top:10px">
-        <button class="btn p" onclick="applyAIPriorities()" style="font-size:11px">✅ <span data-i18n="applyPriorities">Apply Priorities</span></button>
-        <button class="btn" onclick="$('ai-prio-results').style.display='none'" style="font-size:11px">Dismiss</button>
-      </div>
+    </div>
+    <!-- Tab: Templates -->
+    <div id="tasks-content-templates" style="display:none">
+      <div class="st" style="margin:0 0 12px" data-i18n="templatesSub">Reusable presets for quick task creation</div>
+      <div id="tmpl-list"></div>
+    </div>
+    <!-- Tab: Automation Rules -->
+    <div id="tasks-content-automation" style="display:none">
+      <div class="st" style="margin:0 0 12px" data-i18n="automationRulesSub">Auto-apply rules when tasks change</div>
+      <div id="workflow-rules-list" style="font-size:12px;color:var(--mt)">Loading...</div>
     </div>
   </div>
 
@@ -590,23 +615,8 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     <div id="rec-list"></div>
   </div>
 
-  <!-- Templates Page -->
-  <div id="pg-templates" class="pg">
-    <h2>📋 <span data-i18n="templatesPage">Task Templates</span></h2>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-      <div class="st" style="margin:0" data-i18n="templatesSub">Reusable presets for quick task creation</div>
-      <button class="btn p" onclick="openTmplModal()" data-i18n="newTemplate">+ New Template</button>
-    </div>
-    <div id="tmpl-list"></div>
-    <!-- Automation Rules Section -->
-    <div class="cd" id="automation-section" style="margin-top:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h3 style="margin:0">&#9881;&#65039; <span data-i18n="automationRules">Automation Rules</span></h3>
-        <button class="btn p" onclick="showWorkflowBuilder()" style="padding:5px 14px;font-size:11px">+ New Rule</button>
-      </div>
-      <div id="workflow-rules-list" style="font-size:12px;color:var(--mt)">Loading...</div>
-    </div>
-  </div>
+  <!-- pg-templates kept as hidden alias for backward compat -->
+  <div id="pg-templates" class="pg" style="display:none!important"></div>
 
   <!-- Gantt Chart Page -->
   <div id="pg-gantt" class="pg">
@@ -1390,7 +1400,8 @@ const hp=new URLSearchParams(location.search);if(hp.get('session_token')){try{co
 try{const r=await fetch(A+'/auth/client-id');const d=await r.json();_gClientId=d.client_id;if(d.client_id&&typeof google!=='undefined'&&google.accounts){google.accounts.id.initialize({client_id:d.client_id,callback:gSign});google.accounts.id.renderButton($('g-btn'),{theme:'filled_black',size:'large',width:280,shape:'pill'});setTimeout(()=>{if(!$('g-btn').querySelector('iframe')&&!$('g-btn').querySelector('div[role]')){$('g-btn-fallback').style.display='flex'}},2000)}else{$('g-btn-fallback').style.display='flex'}}catch{$('g-btn-fallback').style.display='flex';$('login-err').textContent='Server offline';$('login-err').style.display='block'}};
 function hdr(){return tok?{Authorization:'Bearer '+tok}:{}}
 function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
-function nav(p){document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull();if(typeof loadWorkingGroups==='function')loadWorkingGroups()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt();if(p==='settings')loadSettingsPage();if(p==='templates')loadTemplates()
+function nav(p){if(p==='templates'){p='tasks';setTimeout(()=>switchTasksTab('templates'),50)}
+document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull();if(typeof loadWorkingGroups==='function')loadWorkingGroups()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='recurring')loadRecurring();if(p==='analytics')loadAnalytics();if(p==='gantt')loadGantt();if(p==='settings')loadSettingsPage()
   if(p==='depgraph')loadDepGraph()}
 function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('');taskAssignees=data?.assignees?data.assignees.map(a=>({user_id:a.user_id,name:a.name||'User',role:a.role||'contributor'})):[];if(!taskAssignees.length&&data?.assignee){const tm=teamMembers.find(m=>((m.first_name||'')+' '+(m.last_name||'')).trim()===data.assignee||(m.first_name||'')===data.assignee);if(tm)taskAssignees=[{user_id:tm.id,name:data.assignee,role:'lead'}]}renderAssigneeTags();populateWGDropdown();populateDeptDropdown()}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
@@ -2500,6 +2511,15 @@ async function loadRemind(){try{const d=await(await fetch(A+'/reminders',{header
 async function saveReminder(){const msg=$('mr-msg').value;if(!msg){alert('Message required');return}const atVal=$('mr-at').value;const taskId=$('mr-task').value?parseInt($('mr-task').value):null;const eventId=$('mr-event').value||null;const isRecurring=$('mr-recurring').checked;const rule=isRecurring?$('mr-rule').value:null;const body={message:msg,task_id:taskId,event_id:eventId,is_recurring:isRecurring,recurrence_rule:rule};if(atVal){body.remind_at=new Date(atVal).toISOString()}else{body.minutes=30}await fetch(A+'/reminders',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});closeModal('remind');loadRemind()}
 async function delRemind(id){await fetch(A+'/reminders/'+id,{method:'DELETE',headers:hdr()});loadRemind()}
 async function snoozeRemind(id,minutes){await fetch(A+'/reminders/'+id+'/snooze',{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({minutes})});loadRemind()}
+function switchTasksTab(tab){
+  ['tasks','templates','automation'].forEach(t=>{
+    const tabEl=$('tasks-tab-'+t);if(tabEl)tabEl.classList.toggle('active',t===tab);
+    const content=$('tasks-content-'+t);if(content)content.style.display=t===tab?'block':'none';
+    const toolbar=$('tasks-toolbar-'+t);if(toolbar)toolbar.style.display=t===tab?'flex':'none';
+  });
+  if(tab==='templates')loadTemplates();
+  if(tab==='automation')loadWorkflowRules();
+}
 function switchRmTab(tab){
   $('rm-tab-active').classList.toggle('active',tab==='active');
   $('rm-tab-history').classList.toggle('active',tab==='history');
@@ -2952,7 +2972,7 @@ const I18N={
     offlineMode:'You are offline — changes will sync when reconnected',syncing:'Syncing offline changes...',syncComplete:'All changes synced!',pendingSync:'changes pending sync',
     // AI Analysis
     analyzing:'Analyzing',analyzeBtn:'Analyze',analyzeAllBtn:'Analyze All',momBtn:'📋 MoM',momTitle:'📋 Meeting Minutes Processor',momUploadStep:'Step 1: Upload Meeting Minutes',momUploadDesc:'Upload a PDF, Word, or Excel file. AI will extract action items automatically.',momProcess:'🤖 Process with AI',momAnalyzing:'Analyzing meeting minutes...',momAnalyzingDesc:'Extracting action items, deadlines, and assignments',momItemsFound:'items found',momNoItems:'No action items found in this document.',momSelectAll:'Select All',momDeselectAll:'Deselect All',momType:'Type',momTypeTask:'Task',momTypeReminder:'Reminder',momTypeEvent:'Event',unassigned:'Unassigned',momNoneSelected:'Please select at least one item.',momCreating:'Creating',momCreateAll:'🚀 Create Selected Items',momUploadAnother:'Upload Another',momProcessAnother:'Process Another',momViewTasks:'View Tasks',momComplete:'Items Created Successfully!',momCreatedCount:'Created',newChat:'💭 New Chat',newChatStarted:'New conversation started. How can I help you?',
-    assignees:'Assignees',workingGroups:'Working Groups',workingGroupsSub:'Team groupings for task assignment',assignGroup:'Assign Group',assignDept:'Assign Department',leadRole:'Lead',contributorRole:'Contributor',reviewerRole:'Reviewer',assignedToMe:'Assigned to Me',addMember:'Add Member',groupMembers:'Group Members',newGroup:'New Group'
+    assignees:'Assignees',workingGroups:'Working Groups',workingGroupsSub:'Team groupings for task assignment',assignGroup:'Assign Group',assignDept:'Assign Department',leadRole:'Lead',contributorRole:'Contributor',reviewerRole:'Reviewer',assignedToMe:'Assigned to Me',addMember:'Add Member',groupMembers:'Group Members',newGroup:'New Group',newRule:'New Rule',automationRulesSub:'Auto-apply rules when tasks change'
   },
   kh:{
     home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',templatesNav:'គំរូ',depGraphNav:'ក្រាហ្វពឹងអាស្រ័យ',aiPrioritize:'AI កំណត់អាទិភាព',aiPrioResults:'លទ្ឋផលកំណត់អាទិភាព AI',applyPriorities:'អនុវត្តអាទិភាព',workloadRec:'អំណើណំបន្ទុកការងារ',depGraphTitle:'ក្រាហ្វភាពពឹងអាស្រ័យ',depGraphSub:'ការមើលភាពពឹងអាស្រ័យភារកិច្ចអន្តរកម្ម',dgNewTask:'ភារកិច្ចថ្មី',dgNewLinked:'ភារកិច្ចភ្ជាប់ថ្មី',dgLinkMode:'របៀបភ្ជាប់',analyticsNav:'វិភាគ',
@@ -2999,7 +3019,7 @@ const I18N={
     settingsNav:'ការកំណត់',manageUsers:'គ្រប់គ្រងអ្នកប្រើប្រាស់',allowedEmails:'អាសយដ្ឋានអ៊ីមែលដែលអនុញ្ញាត',allowedEmailsSub:'គ្រប់គ្រងអ្នកដែលអាចចូលផ្ទាំងគ្រប់គ្រង',addEmail:'បន្ថែម',settingsPage:'ការកំណត់',settingsSub:'កំណត់អ៊ីមែល ការជូនដំណឹង និងប្រព័ន្ធ',smtpConfig:'ការកំណត់ SMTP',smtpConfigSub:'ការកំណត់ម៉ាស៊ីនអ៊ីមែល',smtpHost:'ម៉ាស៊ីន SMTP',smtpPort:'លេខគេ',smtpUsername:'អ្តកប្រើប្រាស់',smtpPassword:'ពាក្យសម្ងាត់',smtpFromEmail:'អ៊ីមែលផ្ញើ',smtpFromName:'ឈ្មោះផ្ញើ',smtpTls:'ប្រើ TLS (ការដែណាំ)',appPassHint:'សម្រាប់ Gmail ប្រើ App Password',saveSettings:'រក្សាទុកការកំណត់',sendTestEmail:'ផ្ញើអ៊ីមែលសាកល្បង',smtpSaved:'បានរក្សាទុក SMTP',emailPrefsPageTitle:'ការកំណត់ជូនដំណឹងអ៊ីមែល',emailPrefsSub:'ជ្រើសរើសអ៊ីមែលណាមួយ',masterEmailToggle:'បើកជូនដំណឹងអ៊ីមែល',pushNotifTitle:'ការជូនដំណឹង Push',pushNotifSub:'ការកំណត់ការជូនដំណឹង Push',enablePush:'បើកការជូនដំណឹង Push',sendTestPush:'ផ្ញើ Push សាកល្បង',aboutTitle:'អំពី',aboutUser:'អ្តកប្រើ',aboutEmail:'អ៊ីមែល',aboutLang:'ភាសា',aboutVersion:'កំណែរ',
     offlineMode:'អ្នកនៅក្រៅបណ្ដាញ — ការផ្លាស់ប្ដូរនឹងធ្វើសមកាលកម្មពេលតភ្ជាប់ឡើងវិញ',syncing:'កំពុងធ្វើសមកាលកម្ម...',syncComplete:'បានធ្វើសមកាលកម្មទាំងអស់!',pendingSync:'ការផ្លាស់ប្តូរកំពុងរង់ចាំ',
     analyzing:'កំពុងវិភាគ',analyzeBtn:'វិភាគ',analyzeAllBtn:'វិភាគទាំងអស់',momBtn:'📋 កំណត់ហេតុ',momTitle:'📋 កំណត់ហេតុប្រជុំ',momUploadStep:'ជំហាន ១: ផ្ទុកកំណត់ហេតុ',momUploadDesc:'ផ្ទុក PDF Word ឬ Excel។ AI នឹងស្រង់ចេញសកម្មភាពដោយស្វ័យប្រវត្តិ។',momProcess:'🤖 ដំណើរការជាមួយ AI',momAnalyzing:'កំពុងវិភាគកំណត់ហេតុ...',momAnalyzingDesc:'កំពុងស្រង់ចេញសកម្មភាព',momItemsFound:'រកឃើញ',momNoItems:'គ្មានសកម្មភាពរកឃើញ។',momSelectAll:'ជ្រើសទាំងអស់',momDeselectAll:'មិនជ្រើសទាំងអស់',momType:'ប្រភេទ',momTypeTask:'ភារកិច្ច',momTypeReminder:'ការរំលឹក',momTypeEvent:'ព្រឹត្តិការណ៍',unassigned:'មិនបានកំណត់',momNoneSelected:'សូមជ្រើសយ៉ាងហោចណាស់មួយ។',momCreating:'កំពុងបង្កើត',momCreateAll:'🚀 បង្កើតសកម្មភាព',momUploadAnother:'ផ្ទុកផ្សេងទៀត',momProcessAnother:'ដំណើរការផ្សេងទៀត',momViewTasks:'មើលភារកិច្ច',momComplete:'បានបង្កើតសកម្មភាពដោយជោគជ័យ!',momCreatedCount:'បានបង្កើត',newChat:'💭 ការសនតនាថ្មី',newChatStarted:'ការសនតនាថ្មីបានចាប់ផ្តើម។ តើខ្ញុំអាចជួយអ្វី?',
-    assignees:'អ្នកតតួលខុសត្រូវ',workingGroups:'ក្រុមការងារ',workingGroupsSub:'ក្រុមសម្រាប់ផ្តល់ភារកិច្ច',assignGroup:'ផ្តល់តៅក្រុម',assignDept:'ផ្តល់តៅផ្នែក',leadRole:'ប្រធាន',contributorRole:'អ្នករួមចំណែក',reviewerRole:'អ្នកពិនិត្យ',assignedToMe:'ផ្តល់ឱ្យខ្ញុំ',addMember:'បន្ថែមសមាជិក',groupMembers:'សមាជិកក្រុម',newGroup:'ក្រុមថ្មី'
+    assignees:'អ្នកតតួលខុសត្រូវ',workingGroups:'ក្រុមការងារ',workingGroupsSub:'ក្រុមសម្រាប់ផ្តល់ភារកិច្ច',assignGroup:'ផ្តល់តៅក្រុម',assignDept:'ផ្តល់តៅផ្នែក',leadRole:'ប្រធាន',contributorRole:'អ្នករួមចំណែក',reviewerRole:'អ្នកពិនិត្យ',assignedToMe:'ផ្តល់ឱ្យខ្ញុំ',addMember:'បន្ថែមសមាជិក',groupMembers:'សមាជិកក្រុម',newGroup:'ក្រុមថ្មី',newRule:'ច្បាប់ថ្មី',automationRulesSub:'អនុវត្តច្បាប់ស្វ័យប្រវត្តិពេលភារកិច្ចផ្លាស់ប្តូរ'
   }
 };
 // Helper: get translated string
