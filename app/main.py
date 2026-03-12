@@ -740,15 +740,47 @@ async def service_worker():
     return Response(status_code=404)
 
 
-@app.get("/favicon.ico")
+@app.get("/favicon.png")
+async def favicon_png():
+    """Serve PNG favicon."""
+    import os
+    from fastapi.responses import Response
+    png_path = os.path.join(os.path.dirname(__file__), "static", "favicon.png")
+    if os.path.exists(png_path):
+        with open(png_path, "rb") as f:
+            return Response(content=f.read(), media_type="image/png",
+                            headers={"Cache-Control": "public, max-age=86400"})
+    return Response(status_code=404)
+
+
 @app.get("/favicon.svg")
-async def favicon():
+async def favicon_svg():
     """Serve SVG favicon."""
     import os
     from fastapi.responses import Response
     fav_path = os.path.join(os.path.dirname(__file__), "static", "favicon.svg")
     if os.path.exists(fav_path):
         with open(fav_path, "r") as f:
+            return Response(content=f.read(), media_type="image/svg+xml",
+                            headers={"Cache-Control": "public, max-age=86400"})
+    return Response(status_code=404)
+
+
+@app.get("/favicon.ico")
+async def favicon_ico():
+    """Serve favicon.ico as PNG (browsers accept PNG for .ico)."""
+    import os
+    from fastapi.responses import Response
+    # Try to serve a pre-generated PNG favicon
+    png_path = os.path.join(os.path.dirname(__file__), "static", "favicon.png")
+    if os.path.exists(png_path):
+        with open(png_path, "rb") as f:
+            return Response(content=f.read(), media_type="image/png",
+                            headers={"Cache-Control": "public, max-age=86400"})
+    # Fallback: serve SVG with ico content-type (most modern browsers accept this)
+    svg_path = os.path.join(os.path.dirname(__file__), "static", "favicon.svg")
+    if os.path.exists(svg_path):
+        with open(svg_path, "r") as f:
             return Response(content=f.read(), media_type="image/svg+xml",
                             headers={"Cache-Control": "public, max-age=86400"})
     return Response(status_code=404)
