@@ -4139,25 +4139,25 @@ function populateDeptDropdown(){
   sel.innerHTML='<option value="">\u{1F3DB}\uFE0F Department...</option>'+depts.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join('');
 }
 
+let wgPendingMembers=[];
 async function showWGBuilder(editId){
   $('wg-id').value=editId||'';
   $('wg-name').value='';$('wg-desc').value='';$('wg-icon').value='\u{1F465}';$('wg-color').value='#3b82f6';
   $('wg-builder-title').textContent=editId?'Edit Working Group':'New Working Group';
-  // Always show members section
-  $('wg-members-section').style.display='block';
-  $('wg-members-list').innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">Save the group first to add members.</div>';
+  wgPendingMembers=[];
   const addSel=$('wg-add-member');
   addSel.innerHTML='<option value="">Select member...</option>'+teamMembers.map(m=>'<option value="'+m.id+'">'+((m.first_name||'')+' '+(m.last_name||'')).trim()+'</option>').join('');
-  addSel.disabled=!editId;
+  addSel.disabled=false;
   if(editId){
     try{
-      addSel.disabled=false;
       const g=workingGroups.find(x=>x.id===editId);
       if(g){$('wg-name').value=g.name;$('wg-desc').value=g.description||'';$('wg-icon').value=g.icon||'\u{1F465}';$('wg-color').value=g.color||'#3b82f6'}
       const r=await fetch(A+'/working-groups/'+editId+'/members',{headers:hdr()});
       const d=await r.json();
       renderWGMembers(editId,d.members||[]);
     }catch(e){console.warn('loadWGEdit:',e)}
+  }else{
+    $('wg-members-list').innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">Add members below — they\'ll be saved with the group.</div>';
   }
   $('wg-builder-modal').classList.add('v');
 }
@@ -4184,9 +4184,16 @@ async function saveWorkingGroup(){
       const d=await r.json();
       if(d.id){
         $('wg-id').value=d.id;
-        $('wg-add-member').disabled=false;
-        $('wg-members-list').innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">No members yet. Add members below.</div>';
-        $('wg-builder-title').textContent='\u2705 Group Created! Now add members:';
+        // Add any pending members that were queued before save
+        for(const pm of wgPendingMembers){
+          try{await fetch(A+'/working-groups/'+d.id+'/members',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({user_id:pm.user_id,role:pm.role})})}catch(e){console.warn('addPendingMember:',e)}
+        }
+        wgPendingMembers=[];
+        // Load saved members
+        const mr=await fetch(A+'/working-groups/'+d.id+'/members',{headers:hdr()});
+        const md=await mr.json();
+        renderWGMembers(d.id,md.members||[]);
+        $('wg-builder-title').textContent='\u2705 Group Created! Members saved.';
       }
     }
     loadWorkingGroups();
@@ -4201,7 +4208,18 @@ async function deleteWorkingGroup(id){
 async function addWGMemberFromModal(){
   const gid=$('wg-id').value;
   const uid=$('wg-add-member').value;
-  if(!gid||!uid)return;
+  if(!uid)return;
+  if(!gid){
+    // New group not yet saved — queue member locally
+    const uidInt=parseInt(uid);
+    if(wgPendingMembers.find(m=>m.user_id===uidInt))return;
+    const tm=teamMembers.find(m=>m.id===uidInt);
+    const nm=tm?((tm.first_name||'')+' '+(tm.last_name||'')).trim():'User #'+uid;
+    wgPendingMembers.push({user_id:uidInt,name:nm,role:'member'});
+    renderPendingWGMembers();
+    $('wg-add-member').value='';
+    return;
+  }
   try{
     await fetch(A+'/working-groups/'+gid+'/members',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({user_id:parseInt(uid),role:'member'})});
     const r=await fetch(A+'/working-groups/'+gid+'/members',{headers:hdr()});
@@ -4210,6 +4228,13 @@ async function addWGMemberFromModal(){
     $('wg-add-member').value='';
     loadWorkingGroups();
   }catch(e){console.warn('addWGMember:',e)}
+}
+function renderPendingWGMembers(){
+  const el=$('wg-members-list');if(!el)return;
+  if(!wgPendingMembers.length){el.innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">Add members below — they\'ll be saved with the group.</div>';return}
+  el.innerHTML=wgPendingMembers.map((m,i)=>{
+    return'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px">'+esc(m.name)+' <span style="color:var(--mt);font-size:9px">('+m.role+')</span></span><button class="btn" onclick="wgPendingMembers.splice('+i+',1);renderPendingWGMembers()" style="padding:2px 6px;font-size:9px;color:var(--rd)">\u2715</button></div>'
+  }).join('');
 }
 
 async function removeWGMember(gid,uid){
@@ -4329,7 +4354,7 @@ function getAssigneeInitials(t){
         <input id="wg-color" class="inp" type="color" value="#3b82f6" style="width:100%;height:36px;padding:2px">
       </div>
     </div>
-    <div id="wg-members-section" style="display:none;margin-bottom:10px">
+    <div id="wg-members-section" style="margin-bottom:10px">
       <label style="font-size:11px;color:var(--mt)" data-i18n="groupMembers">Members</label>
       <div id="wg-members-list" style="max-height:150px;overflow-y:auto;margin-top:4px"></div>
       <div style="display:flex;gap:4px;margin-top:6px">
