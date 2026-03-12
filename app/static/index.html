@@ -4122,11 +4122,15 @@ async function showWGBuilder(editId){
   $('wg-id').value=editId||'';
   $('wg-name').value='';$('wg-desc').value='';$('wg-icon').value='\u{1F465}';$('wg-color').value='#3b82f6';
   $('wg-builder-title').textContent=editId?'Edit Working Group':'New Working Group';
-  $('wg-members-section').style.display=editId?'block':'none';
+  // Always show members section
+  $('wg-members-section').style.display='block';
+  $('wg-members-list').innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">Save the group first to add members.</div>';
   const addSel=$('wg-add-member');
   addSel.innerHTML='<option value="">Select member...</option>'+teamMembers.map(m=>'<option value="'+m.id+'">'+((m.first_name||'')+' '+(m.last_name||'')).trim()+'</option>').join('');
+  addSel.disabled=!editId;
   if(editId){
     try{
+      addSel.disabled=false;
       const g=workingGroups.find(x=>x.id===editId);
       if(g){$('wg-name').value=g.name;$('wg-desc').value=g.description||'';$('wg-icon').value=g.icon||'\u{1F465}';$('wg-color').value=g.color||'#3b82f6'}
       const r=await fetch(A+'/working-groups/'+editId+'/members',{headers:hdr()});
@@ -4153,13 +4157,19 @@ async function saveWorkingGroup(){
   try{
     if(id){
       await fetch(A+'/working-groups/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
+      $('wg-builder-title').textContent='\u2705 Group Updated!';
     }else{
       const r=await fetch(A+'/working-groups',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
       const d=await r.json();
-      if(d.id){$('wg-id').value=d.id;$('wg-members-section').style.display='block';renderWGMembers(d.id,[])}
+      if(d.id){
+        $('wg-id').value=d.id;
+        $('wg-add-member').disabled=false;
+        $('wg-members-list').innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">No members yet. Add members below.</div>';
+        $('wg-builder-title').textContent='\u2705 Group Created! Now add members:';
+      }
     }
     loadWorkingGroups();
-  }catch(e){console.warn('saveWG:',e)}
+  }catch(e){console.warn('saveWG:',e);alert('Failed to save group')}
 }
 
 async function deleteWorkingGroup(id){
