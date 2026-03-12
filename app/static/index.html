@@ -2426,21 +2426,42 @@ let msgCache=[];
 async function loadMsgList(){try{const d=await(await fetch(A+'/messages?chat_id='+curG+'&limit=30',{headers:hdr()})).json();
 msgCache=d.messages||[];
 $('ml').innerHTML=msgCache.length?msgCache.map((m,i)=>`<div style="padding:8px 0;border-bottom:1px solid var(--bd);display:flex;gap:10px"><div style="width:28px;height:28px;border-radius:7px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.sender||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">${m.sender||'?'} <span style="font-weight:400;color:var(--mt)">${m.created_at?new Date(m.created_at).toLocaleTimeString():''}</span></div><div style="font-size:12px;margin-top:2px;word-break:break-word">${esc(m.text||'')}</div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap"><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'event')">📅 Create Event</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'task')">📋 Create Task</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'notes')">📝 Prepare Notes</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'reply')">✍️ Draft Reply</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'reminder')">⏰ Set Reminder</button></div></div>${m.has_task_keyword?'<span class="badge" style="background:var(--os);color:var(--or);flex-shrink:0">ACTION</span>':''}</div>`).join(''):'<div class="empty">'+I18N[curLang].noData+'</div>'}catch{}}
-function msgAction(idx,type){const m=msgCache[idx];if(!m)return;const txt=(m.text||'').substring(0,300);
-  if(type==='reminder'){smartCreateReminder(txt,m.sender);return;}
-  if(type==='event'){
-    // Smart event creation: AI extracts details → pre-fill modal → user reviews
-    smartCreateEvent(txt,m.sender);return;
-  }
-  const prompts={task:'Create a task from this message from '+m.sender+': '+txt,notes:'Prepare key talking points and notes for this meeting/discussion: '+txt,reply:'Draft a professional reply to this message from '+m.sender+': '+txt};nav('chat');setTimeout(()=>{$('chi').value=prompts[type]||txt;sendAI()},500)}
+function buildMsgContext(idx){
+  // Build conversation context: messages around the clicked one (chronological order)
+  // msgCache is newest-first, so reverse for chronological
+  const chronological=[...msgCache].reverse();
+  const chronoIdx=chronological.findIndex(m=>m.id===msgCache[idx].id);
+  // Grab up to 10 messages before and 3 after for context
+  const start=Math.max(0,chronoIdx-10);
+  const end=Math.min(chronological.length,chronoIdx+4);
+  const thread=chronological.slice(start,end);
+  return thread.map(m=>{
+    const time=m.created_at?new Date(m.created_at).toLocaleString():'';
+    const marker=m.id===msgCache[idx].id?' ◀ [THIS MESSAGE]':'';
+    return `[${time}] ${m.sender||'Unknown'}: ${m.text||''}${marker}`;
+  }).join('\n');
+}
+function msgAction(idx,type){const m=msgCache[idx];if(!m)return;const txt=m.text||'';
+  const ctx=buildMsgContext(idx);
+  if(type==='reminder'){smartCreateReminder(txt,m.sender,ctx);return;}
+  if(type==='event'){smartCreateEvent(txt,m.sender,ctx);return;}
+  // Build full conversation context for AI actions
+  const ctx=buildMsgContext(idx);
+  const prompts={
+    task:'Based on the conversation thread below, create a task from the highlighted message (marked with ◀ [THIS MESSAGE]) by '+m.sender+'.\n\nConversation thread:\n'+ctx,
+    notes:'Based on the full conversation thread below, prepare comprehensive key talking points, notes, and action items. Focus on the highlighted message (marked with ◀ [THIS MESSAGE]) but use the full context to provide thorough analysis.\n\nConversation thread:\n'+ctx,
+    reply:'Based on the conversation thread below, draft a professional reply to the highlighted message (marked with ◀ [THIS MESSAGE]) from '+m.sender+'. Consider the full context.\n\nConversation thread:\n'+ctx
+  };
+  nav('chat');setTimeout(()=>{$('chi').value=prompts[type]||txt;sendAI()},500)}
 
-async function smartCreateEvent(text,sender){
+async function smartCreateEvent(text,sender,threadCtx){
   // Show a loading indicator
   const lang=curLang==='kh'?'Khmer':'English';
+  const ctxBlock=threadCtx?`\n\nFull conversation thread for context:\n${threadCtx}\n\nFocus on the message marked with ◀ [THIS MESSAGE].`:'';
   const prompt=`Extract event details from this message. Respond ONLY in valid JSON with these fields (use null for missing info):
 {"title": "event title or null", "date": "YYYY-MM-DD or null", "time": "HH:MM or null", "end_time": "HH:MM or null", "location": "venue or null", "description": "brief context or null"}
 
-Message from ${sender}: "${text}"
+Message from ${sender}: "${text}"${ctxBlock}
 
 Respond with JSON only, no markdown, no explanation.`;
 
@@ -2500,8 +2521,9 @@ function highlightMissingEventFields(){
     },{once:true});
   });
 }
-async function smartCreateReminder(text,sender){
-  const prompt='Extract a reminder from this message. Respond ONLY in valid JSON: {"message":"short reminder text","minutes":suggested_minutes_from_now}. Message from '+sender+': "'+text+'". Respond with JSON only, no markdown.';
+async function smartCreateReminder(text,sender,threadCtx){
+  const ctxBlock=threadCtx?'\n\nFull conversation thread for context:\n'+threadCtx+'\n\nFocus on the message marked with ◀ [THIS MESSAGE].':'';
+  const prompt='Extract a reminder from this message. Respond ONLY in valid JSON: {"message":"short reminder text","minutes":suggested_minutes_from_now}. Message from '+sender+': "'+text+'"'+ctxBlock+'. Respond with JSON only, no markdown.';
   try{
     const r=await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:prompt})});
     const d=await r.json();let extracted={};
