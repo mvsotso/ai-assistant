@@ -445,8 +445,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 .assign-dd-item{padding:6px 10px;font-size:11px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
 .assign-dd-item:hover{background:var(--sf)}
 .assign-dd-item .dept{font-size:9px;color:var(--mt)}
-.wg-card{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:6px}
-.wg-card:hover{border-color:var(--ac)}
+.wg-card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:14px;transition:all .2s}
+.wg-card:hover{border-color:var(--ac);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.wg-icon-badge{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.wg-icon-picker{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:180px;overflow-y:auto;padding:6px;background:var(--bg);border:1px solid var(--bd);border-radius:8px}
+.wg-icon-opt{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .15s;background:var(--sf)}
+.wg-icon-opt:hover{background:var(--ac);transform:scale(1.15)}
+.wg-icon-opt.sel{border-color:var(--ac);background:rgba(99,102,241,.2);transform:scale(1.1)}
 </style>
 </head>
 <body>
@@ -4123,7 +4128,7 @@ async function loadWorkingGroups(){
     const el=$('wg-list');
     if(!el)return;
     if(!workingGroups.length){el.innerHTML='<div style="color:var(--mt);padding:8px;font-size:11px">No working groups yet.</div>';return}
-    el.innerHTML=workingGroups.map(g=>'<div class="wg-card" style="border-left:3px solid '+(g.color||'#3b82f6')+'"><div style="flex:1"><strong>'+(g.icon||'\u{1F465}')+' '+esc(g.name)+'</strong>'+(g.description?'<div style="font-size:10px;color:var(--mt)">'+esc(g.description)+'</div>':'')+'<div style="font-size:10px;color:var(--mt);margin-top:2px">'+(g.member_count||0)+' members</div></div><div style="display:flex;gap:4px"><button class="btn" onclick="showWGBuilder('+g.id+')" style="padding:3px 8px;font-size:10px">\u270F\uFE0F</button><button class="btn" onclick="deleteWorkingGroup('+g.id+')" style="padding:3px 8px;font-size:10px;color:var(--rd)">\u2715</button></div></div>').join('');
+    el.innerHTML=workingGroups.map(g=>{const c=g.color||'#3b82f6';return'<div class="wg-card" style="border-left:3px solid '+c+'"><div class="wg-icon-badge" style="background:'+c+'22;color:'+c+'">'+(g.icon||'\u{1F465}')+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px;margin-bottom:2px">'+esc(g.name)+'</div>'+(g.description?'<div style="font-size:11px;color:var(--mt);line-height:1.4;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">'+esc(g.description)+'</div>':'')+'<div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span style="font-size:11px;color:var(--mt);display:flex;align-items:center;gap:3px">\u{1F464} '+(g.member_count||0)+' members</span></div></div><div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0"><button class="btn" onclick="showWGBuilder('+g.id+')" style="padding:4px 10px;font-size:10px">\u270F\uFE0F Edit</button><button class="btn" onclick="deleteWorkingGroup('+g.id+')" style="padding:4px 10px;font-size:10px;color:var(--rd)">\u2715 Delete</button></div></div>'}).join('');
     populateWGDropdown();
   }catch(e){console.warn('loadWG:',e)}
 }
@@ -4139,19 +4144,47 @@ function populateDeptDropdown(){
   sel.innerHTML='<option value="">\u{1F3DB}\uFE0F Department...</option>'+depts.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join('');
 }
 
+const WG_ICONS=[
+  '\u{1F465}','\u{1F464}','\u{1F4BC}','\u{1F3E2}','\u{1F3DB}\uFE0F','\u{1F4BB}','\u{1F5A5}\uFE0F','\u{1F4CA}',
+  '\u{1F4C8}','\u{1F4C9}','\u{1F4DD}','\u{1F4CB}','\u{1F4C1}','\u{1F4C2}','\u{1F512}','\u{1F511}',
+  '\u{1F6E1}\uFE0F','\u{2699}\uFE0F','\u{1F527}','\u{1F529}','\u{1F50D}','\u{1F4E1}','\u{1F310}','\u{2601}\uFE0F',
+  '\u{1F4B0}','\u{1F4B3}','\u{1F3AF}','\u{1F680}','\u{2B50}','\u{1F4A1}','\u{1F9E0}','\u{1F393}',
+  '\u{1F4DA}','\u{1F4D6}','\u{1F4E7}','\u{1F4AC}','\u{1F4DE}','\u{1F5C2}\uFE0F','\u{1F9F1}','\u{1F3D7}\uFE0F',
+  '\u{2696}\uFE0F','\u{1F3E5}','\u{1F9EA}','\u{1F52C}','\u{1F4F0}','\u{1F3A8}','\u{1F5BC}\uFE0F','\u{1F3AC}'
+];
+
+function initWGIconPicker(){
+  const grid=$('wg-icon-grid');if(!grid)return;
+  grid.innerHTML=WG_ICONS.map(ic=>'<div class="wg-icon-opt" data-icon="'+ic+'" onclick="selectWGIcon(this,\''+ic.replace(/'/g,"\\'")+'\')">'+ic+'</div>').join('');
+  updateWGIconPreview();
+}
+function selectWGIcon(el,icon){
+  $('wg-icon').value=icon;
+  document.querySelectorAll('.wg-icon-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  updateWGIconPreview();
+}
+function updateWGIconPreview(){
+  const icon=$('wg-icon').value||'\u{1F465}';
+  const color=$('wg-color').value||'#3b82f6';
+  const prev=$('wg-icon-preview');
+  if(prev){prev.textContent=icon;prev.style.background=color+'22'}
+}
+
 let wgPendingMembers=[];
 async function showWGBuilder(editId){
   $('wg-id').value=editId||'';
   $('wg-name').value='';$('wg-desc').value='';$('wg-icon').value='\u{1F465}';$('wg-color').value='#3b82f6';
   $('wg-builder-title').textContent=editId?'Edit Working Group':'New Working Group';
   wgPendingMembers=[];
+  initWGIconPicker();
   const addSel=$('wg-add-member');
   addSel.innerHTML='<option value="">Select member...</option>'+teamMembers.map(m=>'<option value="'+m.id+'">'+((m.first_name||'')+' '+(m.last_name||'')).trim()+'</option>').join('');
   addSel.disabled=false;
   if(editId){
     try{
       const g=workingGroups.find(x=>x.id===editId);
-      if(g){$('wg-name').value=g.name;$('wg-desc').value=g.description||'';$('wg-icon').value=g.icon||'\u{1F465}';$('wg-color').value=g.color||'#3b82f6'}
+      if(g){$('wg-name').value=g.name;$('wg-desc').value=g.description||'';$('wg-icon').value=g.icon||'\u{1F465}';$('wg-color').value=g.color||'#3b82f6';initWGIconPicker();const cur=document.querySelector('.wg-icon-opt[data-icon="'+(g.icon||'\u{1F465}')+'"]');if(cur)cur.classList.add('sel')}
       const r=await fetch(A+'/working-groups/'+editId+'/members',{headers:hdr()});
       const d=await r.json();
       renderWGMembers(editId,Array.isArray(d)?d:(d.members||[]));
@@ -4344,15 +4377,16 @@ function getAssigneeInitials(t){
       <label style="font-size:11px;color:var(--mt)" data-i18n="description">Description</label>
       <input id="wg-desc" class="inp" placeholder="Optional description" style="width:100%">
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div>
-        <label style="font-size:11px;color:var(--mt)">Icon</label>
-        <input id="wg-icon" class="inp" value="👥" style="width:100%">
+    <input type="hidden" id="wg-icon" value="\u{1F465}">
+    <div style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:11px;color:var(--mt)">Icon & Color</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div id="wg-icon-preview" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;background:#3b82f622">\u{1F465}</div>
+          <input id="wg-color" class="inp" type="color" value="#3b82f6" style="width:40px;height:40px;padding:2px;border-radius:8px;cursor:pointer" onchange="updateWGIconPreview()">
+        </div>
       </div>
-      <div>
-        <label style="font-size:11px;color:var(--mt)">Color</label>
-        <input id="wg-color" class="inp" type="color" value="#3b82f6" style="width:100%;height:36px;padding:2px">
-      </div>
+      <div class="wg-icon-picker" id="wg-icon-grid"></div>
     </div>
     <div id="wg-members-section" style="margin-bottom:10px">
       <label style="font-size:11px;color:var(--mt)" data-i18n="groupMembers">Members</label>
