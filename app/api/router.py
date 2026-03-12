@@ -804,6 +804,74 @@ async def summarize_messages(request: Request, chat_id: int, db: AsyncSession = 
     return {"summary": summary}
 
 
+class GroupAnalysisRequest(BaseModel):
+    chat_id: int
+    chat_title: Optional[str] = None
+
+
+@limiter.limit("10/minute")
+@router.post("/messages/analyze-group")
+async def analyze_group_messages(request: Request, body: GroupAnalysisRequest, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
+    """Comprehensive AI analysis of all messages in a Telegram group."""
+    result = await db.execute(
+        select(Message).where(Message.chat_id == body.chat_id, Message.is_command == False)
+        .order_by(Message.created_at).limit(100)
+    )
+    messages = list(result.scalars().all())
+    if not messages:
+        return {"analysis": "No messages found in this group."}
+
+    # Build full conversation transcript
+    transcript_lines = []
+    for m in messages:
+        ts = m.created_at.strftime("%Y-%m-%d %H:%M") if m.created_at else ""
+        transcript_lines.append(f"[{ts}] {m.sender_name or 'Unknown'}: {m.text or ''}")
+    transcript = "\n".join(transcript_lines)
+
+    group_name = body.chat_title or messages[0].chat_title or "Unknown Group"
+    msg_count = len(messages)
+    senders = list(set(m.sender_name for m in messages if m.sender_name))
+
+    prompt = f"""You are a senior executive briefing assistant for the Chief of Data Management Bureau.
+Analyze the following {msg_count} messages from Telegram group "{group_name}" with {len(senders)} participants ({', '.join(senders[:10])}).
+
+Provide a comprehensive briefing in this exact structure (use markdown formatting):
+
+## 📊 Executive Summary
+A 2-3 sentence overview of what this group discusses and its current status.
+
+## 🔑 Key Topics & Discussions
+List the main topics being discussed, organized by theme. Include who raised each topic.
+
+## ✅ Action Items & Decisions
+Extract any decisions made, tasks assigned, deadlines mentioned, or commitments.
+
+## 👥 Participant Activity
+Brief summary of each active participant's contributions and role in discussions.
+
+## ⚠️ Issues & Blockers
+Any problems, concerns, delays, or blockers mentioned.
+
+## 📅 Upcoming Events & Deadlines
+Any upcoming meetings, deadlines, or scheduled activities.
+
+## 💡 Recommendations
+2-3 actionable recommendations for follow-up based on the conversation analysis.
+
+---
+CONVERSATION TRANSCRIPT:
+{transcript}
+---
+
+Respond in the same language as the majority of messages. If mixed, use English. Be thorough but concise."""
+
+    try:
+        response = await ai_engine.chat(prompt)
+        return {"analysis": response, "msg_count": msg_count, "participants": senders}
+    except Exception as e:
+        return {"analysis": f"Analysis failed: {str(e)}", "msg_count": msg_count, "participants": senders}
+
+
 # ─── Reminders ───
 class ReminderCreate(BaseModel):
     message: str

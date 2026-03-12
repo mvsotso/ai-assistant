@@ -415,6 +415,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .offline-bar{position:fixed;top:0;left:0;right:0;padding:8px 16px;background:var(--os);color:var(--or);font-size:12px;font-weight:600;text-align:center;z-index:300;display:none;align-items:center;justify-content:center;gap:8px}
 .offline-bar.v{display:flex}
 @keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
 .mom-row{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start;font-size:11px}
 .mom-row:hover{border-color:var(--ac)}
 .mom-row.disabled{opacity:.4}
@@ -614,7 +615,15 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
       <div id="wg-list" style="display:flex;flex-direction:column;gap:6px">Loading...</div>
     </div>
   </div>
-  <div id="pg-msgs" class="pg"><h2 data-i18n="messagesPage">Messages</h2><div class="st" data-i18n="telegramMsgs">Telegram group messages</div><div class="fl" id="gfl"></div><div id="ml"></div></div>
+  <div id="pg-msgs" class="pg"><h2 data-i18n="messagesPage">Messages</h2><div class="st" data-i18n="telegramMsgs">Telegram group messages</div><div class="fl" id="gfl"></div>
+    <div id="msg-ai-bar" style="display:none;margin-bottom:12px;display:none">
+      <button class="btn p" id="msg-ai-btn" onclick="analyzeGroupMsgs()" style="padding:6px 16px;font-size:12px;border-radius:10px">🧠 <span data-i18n="aiGroupBriefing">AI Group Briefing</span></button>
+    </div>
+    <div id="msg-ai-panel" style="display:none;margin-bottom:14px;background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(139,92,246,.06));border:1px solid rgba(99,102,241,.2);border-radius:14px;padding:18px;position:relative">
+      <button class="modal-x" onclick="$('msg-ai-panel').style.display='none'" style="position:absolute;top:10px;right:12px">✕</button>
+      <div id="msg-ai-result" style="font-size:12px;line-height:1.8"></div>
+    </div>
+    <div id="ml"></div></div>
   <div id="pg-remind" class="pg"><h2 data-i18n="remindersPage">Reminders</h2><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div class="st" style="margin:0" data-i18n="scheduledNotifs">Scheduled notifications</div><button class="btn p" onclick="openModal('remind')" data-i18n="newReminder">+ New Reminder</button></div><div class="rm-tabs"><div class="rm-tab active" onclick="switchRmTab('active')" id="rm-tab-active" data-i18n="active">Active</div><div class="rm-tab" onclick="switchRmTab('history')" id="rm-tab-history">📜 <span data-i18n="reminderHistory">History</span></div></div><div id="rl"></div><div id="rl-history" style="display:none"></div></div>
   <div id="pg-chat" class="pg"><h2>✨ <span data-i18n="aiAssistant">AI Assistant</span></h2><button class="btn" onclick="newChat()" style="margin-bottom:8px;font-size:11px" data-i18n="newChat">💭 New Chat</button><div class="st" data-i18n="aiSub">Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported</div><div class="ch-c"><div class="ch-m" id="chm"><div class="ch-b ch-a">Hello! Ask me anything or upload files for analysis.</div></div><div id="prompt-chips" style="display:flex;gap:4px;flex-wrap:wrap;padding:0 2px;margin-bottom:4px">
 <button class="btn" style="padding:2px 8px;font-size:9px" onclick="$('chi').value='Summarize my tasks';sendAI()">📋 Summary</button>
@@ -2443,9 +2452,45 @@ async function deleteRole(id,name){
 let curG=null;async function loadMsgs(){try{const r=await fetch(A+'/messages/groups',{headers:hdr()});const gs=(await r.json()).groups||[];$('gfl').innerHTML=gs.map(g=>`<button class="fb ${String(curG)===String(g.chat_id)?'a':''}" onclick="curG=${g.chat_id};renderGroupBtns();loadMsgList()">${g.title} (${g.count})</button>`).join('')||'<div class="empty">'+I18N[curLang].noData+'</div>';if(curG)loadMsgList();else $('ml').innerHTML='<div class="empty">'+I18N[curLang].selectGroup+'</div>'}catch{$('ml').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
 function renderGroupBtns(){document.querySelectorAll('#gfl .fb').forEach(b=>{const t=b.textContent;b.className='fb'+(b.onclick&&String(curG)&&b.outerHTML.includes(String(curG))?' a':'')})}
 let msgCache=[];
-async function loadMsgList(){try{const d=await(await fetch(A+'/messages?chat_id='+curG+'&limit=30',{headers:hdr()})).json();
+async function loadMsgList(){try{$('msg-ai-bar').style.display=curG?'block':'none';$('msg-ai-panel').style.display='none';
+const d=await(await fetch(A+'/messages?chat_id='+curG+'&limit=30',{headers:hdr()})).json();
 msgCache=d.messages||[];
 $('ml').innerHTML=msgCache.length?msgCache.map((m,i)=>`<div style="padding:8px 0;border-bottom:1px solid var(--bd);display:flex;gap:10px"><div style="width:28px;height:28px;border-radius:7px;background:var(--as);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0">${(m.sender||'?')[0]}</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600">${m.sender||'?'} <span style="font-weight:400;color:var(--mt)">${m.created_at?new Date(m.created_at).toLocaleTimeString():''}</span></div><div style="font-size:12px;margin-top:2px;word-break:break-word">${esc(m.text||'')}</div><div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap"><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'event')">📅 Create Event</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'task')">📋 Create Task</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'notes')">📝 Prepare Notes</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'reply')">✍️ Draft Reply</button><button class="btn" style="padding:2px 8px;font-size:9px" onclick="msgAction(${i},'reminder')">⏰ Set Reminder</button></div></div>${m.has_task_keyword?'<span class="badge" style="background:var(--os);color:var(--or);flex-shrink:0">ACTION</span>':''}</div>`).join(''):'<div class="empty">'+I18N[curLang].noData+'</div>'}catch{}}
+async function analyzeGroupMsgs(){
+  if(!curG)return;
+  const btn=$('msg-ai-btn');
+  const panel=$('msg-ai-panel');
+  const result=$('msg-ai-result');
+  // Find group title
+  const groupBtn=document.querySelector('#gfl .fb.a');
+  const groupTitle=groupBtn?groupBtn.textContent.replace(/\s*\(\d+\)\s*$/,'').trim():'Group';
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Analyzing '+esc(groupTitle)+'...';
+  panel.style.display='block';
+  result.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:20px 0"><span class="spin"></span><span style="color:var(--mt)">AI is reading and analyzing all messages in <b>'+esc(groupTitle)+'</b>... This may take a moment.</span></div>';
+  try{
+    const r=await fetch(A+'/messages/analyze-group',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({chat_id:curG,chat_title:groupTitle})});
+    const d=await r.json();
+    const analysis=d.analysis||'No analysis available.';
+    const participants=d.participants||[];
+    const msgCount=d.msg_count||0;
+    // Render markdown-like content
+    let html=analysis
+      .replace(/^## (.+)$/gm,'<h4 style="margin:14px 0 6px;font-size:13px;font-weight:700;color:var(--ac)">$1</h4>')
+      .replace(/^### (.+)$/gm,'<h5 style="margin:10px 0 4px;font-size:12px;font-weight:600">$1</h5>')
+      .replace(/^\*\*(.+?)\*\*/gm,'<strong>$1</strong>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^- (.+)$/gm,'<div style="padding:2px 0 2px 12px;position:relative"><span style="position:absolute;left:0">•</span>$1</div>')
+      .replace(/^\d+\. (.+)$/gm,'<div style="padding:2px 0 2px 4px">$&</div>')
+      .replace(/\n\n/g,'<br>')
+      .replace(/\n/g,'<br>');
+    const meta='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(99,102,241,.15)"><span style="font-size:10px;color:var(--mt)">📨 '+msgCount+' messages analyzed</span><span style="font-size:10px;color:var(--mt)">👥 '+participants.length+' participants</span><span style="font-size:10px;color:var(--mt)">🕐 '+new Date().toLocaleTimeString()+'</span></div>';
+    result.innerHTML=meta+html;
+  }catch(e){
+    result.innerHTML='<div style="color:var(--rd);padding:8px">❌ Analysis failed: '+esc(e.message||'Unknown error')+'</div>';
+  }finally{
+    btn.disabled=false;btn.innerHTML='🧠 <span data-i18n="aiGroupBriefing">AI Group Briefing</span>';
+  }
+}
 function buildMsgContext(idx){
   // Build conversation context: messages around the clicked one (chronological order)
   // msgCache is newest-first, so reverse for chronological
@@ -2922,7 +2967,7 @@ const I18N={
     // Page headers
     dashboard:'Dashboard',taskBoard:'Task Board',tasksPage:'Tasks',teamMembers:'Team Members',messagesPage:'Messages',remindersPage:'Reminders',aiAssistant:'AI Assistant',calendarPage:'Calendar',recurringTasks:'Recurring Tasks',analyticsPage:'Analytics',
     // Subtitles / descriptions
-    telegramMsgs:'Telegram group messages',scheduledNotifs:'Scheduled notifications',aiSub:'Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported',dragCards:'Drag cards to change status',taskTemplates:'Task templates that auto-generate on schedule',analyticsSub:'Task completion trends and team performance',
+    telegramMsgs:'Telegram group messages',aiGroupBriefing:'AI Group Briefing',scheduledNotifs:'Scheduled notifications',aiSub:'Chat with Claude Opus 4.6 · English & ខ្មែរ · File uploads supported',dragCards:'Drag cards to change status',taskTemplates:'Task templates that auto-generate on schedule',analyticsSub:'Task completion trends and team performance',
     // Login
     loginTitle:'AI Personal Assistant',loginSub:'Sign in with your Google account to access your dashboard.',signInGoogle:'Sign in with Google',
     // Welcome
@@ -3043,7 +3088,7 @@ const I18N={
   kh:{
     home:'ទំព័រដើម',board:'ក្តារ',tasks:'ភារកិច្ច',team:'ក្រុម',msgs:'សារ',remind:'រំលឹក',aiChat:'AI ជំនួយ',calendarNav:'ប្រតិទិន',recurringNav:'ដដែលៗ',templatesNav:'គំរូ',depGraphNav:'ក្រាហ្វពឹងអាស្រ័យ',aiPrioritize:'AI កំណត់អាទិភាព',aiPrioResults:'លទ្ឋផលកំណត់អាទិភាព AI',applyPriorities:'អនុវត្តអាទិភាព',workloadRec:'អំណើណំបន្ទុកការងារ',depGraphTitle:'ក្រាហ្វភាពពឹងអាស្រ័យ',depGraphSub:'ការមើលភាពពឹងអាស្រ័យភារកិច្ចអន្តរកម្ម',dgNewTask:'ភារកិច្ចថ្មី',dgNewLinked:'ភារកិច្ចភ្ជាប់ថ្មី',dgLinkMode:'របៀបភ្ជាប់',analyticsNav:'វិភាគ',
     dashboard:'ផ្ទាំងគ្រប់គ្រង',taskBoard:'ក្តារភារកិច្ច',tasksPage:'ភារកិច្ច',teamMembers:'សមាជិកក្រុម',messagesPage:'សារ',remindersPage:'ការរំលឹក',aiAssistant:'AI ជំនួយការ',calendarPage:'ប្រតិទិន',recurringTasks:'ភារកិច្ចដដែលៗ',analyticsPage:'វិភាគ',
-    telegramMsgs:'សារក្រុម Telegram',scheduledNotifs:'ការជូនដំណឹងដែលបានកំណត់',aiSub:'ជជែកជាមួយ Claude Opus 4.6 · English & ខ្មែរ · អាចផ្ទុកឯកសារ',dragCards:'អូសកាតដើម្បីប្តូរស្ថានភាព',taskTemplates:'គំរូភារកិច្ចដែលបង្កើតដោយស្វ័យប្រវត្តិតាមកាលវិភាគ',analyticsSub:'និន្នាការបញ្ចប់ភារកិច្ច និងសមត្ថភាពក្រុម',
+    telegramMsgs:'សារក្រុម Telegram',aiGroupBriefing:'AI វិភាគក្រុម',scheduledNotifs:'ការជូនដំណឹងដែលបានកំណត់',aiSub:'ជជែកជាមួយ Claude Opus 4.6 · English & ខ្មែរ · អាចផ្ទុកឯកសារ',dragCards:'អូសកាតដើម្បីប្តូរស្ថានភាព',taskTemplates:'គំរូភារកិច្ចដែលបង្កើតដោយស្វ័យប្រវត្តិតាមកាលវិភាគ',analyticsSub:'និន្នាការបញ្ចប់ភារកិច្ច និងសមត្ថភាពក្រុម',
     loginTitle:'AI ជំនួយការផ្ទាល់ខ្លួន',loginSub:'ចូលដោយប្រើគណនី Google របស់អ្នកដើម្បីចូលផ្ទាំងគ្រប់គ្រង។',signInGoogle:'ចូលដោយ Google',
     welcome:'សូមស្វាគមន៍',
     todo:'ត្រូវធ្វើ',inProgress:'កំពុងធ្វើ',active:'កំពុងធ្វើ',review:'ពិនិត្យ',done:'រួចរាល់',overdue:'ហួសកាលកំណត់',
