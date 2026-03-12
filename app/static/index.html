@@ -4120,7 +4120,7 @@ async function showWGBuilder(editId){
       renderWGMembers(editId,d.members||[]);
     }catch(e){console.warn('loadWGEdit:',e)}
   }
-  $('wg-builder-modal').style.display='flex';
+  $('wg-builder-modal').classList.add('v');
 }
 
 function renderWGMembers(gid,members){
@@ -4263,47 +4263,40 @@ function getAssigneeInitials(t){
   </div>
 
   <!-- Working Group Builder Modal -->
-  <div id="wg-builder-modal" class="modal" style="display:none">
-    <div class="modal-c" style="max-width:520px">
-      <div class="modal-h">
-        <h3 id="wg-builder-title">New Working Group</h3>
-        <button class="modal-x" onclick="$('wg-builder-modal').style.display='none'">&times;</button>
+  <div class="modal-overlay" id="wg-builder-modal"><div class="modal" style="max-width:520px">
+    <h3 id="wg-builder-title" data-i18n="newGroup">New Working Group</h3>
+    <input type="hidden" id="wg-id">
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--mt)" data-i18n="groupName">Group Name</label>
+      <input id="wg-name" class="inp" placeholder="e.g. IT Committee" style="width:100%">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--mt)" data-i18n="description">Description</label>
+      <input id="wg-desc" class="inp" placeholder="Optional description" style="width:100%">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label style="font-size:11px;color:var(--mt)">Icon</label>
+        <input id="wg-icon" class="inp" value="👥" style="width:100%">
       </div>
-      <div class="modal-b" style="padding:16px">
-        <input type="hidden" id="wg-id">
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--mt)">Group Name</label>
-          <input id="wg-name" class="inp" placeholder="e.g. IT Committee" style="width:100%">
-        </div>
-        <div style="margin-bottom:10px">
-          <label style="font-size:11px;color:var(--mt)">Description</label>
-          <input id="wg-desc" class="inp" placeholder="Optional description" style="width:100%">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-          <div>
-            <label style="font-size:11px;color:var(--mt)">Icon</label>
-            <input id="wg-icon" class="inp" value="👥" style="width:100%">
-          </div>
-          <div>
-            <label style="font-size:11px;color:var(--mt)">Color</label>
-            <input id="wg-color" class="inp" type="color" value="#3b82f6" style="width:100%;height:36px;padding:2px">
-          </div>
-        </div>
-        <div id="wg-members-section" style="display:none;margin-bottom:10px">
-          <label style="font-size:11px;color:var(--mt)">Members</label>
-          <div id="wg-members-list" style="max-height:150px;overflow-y:auto;margin-top:4px"></div>
-          <div style="display:flex;gap:4px;margin-top:6px">
-            <select id="wg-add-member" class="inp" style="flex:1"><option value="">Select member...</option></select>
-            <button class="btn p" onclick="addWGMemberFromModal()" style="padding:4px 10px;font-size:10px">+ Add</button>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
-          <button class="btn" onclick="$('wg-builder-modal').style.display='none'">Cancel</button>
-          <button class="btn p" onclick="saveWorkingGroup()">Save Group</button>
-        </div>
+      <div>
+        <label style="font-size:11px;color:var(--mt)">Color</label>
+        <input id="wg-color" class="inp" type="color" value="#3b82f6" style="width:100%;height:36px;padding:2px">
       </div>
     </div>
-  </div>
+    <div id="wg-members-section" style="display:none;margin-bottom:10px">
+      <label style="font-size:11px;color:var(--mt)" data-i18n="groupMembers">Members</label>
+      <div id="wg-members-list" style="max-height:150px;overflow-y:auto;margin-top:4px"></div>
+      <div style="display:flex;gap:4px;margin-top:6px">
+        <select id="wg-add-member" class="inp" style="flex:1"><option value="">Select member...</option></select>
+        <button class="btn p" onclick="addWGMemberFromModal()" style="padding:4px 10px;font-size:10px">+ Add</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn" onclick="$('wg-builder-modal').classList.remove('v')" data-i18n="cancel">Cancel</button>
+      <button class="btn p" onclick="saveWorkingGroup()" data-i18n="save">Save Group</button>
+    </div>
+  </div></div>
 
 </body>
 </html>
