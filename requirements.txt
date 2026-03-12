@@ -34,6 +34,7 @@ PyPDF2==3.0.1
 Pillow==11.1.0
 openpyxl==3.1.5
 python-docx==1.1.2
+python-pptx==1.0.2
 python-multipart==0.0.20
 
 # Rate Limiting

@@ -1089,6 +1089,41 @@ async def ai_chat(request: Request, body: ChatRequest, db: AsyncSession = Depend
     return {"response": response, "actions": action_results}
 
 
+# ─── Document Generation ───
+class DocGenRequest(BaseModel):
+    content: str
+    title: Optional[str] = "Document"
+    format: str = "docx"  # "docx" or "pptx"
+
+
+@limiter.limit("10/minute")
+@router.post("/ai/generate-doc")
+async def generate_document(request: Request, body: DocGenRequest, _auth: dict = Depends(require_auth)):
+    """Generate a Word or PowerPoint document from content."""
+    from app.services.doc_generator import generate_docx, generate_pptx
+    from fastapi.responses import StreamingResponse
+    import re
+
+    title = body.title or "Document"
+    # Clean title for filename
+    safe_title = re.sub(r"[^\w\s-]", "", title).strip().replace(" ", "_")[:50]
+
+    if body.format == "pptx":
+        buf = generate_pptx(body.content, title)
+        filename = f"{safe_title}.pptx"
+        media = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    else:
+        buf = generate_docx(body.content, title)
+        filename = f"{safe_title}.docx"
+        media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+    return StreamingResponse(
+        buf,
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
 # ─── AI Chat with File Upload ───
 from fastapi import UploadFile, File, Form
 

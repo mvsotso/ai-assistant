@@ -2761,8 +2761,29 @@ function renderMd(text){
 }
 function copyCode(id){const el=$(id);if(!el)return;navigator.clipboard.writeText(el.textContent).then(()=>{const btn=el.closest('.ch-code-block').querySelector('button');if(btn){const orig=btn.innerHTML;btn.innerHTML='✅ Copied!';setTimeout(()=>btn.innerHTML=orig,1500)}})}
 function copyMsg(btn){const bubble=btn.closest('.ch-b');if(!bubble)return;const clone=bubble.cloneNode(true);const actions=clone.querySelector('.ch-actions');if(actions)actions.remove();navigator.clipboard.writeText(clone.textContent.trim()).then(()=>{const orig=btn.innerHTML;btn.innerHTML='✅ Copied';setTimeout(()=>btn.innerHTML=orig,1500)})}
+async function downloadDoc(btn,fmt){
+  const bubble=btn.closest('.ch-b');if(!bubble)return;
+  const idx=[...document.querySelectorAll('#chm .ch-b.ch-a')].indexOf(bubble);
+  const aiMsgs=chatHistory.filter(h=>h.role==='assistant');
+  const content=aiMsgs[idx]?.content||bubble.textContent.trim();
+  const tm=content.match(/^##?\s+(.+)$/m);
+  const title=tm?tm[1].replace(/[^\w\s-]/g,'').trim():'Document';
+  const orig=btn.innerHTML;
+  btn.innerHTML='<span class="spin" style="width:12px;height:12px"></span>';btn.disabled=true;
+  try{
+    const r=await fetch(A+'/ai/generate-doc',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({content,title,format:fmt})});
+    if(!r.ok)throw new Error('Failed');
+    const blob=await r.blob();const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=title.replace(/\s+/g,'_').slice(0,50)+'.'+fmt;
+    document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+    btn.innerHTML='✅ Done!';setTimeout(()=>btn.innerHTML=orig,2000);
+  }catch(e){btn.innerHTML='❌ Failed';setTimeout(()=>btn.innerHTML=orig,2000)}
+  btn.disabled=false;
+}
 let aiMsgCounter=0;
-async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl"><div style="display:flex;align-items:center;gap:8px;color:var(--mt)"><span class="spin"></span>${chFile?'Processing file...':'Thinking...'}</div></div>`;c.scrollTop=c.scrollHeight;chatHistory.push({role:'user',content:dm});chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m,history:chatHistory.slice(-20)})})).json();$('chl').remove();const aiResp=d.response||'No response';chatHistory.push({role:'assistant',content:aiResp});const mid='ai-msg-'+(++aiMsgCounter);c.innerHTML+=`<div class="ch-b ch-a" id="${mid}">${renderMd(aiResp)}<div class="ch-actions"><button onclick="copyMsg(this)">📋 Copy</button><button onclick="retryAI()">🔄 Retry</button></div></div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">❌ Error: ${esc(e.message||'Failed')}</div>`}chL=false;c.scrollTop=c.scrollHeight}
+async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl"><div style="display:flex;align-items:center;gap:8px;color:var(--mt)"><span class="spin"></span>${chFile?'Processing file...':'Thinking...'}</div></div>`;c.scrollTop=c.scrollHeight;chatHistory.push({role:'user',content:dm});chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m,history:chatHistory.slice(-20)})})).json();$('chl').remove();const aiResp=d.response||'No response';chatHistory.push({role:'assistant',content:aiResp});const mid='ai-msg-'+(++aiMsgCounter);const hasStructured=aiResp.length>200&&(/^##\s/m.test(aiResp)||/\n- /m.test(aiResp)||/\n\d+\.\s/m.test(aiResp));
+const dlBtns=hasStructured?'<button onclick="downloadDoc(this,\'docx\')">📄 Word</button><button onclick="downloadDoc(this,\'pptx\')">📊 PowerPoint</button>':'';
+c.innerHTML+=`<div class="ch-b ch-a" id="${mid}">${renderMd(aiResp)}<div class="ch-actions"><button onclick="copyMsg(this)">📋 Copy</button>${dlBtns}<button onclick="retryAI()">🔄 Retry</button></div></div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">❌ Error: ${esc(e.message||'Failed')}</div>`}chL=false;c.scrollTop=c.scrollHeight}
 function retryAI(){if(chatHistory.length<2)return;chatHistory.pop();const lastUser=chatHistory.pop();if(lastUser)$('chi').value=lastUser.content;const msgs=document.querySelectorAll('#chm .ch-b');if(msgs.length>=2){msgs[msgs.length-1].remove();msgs[msgs.length-2].remove()}sendAI()}
 function newChat(){chatHistory=[];aiMsgCounter=0;$('chm').innerHTML='<div class="ch-b ch-a" style="color:var(--mt)">'+t('newChatStarted')+'</div>'}
 // ── AI Suggestions ──
