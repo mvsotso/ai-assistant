@@ -1360,15 +1360,20 @@ async def delete_working_group(request: Request, wg_id: int, db: AsyncSession = 
 async def list_wg_members(request: Request, wg_id: int, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
     result = await db.execute(
         select(WorkingGroupMember, User)
-        .join(User, WorkingGroupMember.user_id == User.id)
+        .outerjoin(User, WorkingGroupMember.user_id == User.id)
         .where(WorkingGroupMember.group_id == wg_id)
     )
-    return [{"user_id": m.user_id,
-             "name": f"{u.first_name or ''} {u.last_name or ''}".strip() or "Unknown",
-             "department": getattr(u, "department", None),
-             "role": m.role,
-             "joined_at": m.joined_at.isoformat() if m.joined_at else None}
-            for m, u in result.all()]
+    members = []
+    for m, u in result.all():
+        if u:
+            name = f"{u.first_name or ''} {u.last_name or ''}".strip() or "Unknown"
+            dept = getattr(u, "department", None)
+        else:
+            name = f"User #{m.user_id}"
+            dept = None
+        members.append({"user_id": m.user_id, "name": name, "department": dept,
+                        "role": m.role, "joined_at": m.joined_at.isoformat() if m.joined_at else None})
+    return members
 
 
 @limiter.limit("15/minute")

@@ -4153,15 +4153,18 @@ const WG_ICONS=[
   '\u{2696}\uFE0F','\u{1F3E5}','\u{1F9EA}','\u{1F52C}','\u{1F4F0}','\u{1F3A8}','\u{1F5BC}\uFE0F','\u{1F3AC}'
 ];
 
-function initWGIconPicker(){
+function initWGIconPicker(selIcon){
   const grid=$('wg-icon-grid');if(!grid)return;
-  grid.innerHTML=WG_ICONS.map(ic=>'<div class="wg-icon-opt" data-icon="'+ic+'" onclick="selectWGIcon(this,\''+ic.replace(/'/g,"\\'")+'\')">'+ic+'</div>').join('');
-  updateWGIconPreview();
-}
-function selectWGIcon(el,icon){
-  $('wg-icon').value=icon;
-  document.querySelectorAll('.wg-icon-opt').forEach(o=>o.classList.remove('sel'));
-  el.classList.add('sel');
+  const cur=selIcon||$('wg-icon').value||'\u{1F465}';
+  grid.innerHTML=WG_ICONS.map((ic,i)=>'<div class="wg-icon-opt'+(ic===cur?' sel':'')+'" data-idx="'+i+'">'+ic+'</div>').join('');
+  grid.onclick=function(e){
+    const opt=e.target.closest('.wg-icon-opt');if(!opt)return;
+    const idx=parseInt(opt.dataset.idx);if(isNaN(idx))return;
+    $('wg-icon').value=WG_ICONS[idx];
+    grid.querySelectorAll('.wg-icon-opt').forEach(o=>o.classList.remove('sel'));
+    opt.classList.add('sel');
+    updateWGIconPreview();
+  };
   updateWGIconPreview();
 }
 function updateWGIconPreview(){
@@ -4184,7 +4187,7 @@ async function showWGBuilder(editId){
   if(editId){
     try{
       const g=workingGroups.find(x=>x.id===editId);
-      if(g){$('wg-name').value=g.name;$('wg-desc').value=g.description||'';$('wg-icon').value=g.icon||'\u{1F465}';$('wg-color').value=g.color||'#3b82f6';initWGIconPicker();const cur=document.querySelector('.wg-icon-opt[data-icon="'+(g.icon||'\u{1F465}')+'"]');if(cur)cur.classList.add('sel')}
+      if(g){$('wg-name').value=g.name;$('wg-desc').value=g.description||'';$('wg-icon').value=g.icon||'\u{1F465}';$('wg-color').value=g.color||'#3b82f6';initWGIconPicker(g.icon||'\u{1F465}')}
       const r=await fetch(A+'/working-groups/'+editId+'/members',{headers:hdr()});
       const d=await r.json();
       renderWGMembers(editId,Array.isArray(d)?d:(d.members||[]));
@@ -4257,7 +4260,7 @@ async function addWGMemberFromModal(){
     await fetch(A+'/working-groups/'+gid+'/members',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({user_id:parseInt(uid),role:'member'})});
     const r=await fetch(A+'/working-groups/'+gid+'/members',{headers:hdr()});
     const d=await r.json();
-    renderWGMembers(parseInt(gid),d.members||[]);
+    renderWGMembers(parseInt(gid),Array.isArray(d)?d:(d.members||[]));
     $('wg-add-member').value='';
     loadWorkingGroups();
   }catch(e){console.warn('addWGMember:',e)}
