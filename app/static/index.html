@@ -4119,7 +4119,7 @@ async function loadWorkingGroups(){
   try{
     const r=await fetch(A+'/working-groups',{headers:hdr()});
     const d=await r.json();
-    workingGroups=d.groups||[];
+    workingGroups=Array.isArray(d)?d:(d.groups||[]);
     const el=$('wg-list');
     if(!el)return;
     if(!workingGroups.length){el.innerHTML='<div style="color:var(--mt);padding:8px;font-size:11px">No working groups yet.</div>';return}
