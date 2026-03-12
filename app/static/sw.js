@@ -3,7 +3,7 @@
  * Cache-first for static assets, network-first for API with fallback.
  * IndexedDB persistence + Background Sync for offline mutations.
  */
-const CACHE_VERSION = 'v46';
+const CACHE_VERSION = 'v47';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const API_CACHE = `api-${CACHE_VERSION}`;
 

@@ -4154,7 +4154,7 @@ async function showWGBuilder(editId){
       if(g){$('wg-name').value=g.name;$('wg-desc').value=g.description||'';$('wg-icon').value=g.icon||'\u{1F465}';$('wg-color').value=g.color||'#3b82f6'}
       const r=await fetch(A+'/working-groups/'+editId+'/members',{headers:hdr()});
       const d=await r.json();
-      renderWGMembers(editId,d.members||[]);
+      renderWGMembers(editId,Array.isArray(d)?d:(d.members||[]));
     }catch(e){console.warn('loadWGEdit:',e)}
   }else{
     $('wg-members-list').innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">Add members below — they\'ll be saved with the group.</div>';
@@ -4166,7 +4166,7 @@ function renderWGMembers(gid,members){
   const el=$('wg-members-list');if(!el)return;
   if(!members.length){el.innerHTML='<div style="font-size:11px;color:var(--mt);padding:4px">No members yet.</div>';return}
   el.innerHTML=members.map(m=>{
-    const nm=((m.first_name||'')+' '+(m.last_name||'User #'+m.user_id)).trim();
+    const nm=m.name||((m.first_name||'')+' '+(m.last_name||'')).trim()||'User #'+m.user_id;
     return'<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--bd)"><span style="font-size:11px">'+esc(nm)+' <span style="color:var(--mt);font-size:9px">('+( m.role||'member')+')</span></span><button class="btn" onclick="removeWGMember('+gid+','+m.user_id+')" style="padding:2px 6px;font-size:9px;color:var(--rd)">\u2715</button></div>'
   }).join('');
 }
@@ -4192,7 +4192,7 @@ async function saveWorkingGroup(){
         // Load saved members
         const mr=await fetch(A+'/working-groups/'+d.id+'/members',{headers:hdr()});
         const md=await mr.json();
-        renderWGMembers(d.id,md.members||[]);
+        renderWGMembers(d.id,Array.isArray(md)?md:(md.members||[]));
         $('wg-builder-title').textContent='\u2705 Group Created! Members saved.';
       }
     }
