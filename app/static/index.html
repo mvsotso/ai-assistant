@@ -71,13 +71,43 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .pi-h{display:flex;justify-content:space-between;margin-bottom:6px}.pi-n{font-size:12px;font-weight:600}.pi-p{font-size:11px;font-weight:700;color:var(--ac)}
 .pi-b{height:5px;border-radius:3px;background:var(--sf);overflow:hidden}.pi-f{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--ac),var(--gn));transition:.5s}
 .ch-c{display:flex;flex-direction:column;height:calc(100vh - 100px)}
-.ch-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:8px}
-.ch-b{max-width:80%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5;white-space:pre-wrap}
-.ch-u{align-self:flex-end;background:var(--ac);color:#fff;border-bottom-right-radius:3px}
-.ch-a{align-self:flex-start;background:var(--cd);border:1px solid var(--bd);border-bottom-left-radius:3px}
+.ch-m{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:8px}
+.ch-b{max-width:85%;padding:12px 16px;border-radius:14px;font-size:13px;line-height:1.7;position:relative}
+.ch-u{align-self:flex-end;background:var(--ac);color:#fff;border-bottom-right-radius:4px;white-space:pre-wrap}
+.ch-a{align-self:flex-start;background:var(--cd);border:1px solid var(--bd);border-bottom-left-radius:4px;width:85%;max-width:85%}
 .ch-r{display:flex;gap:6px;padding-top:8px;border-top:1px solid var(--bd)}
-.ch-i{flex:1;background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--tx);font-size:12px;outline:none;font-family:'DM Sans',sans-serif}
-.ch-s{width:38px;height:38px;border-radius:8px;border:none;background:var(--ac);color:#fff;font-size:14px;cursor:pointer;flex-shrink:0}
+.ch-i{flex:1;background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;color:var(--tx);font-size:13px;outline:none;font-family:'DM Sans',sans-serif}
+.ch-i:focus{border-color:var(--ac);box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+.ch-s{width:38px;height:38px;border-radius:10px;border:none;background:var(--ac);color:#fff;font-size:14px;cursor:pointer;flex-shrink:0;transition:transform .1s}
+.ch-s:hover{transform:scale(1.05)}
+/* Markdown in AI responses */
+.ch-a h2,.ch-a h3,.ch-a h4{margin:12px 0 6px;font-weight:700;color:var(--tx);line-height:1.4}
+.ch-a h2{font-size:15px;padding-bottom:4px;border-bottom:1px solid var(--bd)}
+.ch-a h3{font-size:14px}
+.ch-a h4{font-size:13px;color:var(--ac)}
+.ch-a p{margin:4px 0 8px}
+.ch-a ul,.ch-a ol{margin:4px 0 8px;padding-left:20px}
+.ch-a li{margin:3px 0;line-height:1.6}
+.ch-a strong{font-weight:700;color:var(--tx)}
+.ch-a em{font-style:italic;color:var(--mt)}
+.ch-a hr{border:none;border-top:1px solid var(--bd);margin:10px 0}
+.ch-a a{color:var(--ac);text-decoration:underline}
+.ch-a blockquote{border-left:3px solid var(--ac);padding:4px 12px;margin:8px 0;background:rgba(99,102,241,.04);border-radius:0 6px 6px 0;font-style:italic;color:var(--mt)}
+.ch-a table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11px}
+.ch-a th,.ch-a td{border:1px solid var(--bd);padding:5px 8px;text-align:left}
+.ch-a th{background:var(--sf);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+.ch-a td{font-size:11px}
+.ch-a tr:nth-child(even) td{background:rgba(99,102,241,.02)}
+.ch-code-block{position:relative;margin:8px 0;border-radius:10px;overflow:hidden;border:1px solid var(--bd)}
+.ch-code-hdr{display:flex;justify-content:space-between;align-items:center;padding:5px 12px;background:var(--sf);font-size:10px;color:var(--mt);font-weight:600;border-bottom:1px solid var(--bd)}
+.ch-code-hdr button{background:none;border:1px solid var(--bd);border-radius:5px;padding:2px 8px;font-size:9px;color:var(--mt);cursor:pointer;transition:all .15s}
+.ch-code-hdr button:hover{background:var(--ac);color:#fff;border-color:var(--ac)}
+.ch-code-block pre{margin:0;padding:12px;font-size:11px;line-height:1.6;overflow-x:auto;background:var(--bg);font-family:'Fira Code','Consolas','Monaco',monospace;color:var(--tx)}
+.ch-code-block code{font-family:inherit}
+.ch-inline-code{background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:1px 5px;font-size:11px;font-family:'Fira Code','Consolas',monospace;color:var(--ac)}
+.ch-actions{display:flex;gap:4px;margin-top:8px;padding-top:6px;border-top:1px solid rgba(99,102,241,.08)}
+.ch-actions button{background:none;border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:9px;color:var(--mt);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:3px}
+.ch-actions button:hover{background:var(--sf);border-color:var(--ac);color:var(--ac)}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}.modal-overlay.v{display:flex}
 .modal{background:var(--cd);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
 .modal h3{font-size:16px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
@@ -300,7 +330,7 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
   .mobile-only{display:inline-flex}.mobile-hdr{display:flex}.sb{transform:translateX(-100%)}.sb.open{transform:translateX(0)}.sb-overlay.open{display:block}
   .mn{margin-left:0;padding:12px;padding-top:64px;max-height:none;min-height:100vh}
   .g2{grid-template-columns:1fr}.row{gap:8px}.sc{min-width:calc(50% - 4px);flex:1 1 calc(50% - 4px);padding:12px 10px}.sc-v{font-size:22px}
-  .bc{min-width:100%}#board{flex-direction:column}.ch-c{height:calc(100vh - 140px)}.ch-b{max-width:90%}
+  .bc{min-width:100%}#board{flex-direction:column}.ch-c{height:calc(100vh - 140px)}.ch-b{max-width:95%}.ch-a{width:95%;max-width:95%}
   .tr{padding:8px 10px;gap:8px}.modal{padding:16px;border-radius:12px}h2{font-size:18px}
   .cal-cell{min-height:70px}.cal-evt{font-size:9px;-webkit-line-clamp:1}.cal-toolbar{flex-direction:column;align-items:flex-start}
   .btn{padding:6px 10px;font-size:11px}
@@ -2676,8 +2706,65 @@ function remindAboutTask(){if(!tdTask)return;closeTD();openModal('remind');$('mr
 async function populateRmTaskSelect(){const sel=$('mr-task');sel.innerHTML='<option value="">\u2014 None \u2014</option>';try{const r=await fetch(A+'/tasks?limit=200',{headers:hdr()});const d=await r.json();const tasks=(d.tasks||[]).filter(t=>t.status!=='done');sel.innerHTML+= tasks.map(t=>`<option value="${t.id}">#${t.id} ${t.title.slice(0,40)}</option>`).join('')}catch{}}
 let chL=false,chFile=null,chatHistory=[];function onFileSelect(){const f=$('chf').files[0];if(f){chFile=f;$('chfn').style.display='block';$('chfn').innerHTML=`📎 ${f.name} <button onclick="clearFile()" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:11px">✕</button>`}}
 function clearFile(){chFile=null;$('chf').value='';$('chfn').style.display='none'}
-async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl" style="color:var(--mt)">${chFile?'Processing...':'Thinking...'}</div>`;c.scrollTop=c.scrollHeight;chatHistory.push({role:'user',content:dm});chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m,history:chatHistory.slice(-20)})})).json();$('chl').remove();const aiResp=d.response||'No response';chatHistory.push({role:'assistant',content:aiResp});c.innerHTML+=`<div class="ch-b ch-a">${esc(aiResp)}</div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">Error: ${e.message||'Failed'}</div>`}chL=false;c.scrollTop=c.scrollHeight}
-function newChat(){chatHistory=[];$('chm').innerHTML='<div class="ch-b ch-a" style="color:var(--mt)">'+t('newChatStarted')+'</div>'}
+/* ── Markdown Renderer ── */
+function renderMd(text){
+  if(!text)return'';
+  let html=text;
+  // Code blocks with language header
+  html=html.replace(/```(\w*)\n([\s\S]*?)```/g,function(_,lang,code){
+    const langLabel=lang||'code';
+    const id='cb'+Math.random().toString(36).slice(2,8);
+    return'<div class="ch-code-block"><div class="ch-code-hdr"><span>'+langLabel+'</span><button onclick="copyCode(\''+id+'\')">📋 Copy</button></div><pre id="'+id+'"><code>'+code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').trim()+'</code></pre></div>';
+  });
+  // Inline code
+  html=html.replace(/`([^`\n]+)`/g,'<span class="ch-inline-code">$1</span>');
+  // Tables
+  html=html.replace(/(?:^|\n)(\|.+\|)\n(\|[-| :]+\|)\n((?:\|.+\|\n?)+)/gm,function(_,hdr,_sep,rows){
+    const ths=hdr.split('|').filter(c=>c.trim()).map(c=>'<th>'+c.trim()+'</th>').join('');
+    const trs=rows.trim().split('\n').map(r=>{
+      const tds=r.split('|').filter(c=>c.trim()).map(c=>'<td>'+c.trim()+'</td>').join('');
+      return'<tr>'+tds+'</tr>';
+    }).join('');
+    return'<table><thead><tr>'+ths+'</tr></thead><tbody>'+trs+'</tbody></table>';
+  });
+  // Headers (process before other inline)
+  html=html.replace(/^#### (.+)$/gm,'<h4>$1</h4>');
+  html=html.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  html=html.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  // Horizontal rules
+  html=html.replace(/^---+$/gm,'<hr>');
+  // Blockquotes
+  html=html.replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>');
+  // Bold + italic
+  html=html.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  html=html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,'<em>$1</em>');
+  // Ordered lists
+  html=html.replace(/(?:^|\n)(\d+\. .+(?:\n\d+\. .+)*)/gm,function(_,block){
+    const items=block.trim().split('\n').map(l=>l.replace(/^\d+\.\s*/,'')).map(l=>'<li>'+l+'</li>').join('');
+    return'<ol>'+items+'</ol>';
+  });
+  // Unordered lists
+  html=html.replace(/(?:^|\n)(- .+(?:\n- .+)*)/gm,function(_,block){
+    const items=block.trim().split('\n').map(l=>l.replace(/^- /,'')).map(l=>'<li>'+l+'</li>').join('');
+    return'<ul>'+items+'</ul>';
+  });
+  // Links
+  html=html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Paragraphs (double newlines)
+  html=html.replace(/\n\n/g,'</p><p>');
+  // Single newlines within paragraphs
+  html=html.replace(/\n/g,'<br>');
+  // Wrap in paragraph
+  if(!html.startsWith('<'))html='<p>'+html+'</p>';
+  return html;
+}
+function copyCode(id){const el=$(id);if(!el)return;navigator.clipboard.writeText(el.textContent).then(()=>{const btn=el.closest('.ch-code-block').querySelector('button');if(btn){const orig=btn.innerHTML;btn.innerHTML='✅ Copied!';setTimeout(()=>btn.innerHTML=orig,1500)}})}
+function copyMsg(btn){const bubble=btn.closest('.ch-b');if(!bubble)return;const clone=bubble.cloneNode(true);const actions=clone.querySelector('.ch-actions');if(actions)actions.remove();navigator.clipboard.writeText(clone.textContent.trim()).then(()=>{const orig=btn.innerHTML;btn.innerHTML='✅ Copied';setTimeout(()=>btn.innerHTML=orig,1500)})}
+let aiMsgCounter=0;
+async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl"><div style="display:flex;align-items:center;gap:8px;color:var(--mt)"><span class="spin"></span>${chFile?'Processing file...':'Thinking...'}</div></div>`;c.scrollTop=c.scrollHeight;chatHistory.push({role:'user',content:dm});chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m,history:chatHistory.slice(-20)})})).json();$('chl').remove();const aiResp=d.response||'No response';chatHistory.push({role:'assistant',content:aiResp});const mid='ai-msg-'+(++aiMsgCounter);c.innerHTML+=`<div class="ch-b ch-a" id="${mid}">${renderMd(aiResp)}<div class="ch-actions"><button onclick="copyMsg(this)">📋 Copy</button><button onclick="retryAI()">🔄 Retry</button></div></div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">❌ Error: ${esc(e.message||'Failed')}</div>`}chL=false;c.scrollTop=c.scrollHeight}
+function retryAI(){if(chatHistory.length<2)return;chatHistory.pop();const lastUser=chatHistory.pop();if(lastUser)$('chi').value=lastUser.content;const msgs=document.querySelectorAll('#chm .ch-b');if(msgs.length>=2){msgs[msgs.length-1].remove();msgs[msgs.length-2].remove()}sendAI()}
+function newChat(){chatHistory=[];aiMsgCounter=0;$('chm').innerHTML='<div class="ch-b ch-a" style="color:var(--mt)">'+t('newChatStarted')+'</div>'}
 // ── AI Suggestions ──
 async function loadAISuggestions(){$('ai-suggestions').innerHTML='<div style="color:var(--mt)">\U0001f914 Analyzing your tasks...</div>';try{const d=await(await fetch(A+'/ai/suggestions',{headers:hdr()})).json();const s=d.suggestions||[];if(!s.length){$('ai-suggestions').innerHTML='<div style="color:var(--mt)">No suggestions at this time</div>';return}$('ai-suggestions').innerHTML=s.map(sg=>`<div style="padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div><div style="font-weight:600;font-size:12px">${sg.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${sg.rationale||''}</div><div style="font-size:9px;color:var(--ac);margin-top:2px">${sg.suggested_assignee?'\U0001f464 '+sg.suggested_assignee:''} ${sg.priority?'\u2022 '+sg.priority:''}</div></div><button class="btn p" style="padding:3px 10px;font-size:9px;white-space:nowrap" onclick="createFromSuggestion(this)" data-title="${sg.title}" data-assignee="${sg.suggested_assignee||''}" data-prio="${sg.priority||'medium'}">+ Create</button></div></div>`).join('')}catch(e){$('ai-suggestions').innerHTML='<div style="color:var(--rd)">Failed to load suggestions</div>'}}
 function createFromSuggestion(btn){const t=btn.dataset.title||'';const a=btn.dataset.assignee||'';const p=btn.dataset.prio||'medium';openModal('task',{title:t,assignee_name:a,priority:p})}
