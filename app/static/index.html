@@ -1125,10 +1125,19 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
   <div style="flex:1">
     <div class="td-title" id="td-title"></div>
     <div class="td-meta" id="td-meta"></div>
+    <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+      <label style="font-size:10px;color:var(--mt);font-weight:600">Status:</label>
+      <select class="inp" id="td-status-sel" style="padding:3px 8px;font-size:11px;border-radius:6px;min-width:110px">
+        <option value="todo">📋 To Do</option>
+        <option value="in_progress">🔄 Active</option>
+        <option value="review">👀 Review</option>
+        <option value="done">✅ Done</option>
+      </select>
+    </div>
   </div>
   <div style="display:flex;gap:4px">
     <button class="btn" onclick="remindAboutTask()" style="padding:5px 10px;font-size:11px">⏰ <span data-i18n="remindAboutTask">Remind</span></button>
-    <button class="btn" onclick="editTaskFromTD()" style="padding:5px 10px;font-size:11px">✏️ <span data-i18n="edit">Edit</span></button>
+    <button class="btn p" onclick="editTaskFromTD()" style="padding:5px 10px;font-size:11px">✏️ <span data-i18n="edit">Edit</span></button>
     <button class="btn" onclick="closeTD()" style="padding:5px 10px;font-size:11px">✕</button>
   </div>
 </div>
@@ -1187,6 +1196,10 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
     <span id="td-audit-count" style="font-size:11px;color:var(--mt)"></span>
   </div>
   <div id="td-audit" style="display:none;max-height:200px;overflow-y:auto"></div>
+</div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)">
+  <button class="btn" onclick="closeTD()" data-i18n="close">Close</button>
+  <button class="btn p" onclick="editTaskFromTD()">✏️ <span data-i18n="editTask">Edit Task</span></button>
 </div>
 </div></div>
 <div class="modal-overlay" id="modal-event" onclick="if(event.target===this)closeEventModal()"><div class="modal"><h3 id="modal-event-title"><span data-i18n="newEvent">New Event</span><button class="modal-x" onclick="closeEventModal()">✕</button></h3>
@@ -1698,6 +1711,11 @@ async function openTD(taskId){
   $('td-desc').textContent=t.description||'';
   $('td-desc').style.display=t.description?'block':'none';
 
+  // Quick status selector
+  const statusSel=$('td-status-sel');
+  if(statusSel){statusSel.value=t.status;statusSel.onchange=async function(){
+    const ns=this.value;try{await fetch(A+'/tasks/'+t.id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({status:ns})});t.status=ns;openTD(t.id);loadTasks()}catch{alert('Failed to update status')}
+  }}
   // Meta badges
   let meta='';
   meta+=`<span class="td-meta-item">${SI[t.status]||'•'} ${t.status.replace('_',' ')}</span>`;
