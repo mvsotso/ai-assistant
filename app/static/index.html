@@ -80,7 +80,8 @@ h2{font-size:22px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:
 .ch-s{width:38px;height:38px;border-radius:8px;border:none;background:var(--ac);color:#fff;font-size:14px;cursor:pointer;flex-shrink:0}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}.modal-overlay.v{display:flex}
 .modal{background:var(--cd);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
-.modal h3{font-size:16px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:16px}
+.modal h3{font-size:16px;font-weight:700;font-family:'Outfit',sans-serif;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.modal-x{background:none;border:none;color:var(--mt);font-size:20px;cursor:pointer;padding:0 2px;line-height:1;border-radius:6px;transition:.15s}.modal-x:hover{color:var(--tx);background:var(--sf)}
 .fg{margin-bottom:12px}.fg label{font-size:11px;color:var(--mt);font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase}
 .empty{font-size:11px;color:var(--mt);text-align:center;padding:20px;font-style:italic}
 /* Calendar — Google Calendar Style */
@@ -1081,7 +1082,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </div></div>
 
 <!-- Task Modal (updated with group/subgroup fields) -->
-<div class="modal-overlay" id="modal-task"><div class="modal"><h3 id="modal-task-title" data-i18n="newTaskTitle">New Task</h3>
+<div class="modal-overlay" id="modal-task" onclick="if(event.target===this)closeModal('task')"><div class="modal"><h3 id="modal-task-title"><span data-i18n="newTaskTitle">New Task</span><button class="modal-x" onclick="closeModal('task')">✕</button></h3>
 <div class="fg" id="mt-tmpl-wrap" style="margin-bottom:4px"><label data-i18n="useTemplate">Use Template</label><select class="inp" id="mt-tmpl" onchange="applyTemplate(this.value)" style="font-size:11px"><option value="">-- None --</option></select></div>
 <div class="fg"><label data-i18n="title">Title</label><input class="inp" id="mt-title" placeholder="Task title..." data-i18n-ph="phTaskTitle"></div>
 <div class="fg"><label data-i18n="description">Description</label><textarea class="inp" id="mt-desc" rows="3" placeholder="Description..." data-i18n-ph="phDescription" style="resize:vertical"></textarea></div>
@@ -1100,7 +1101,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </div><input type="hidden" id="mt-id" value=""><input type="hidden" id="mt-assign" value="">
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeModal('task')" data-i18n="cancel">Cancel</button><button class="btn d" id="mt-del" onclick="deleteTask()" style="display:none" data-i18n="delete">Delete</button><button class="btn p" onclick="saveTask()" data-i18n="save">Save</button></div></div></div>
 <!-- Reminder Modal -->
-<div class="modal-overlay" id="modal-remind"><div class="modal"><h3 data-i18n="newReminder">New Reminder</h3>
+<div class="modal-overlay" id="modal-remind" onclick="if(event.target===this)closeModal('remind')"><div class="modal"><h3><span data-i18n="newReminder">New Reminder</span><button class="modal-x" onclick="closeModal('remind')">✕</button></h3>
 <div class="fg"><label data-i18n="reminderMsg">Message</label><input class="inp" id="mr-msg" placeholder="Remind me to..." data-i18n-ph="phRemindMe"></div>
 <div class="fg"><label data-i18n="remindAt">When</label><input class="inp" id="mr-at" type="datetime-local" onchange="this.blur()">
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="setRmQuick(15)">15m</button><button class="btn" onclick="setRmQuick(30)">30m</button><button class="btn" onclick="setRmQuick(60)">1h</button><button class="btn" onclick="setRmQuick(120)">2h</button><button class="btn" onclick="setRmQuick(1440)">Tomorrow</button><button class="btn" onclick="suggestRmTime()" style="background:linear-gradient(135deg,rgba(168,85,247,.1),rgba(59,130,246,.1));border-color:rgba(168,85,247,.3)">💡 <span data-i18n="suggestTime">Suggest</span></button></div></div>
@@ -1179,7 +1180,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
   <div id="td-audit" style="display:none;max-height:200px;overflow-y:auto"></div>
 </div>
 </div></div>
-<div class="modal-overlay" id="modal-event"><div class="modal"><h3 id="modal-event-title" data-i18n="newEvent">New Event</h3>
+<div class="modal-overlay" id="modal-event" onclick="if(event.target===this)closeEventModal()"><div class="modal"><h3 id="modal-event-title"><span data-i18n="newEvent">New Event</span><button class="modal-x" onclick="closeEventModal()">✕</button></h3>
 <div class="fg"><label data-i18n="title">Title</label><input class="inp" id="me-title" placeholder="Event title..." data-i18n-ph="phEventTitle"></div>
 <div class="fg"><label data-i18n="description">Description</label><textarea class="inp" id="me-desc" rows="3" placeholder="Notes..." data-i18n-ph="phNotes" style="resize:vertical"></textarea></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -1216,7 +1217,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeEventModal()" data-i18n="cancel">Cancel</button><button class="btn d" id="me-del" onclick="deleteEvent()" style="display:none" data-i18n="delete">Delete</button><button class="btn p" id="me-save" onclick="saveEvent()" data-i18n="createEvent">Create Event</button></div></div></div>
 
 <!-- Template Modal -->
-<div class="modal-overlay" id="modal-tmpl"><div class="modal"><h3 id="modal-tmpl-title" data-i18n="newTemplate">New Template</h3>
+<div class="modal-overlay" id="modal-tmpl" onclick="if(event.target===this)closeTmplModal()"><div class="modal"><h3 id="modal-tmpl-title"><span data-i18n="newTemplate">New Template</span><button class="modal-x" onclick="closeTmplModal()">✕</button></h3>
 <div class="fg"><label data-i18n="templateName">Template Name</label><input class="inp" id="tt-name" placeholder="e.g. Meeting Follow-Up"></div>
 <div class="fg"><label data-i18n="titleTemplate">Title Template</label><input class="inp" id="tt-title" placeholder="Follow up: {title}"><div style="font-size:9px;color:var(--mt);margin-top:2px" data-i18n="variablesHint">Variables: {date}, {user}, {weekday}, {title}</div></div>
 <div class="fg"><label data-i18n="description">Description</label><textarea class="inp" id="tt-desc" rows="2" style="resize:vertical"></textarea></div>
@@ -1244,7 +1245,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </div></div></div>
 
 <!-- Recurring Task Modal -->
-<div class="modal-overlay" id="modal-rec"><div class="modal"><h3 id="modal-rec-title" data-i18n="newRecurring">New Recurring Task</h3>
+<div class="modal-overlay" id="modal-rec" onclick="if(event.target===this)closeRecModal()"><div class="modal"><h3 id="modal-rec-title"><span data-i18n="newRecurring">New Recurring Task</span><button class="modal-x" onclick="closeRecModal()">✕</button></h3>
 <div class="fg"><label data-i18n="title">Title</label><input class="inp" id="rc-title" placeholder="Task title..." data-i18n-ph="phTaskTitle"></div>
 <div class="fg"><label data-i18n="description">Description</label><textarea class="inp" id="rc-desc" rows="2" placeholder="Description..." data-i18n-ph="phDescription" style="resize:vertical"></textarea></div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -1272,7 +1273,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeRecModal()" data-i18n="cancel">Cancel</button><button class="btn d" id="rc-del" onclick="deleteRec()" style="display:none" data-i18n="delete">Delete</button><button class="btn p" id="rc-save" onclick="saveRec()" data-i18n="create">Create</button></div></div></div>
 
 <!-- Group Manager Modal -->
-<div class="modal-overlay" id="modal-gm" onclick="if(event.target===this)closeGM()"><div class="modal gm-panel"><h3 data-i18n="manageGroups">⚙️ Manage Task Groups</h3>
+<div class="modal-overlay" id="modal-gm" onclick="if(event.target===this)closeGM()"><div class="modal gm-panel"><h3><span data-i18n="manageGroups">⚙️ Manage Task Groups</span><button class="modal-x" onclick="closeGM()">✕</button></h3>
 <div class="gm-add">
   <input type="text" id="gm-name" class="gm-inp" placeholder="Group name" data-i18n-ph="phGroupName" style="flex:1;min-width:120px" maxlength="100">
   <input type="text" id="gm-icon" class="gm-inp gm-icon" placeholder="📁" maxlength="4">
@@ -1283,7 +1284,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </div></div>
 
 <!-- Category Manager Modal -->
-<div class="modal-overlay" id="modal-cm" onclick="if(event.target===this)closeCM()"><div class="modal gm-panel"><h3 data-i18n="manageCategories">⚙️ Manage Categories</h3>
+<div class="modal-overlay" id="modal-cm" onclick="if(event.target===this)closeCM()"><div class="modal gm-panel"><h3><span data-i18n="manageCategories">⚙️ Manage Categories</span><button class="modal-x" onclick="closeCM()">✕</button></h3>
 <div class="gm-add">
   <input type="text" id="cm-name" class="gm-inp" placeholder="Category name" data-i18n-ph="phCatName" style="flex:1;min-width:120px" maxlength="100">
   <input type="text" id="cm-icon" class="gm-inp gm-icon" placeholder="📂" maxlength="4">
@@ -1294,20 +1295,20 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </div></div>
 
 <!-- Assign Group Modal -->
-<div class="modal-overlay" id="modal-assign" onclick="if(event.target===this)closeAssign()"><div class="modal" style="max-width:380px"><h3 data-i18n="moveToGroup">📂 Move to Group</h3>
+<div class="modal-overlay" id="modal-assign" onclick="if(event.target===this)closeAssign()"><div class="modal" style="max-width:380px"><h3><span data-i18n="moveToGroup">📂 Move to Group</span><button class="modal-x" onclick="closeAssign()">✕</button></h3>
 <div class="fg"><label data-i18n="group">Group</label><select class="inp" id="asg-group" onchange="onAsgGroupChange()"><option value="" data-i18n="ungrouped">— Ungrouped —</option></select></div>
 <div class="fg"><label data-i18n="subGroup">Sub-Group</label><select class="inp" id="asg-sg" style="display:none"><option value="" data-i18n="noneOption">— None —</option></select></div>
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeAssign()" data-i18n="cancel">Cancel</button><button class="btn p" onclick="confirmAssign()" data-i18n="moveBtn">Move</button></div>
 </div></div>
 
 <!-- Add SubGroup Modal -->
-<div class="modal-overlay" id="modal-addsg" onclick="if(event.target===this)closeAddSg()"><div class="modal" style="max-width:360px"><h3 data-i18n="addSubGroup">Add Sub-Group</h3>
+<div class="modal-overlay" id="modal-addsg" onclick="if(event.target===this)closeAddSg()"><div class="modal" style="max-width:360px"><h3><span data-i18n="addSubGroup">Add Sub-Group</span><button class="modal-x" onclick="closeAddSg()">✕</button></h3>
 <div class="fg"><input class="inp" id="addsg-name" placeholder="Sub-group name..." data-i18n-ph="phSubGroupName" maxlength="100"></div>
 <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeAddSg()" data-i18n="cancel">Cancel</button><button class="btn p" onclick="createSgFromModal()" data-i18n="create">Create</button></div>
 </div></div>
 
 <!-- Member Add/Edit Modal -->
-<div class="modal-overlay" id="modal-member" onclick="if(event.target===this)closeMemberModal()"><div class="modal" style="max-width:520px"><h3 id="modal-member-title" data-i18n="addMemberTitle">Add Member</h3>
+<div class="modal-overlay" id="modal-member" onclick="if(event.target===this)closeMemberModal()"><div class="modal" style="max-width:520px"><h3 id="modal-member-title"><span data-i18n="addMemberTitle">Add Member</span><button class="modal-x" onclick="closeMemberModal()">✕</button></h3>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 <div class="fg"><label data-i18n="firstName">First Name *</label><input class="inp" id="mm-fname" placeholder="First name" data-i18n-ph="phFirstName"></div>
 <div class="fg"><label data-i18n="lastName">Last Name</label><input class="inp" id="mm-lname" placeholder="Last name" data-i18n-ph="phLastName"></div>
@@ -1329,7 +1330,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </div></div></div>
 
 <!-- Invite Modal -->
-<div class="modal-overlay" id="modal-invite" onclick="if(event.target===this)closeInviteModal()"><div class="modal" style="max-width:380px"><h3 data-i18n="inviteByTelegram">📨 Invite by Telegram</h3>
+<div class="modal-overlay" id="modal-invite" onclick="if(event.target===this)closeInviteModal()"><div class="modal" style="max-width:380px"><h3><span data-i18n="inviteByTelegram">📨 Invite by Telegram</span><button class="modal-x" onclick="closeInviteModal()">✕</button></h3>
 <div class="fg"><label data-i18n="telegramUsername">Telegram Username</label><input class="inp" id="inv-tg" placeholder="@username" data-i18n-ph="phUsername"></div>
 <div class="fg"><label data-i18n="assignRole">Assign Role</label><select class="inp" id="inv-role"><option value="" data-i18n="defaultRole">— Default —</option></select></div>
 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
@@ -1339,7 +1340,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 
 <!-- Bulk Import Modal -->
 <div class="modal-overlay" id="modal-bulk-import" onclick="if(event.target===this)closeBulkImport()"><div class="modal" style="max-width:540px">
-<h3 data-i18n="bulkImportTitle">📥 Bulk Import Members</h3>
+<h3><span data-i18n="bulkImportTitle">📥 Bulk Import Members</span><button class="modal-x" onclick="closeBulkImport()">✕</button></h3>
 <div style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px">
   <div style="font-size:12px;font-weight:600;margin-bottom:6px" data-i18n="step1Template">Step 1: Download Template</div>
   <div style="font-size:11px;color:var(--mt);margin-bottom:10px" data-i18n="templateDesc">Download the Excel template, fill in your team members, then upload it below.</div>
@@ -1363,7 +1364,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 
 <!-- MoM Processor Modal -->
 <div class="modal-overlay" id="modal-mom" onclick="if(event.target===this)closeMom()"><div class="modal" style="max-width:720px">
-<h3 data-i18n="momTitle">📋 Meeting Minutes Processor</h3>
+<h3><span data-i18n="momTitle">📋 Meeting Minutes Processor</span><button class="modal-x" onclick="closeMom()">✕</button></h3>
 <div id="mom-step-upload">
   <div style="background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px">
     <div style="font-size:12px;font-weight:600;margin-bottom:6px" data-i18n="momUploadStep">Step 1: Upload Meeting Minutes</div>
@@ -1394,7 +1395,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 </div>
 </div></div>
 <!-- Role Manager Modal -->
-<div class="modal-overlay" id="modal-roles" onclick="if(event.target===this)closeRoleMgr()"><div class="modal gm-panel"><h3 data-i18n="manageRoles">🏷️ Manage Roles</h3>
+<div class="modal-overlay" id="modal-roles" onclick="if(event.target===this)closeRoleMgr()"><div class="modal gm-panel"><h3><span data-i18n="manageRoles">🏷️ Manage Roles</span><button class="modal-x" onclick="closeRoleMgr()">✕</button></h3>
 <div class="gm-add" style="margin-bottom:14px">
   <input type="text" id="rm-name" class="gm-inp" placeholder="Role name" data-i18n-ph="phRoleName" style="flex:1;min-width:100px" maxlength="100">
   <input type="color" id="rm-color" value="#3b82f6" class="gm-color">
@@ -1429,8 +1430,9 @@ if(p==='recurring'){p='tasks';setTimeout(()=>switchTasksTab('recurring'),50)}
 if(p==='gantt'){p='analytics';setTimeout(()=>switchAnalyticsTab('gantt'),50)}
 if(p==='depgraph'){p='analytics';setTimeout(()=>switchAnalyticsTab('depgraph'),50)}
 document.querySelectorAll('.pg').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('a'));document.querySelectorAll('.sb-logo').forEach(x=>x.style.boxShadow=p==='dash'?'0 0 0 2px var(--ac)':'none');$('pg-'+p).classList.add('a');const b=document.querySelector(`[data-p="${p}"]`);if(b)b.classList.add('a');if($('mobile-title'))$('mobile-title').textContent=PT[p]||'';closeSidebar();if(p==='dash')loadDash();if(p==='board')loadBoard();if(p==='tasks'){loadGrps();loadTasks()}if(p==='team'){loadTeamRoles();loadTeamFull();if(typeof loadWorkingGroups==='function')loadWorkingGroups()};if(p==='msgs')loadMsgs();if(p==='remind')loadRemind();if(p==='calendar')initCalPage();if(p==='analytics')loadAnalytics();if(p==='settings')loadSettingsPage()}
-function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';$('modal-task-title').textContent=data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle;$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('');taskAssignees=data?.assignees?data.assignees.map(a=>({user_id:a.user_id,name:a.name||'User',role:a.role||'contributor'})):[];if(!taskAssignees.length&&data?.assignee){const tm=teamMembers.find(m=>((m.first_name||'')+' '+(m.last_name||'')).trim()===data.assignee||(m.first_name||'')===data.assignee);if(tm)taskAssignees=[{user_id:tm.id,name:data.assignee,role:'lead'}]}renderAssigneeTags();taskWGs=data?.assigned_groups?data.assigned_groups.map(g=>({id:g.id,name:g.name,icon:g.icon||'\u{1F465}',color:g.color||'#3b82f6'})):[];renderWGTags();populateWGDropdown();populateDeptDropdown()}}
+function openModal(t,data){$('modal-'+t).classList.add('v');if(t==='remind'){populateRmTaskSelect();$('mr-msg').value='';$('mr-at').value='';$('mr-task').value='';$('mr-event').value='';$('mr-recurring').checked=false;$('mr-rule-wrap').style.display='none';setRmQuick(30)}if(t==='task'){$('mt-id').value=data?.id||'';$('mt-title').value=data?.title||'';$('mt-desc').value=data?.description||'';$('mt-prio').value=data?.priority||'medium';$('mt-status').value=data?.status||'todo';$('mt-assign').value=data?.assignee||'';$('mt-due').value=data?.due_date?data.due_date.slice(0,16):'';setModalTitle($('modal-task-title'),data?.id?I18N[curLang].editTask+' #'+data.id:I18N[curLang].newTaskTitle);$('mt-del').style.display=data?.id?'block':'none';populateMtGroups(data);populateCatSelect(data?.category||'',data?.subcategory||'');$('team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('');taskAssignees=data?.assignees?data.assignees.map(a=>({user_id:a.user_id,name:a.name||'User',role:a.role||'contributor'})):[];if(!taskAssignees.length&&data?.assignee){const tm=teamMembers.find(m=>((m.first_name||'')+' '+(m.last_name||'')).trim()===data.assignee||(m.first_name||'')===data.assignee);if(tm)taskAssignees=[{user_id:tm.id,name:data.assignee,role:'lead'}]}renderAssigneeTags();taskWGs=data?.assigned_groups?data.assigned_groups.map(g=>({id:g.id,name:g.name,icon:g.icon||'\u{1F465}',color:g.color||'#3b82f6'})):[];renderWGTags();populateWGDropdown();populateDeptDropdown()}}
 function closeModal(t){$('modal-'+t).classList.remove('v')}
+function setModalTitle(el,txt){if(!el)return;const sp=el.querySelector('span');if(sp)sp.textContent=txt;else el.textContent=txt}
 let tCats=[];
 let catSubMap={};
 async function loadCatsAPI(){
@@ -1513,8 +1515,8 @@ let evtFile=null;
 function onEvtFileSelect(){const f=$('me-file').files[0];if(f){evtFile=f;$('me-fname').textContent=`${f.name} (${(f.size/1024).toFixed(1)}KB)`;$('me-fname').style.color='var(--ac)'}}
 function clearEvtFile(){evtFile=null;$('me-file').value='';$('me-fname').textContent=t('noFile');$('me-fname').style.color='var(--mt)'}
 function showAttachments(attachments){const el=$('me-attachments');if(attachments&&attachments.length){el.style.display='block';let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div style="font-size:10px;color:var(--mt);font-weight:600">ATTACHMENTS</div>';if(attachments.length>=2)h+='<button class="btn" style="padding:2px 8px;font-size:9px" onclick="analyzeAllAttachments()">🔍 '+t('analyzeAllBtn')+'</button>';h+='</div>';h+=attachments.map((a,i)=>{const safeUrl=esc(a.fileUrl||'');const safeTitle=esc(a.title||'');return`<div style="margin-bottom:4px"><div style="display:flex;align-items:center;gap:6px;padding:4px 0"><span style="font-size:12px">📄</span><a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="font-size:11px;color:var(--ac)">${safeTitle}</a><button class="btn" style="padding:2px 8px;font-size:9px" data-url="${safeUrl}" data-name="${safeTitle}" data-idx="${i}" onclick="analyzeSingleAttachment(this)">🔍 ${t('analyzeBtn')}</button></div><div id="attach-result-${i}" style="display:none;padding:6px 8px;margin:4px 0 4px 22px;background:var(--sf);border-radius:6px;font-size:10px;line-height:1.6;border-left:2px solid var(--ac);max-height:200px;overflow-y:auto"></div></div>`}).join('');el.innerHTML=h}else{el.style.display='none';el.innerHTML=''}}
-function openEventModal(dt,hr){$('modal-event').classList.add('v');$('me-id').value='';$('me-title').value='';$('me-desc').value='';$('me-loc').value='';$('me-del').style.display='none';$('me-link').style.display='none';$('me-ai-section').style.display='none';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('newEvent');$('me-save').textContent=t('createEvent');clearEvtFile();showAttachments(null);evtDuration=60;const d=dt||fmt(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());const h=hr||9;$('me-date').value=d;$('me-edate').value=d;$('me-time').value=String(h).padStart(2,'0')+':00';$('me-etime').value=String(Math.min(h+1,23)).padStart(2,'0')+':00';setTimeout(()=>$('me-title').focus(),100)}
-function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)return;$('modal-event').classList.add('v');$('me-id').value=ev.id;$('me-title').value=ev.title||'';$('me-desc').value=ev.description||'';$('me-loc').value=ev.location||'';$('me-del').style.display='block';$('me-ai-section').style.display='block';$('me-ai-result').style.display='none';$('modal-event-title').textContent=t('editEvent');$('me-save').textContent=t('updateEvent');clearEvtFile();showAttachments(ev.attachments);if(ev.start_raw){try{const d=new Date(ev.start_raw);$('me-date').value=d.toISOString().split('T')[0];$('me-time').value=d.toTimeString().slice(0,5)}catch{}}if(ev.end_raw){try{const d=new Date(ev.end_raw);$('me-edate').value=d.toISOString().split('T')[0];$('me-etime').value=d.toTimeString().slice(0,5)}catch{}}if(ev.link){$('me-link').style.display='block';$('me-gcal-link').href=ev.link}else $('me-link').style.display='none';calcDuration();
+function openEventModal(dt,hr){$('modal-event').classList.add('v');$('me-id').value='';$('me-title').value='';$('me-desc').value='';$('me-loc').value='';$('me-del').style.display='none';$('me-link').style.display='none';$('me-ai-section').style.display='none';$('me-ai-result').style.display='none';setModalTitle($('modal-event-title'),t('newEvent'));$('me-save').textContent=t('createEvent');clearEvtFile();showAttachments(null);evtDuration=60;const d=dt||fmt(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());const h=hr||9;$('me-date').value=d;$('me-edate').value=d;$('me-time').value=String(h).padStart(2,'0')+':00';$('me-etime').value=String(Math.min(h+1,23)).padStart(2,'0')+':00';setTimeout(()=>$('me-title').focus(),100)}
+function openEventFromCal(id){const ev=calEvents.find(e=>e.id===id);if(!ev)return;$('modal-event').classList.add('v');$('me-id').value=ev.id;$('me-title').value=ev.title||'';$('me-desc').value=ev.description||'';$('me-loc').value=ev.location||'';$('me-del').style.display='block';$('me-ai-section').style.display='block';$('me-ai-result').style.display='none';setModalTitle($('modal-event-title'),t('editEvent'));$('me-save').textContent=t('updateEvent');clearEvtFile();showAttachments(ev.attachments);if(ev.start_raw){try{const d=new Date(ev.start_raw);$('me-date').value=d.toISOString().split('T')[0];$('me-time').value=d.toTimeString().slice(0,5)}catch{}}if(ev.end_raw){try{const d=new Date(ev.end_raw);$('me-edate').value=d.toISOString().split('T')[0];$('me-etime').value=d.toTimeString().slice(0,5)}catch{}}if(ev.link){$('me-link').style.display='block';$('me-gcal-link').href=ev.link}else $('me-link').style.display='none';calcDuration();
   // Auto-generate AI keynotes if event has attachments
   if(ev.attachments&&ev.attachments.length){
     autoEventAIWithAttachments(ev);
@@ -2243,7 +2245,7 @@ function openMemberModal(memberId){
   if(memberId){
     const m=teamMembers.find(x=>x.id===memberId);
     if(!m)return;
-    $('modal-member-title').textContent=t('editMember');
+    setModalTitle($('modal-member-title'),t('editMember'));
     $('mm-id').value=m.id;
     $('mm-fname').value=m.first_name||'';
     $('mm-lname').value=m.last_name||'';
@@ -2259,7 +2261,7 @@ function openMemberModal(memberId){
     $('mm-del').style.display='block';
     $('mm-save').textContent=t('update');
   }else{
-    $('modal-member-title').textContent=t('addMemberTitle');
+    setModalTitle($('modal-member-title'),t('addMemberTitle'));
     $('mm-id').value='';
     $('mm-fname').value='';$('mm-lname').value='';$('mm-tg').value='';$('mm-tgid').value='';
     $('mm-phone').value='';$('mm-email').value='';$('mm-dept').value='';$('mm-title').value='';
@@ -2624,7 +2626,7 @@ let allRec=[];
 async function loadRecurring(){try{const d=await(await fetch(A+'/recurring',{headers:hdr()})).json();allRec=d.recurring_tasks||[];renderRecList()}catch{$('rec-list').innerHTML='<div class="empty">'+I18N[curLang].failed+'</div>'}}
 function renderRecList(){$('rec-list').innerHTML=allRec.length?allRec.map(r=>{const c=RECUR_COLORS[r.recurrence]||'#6b7094';const rid=parseInt(r.id)||0;return`<div class="tr" onclick="openRecModal(allRec.find(x=>x.id===${rid}))"><div class="pb" style="background:${c}"></div><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;${r.is_active?'':'opacity:.5;text-decoration:line-through'}">${esc(r.title)}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${esc(r.schedule_display||r.recurrence)} · ${esc(r.assignee||'Unassigned')}${r.category?' · '+esc(r.category):''}${r.next_due?' · Next: '+new Date(r.next_due).toLocaleDateString():''}</div></div><span class="badge" style="background:${c}1a;color:${c}">${RECUR_LABELS[r.recurrence]||esc(r.recurrence)}</span><span class="badge" style="background:${r.is_active?'var(--gs)':'var(--rs)'};color:${r.is_active?'var(--gn)':'var(--rd)'}">${r.is_active?'Active':'Paused'}</span><button class="btn" style="padding:4px 10px;font-size:10px;flex-shrink:0" onclick="event.stopPropagation();toggleRec(${rid})">${r.is_active?'Pause':'Resume'}</button></div>`}).join(''):'<div class="empty">No recurring tasks yet</div>'}
 function onRecTypeChange(){const v=$('rc-recurrence').value;$('rc-dow-wrap').style.display=v==='weekly'?'block':'none';$('rc-dom-wrap').style.display=['monthly','quarterly','semi_annually','yearly'].includes(v)?'block':'none';$('rc-mom-wrap').style.display=v==='yearly'?'block':'none'}
-function openRecModal(data){$('modal-rec').classList.add('v');$('rc-id').value=data?.id||'';$('rc-title').value=data?.title||'';$('rc-desc').value=data?.description||'';$('rc-prio').value=data?.priority||'medium';$('rc-status').value=data?.status||'todo';$('rc-assign').value=data?.assignee||'';$('rc-due').value=data?.due_date?data.due_date.slice(0,16):'';populateRcCatSelect(data?.category||'',data?.subcategory||'');populateRcGroups(data);$('rc-recurrence').value=data?.recurrence||'monthly';$('rc-dow').value=data?.day_of_week??0;$('rc-dom').value=data?.day_of_month||1;$('rc-mom').value=data?.month_of_year||1;$('rc-time').value=data?.time_of_day||'09:00';$('modal-rec-title').textContent=data?.id?t('editRecurring'):t('newRecurring');$('rc-del').style.display=data?.id?'block':'none';$('rc-save').textContent=data?.id?t('update'):t('create');onRecTypeChange();$('rc-team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}
+function openRecModal(data){$('modal-rec').classList.add('v');$('rc-id').value=data?.id||'';$('rc-title').value=data?.title||'';$('rc-desc').value=data?.description||'';$('rc-prio').value=data?.priority||'medium';$('rc-status').value=data?.status||'todo';$('rc-assign').value=data?.assignee||'';$('rc-due').value=data?.due_date?data.due_date.slice(0,16):'';populateRcCatSelect(data?.category||'',data?.subcategory||'');populateRcGroups(data);$('rc-recurrence').value=data?.recurrence||'monthly';$('rc-dow').value=data?.day_of_week??0;$('rc-dom').value=data?.day_of_month||1;$('rc-mom').value=data?.month_of_year||1;$('rc-time').value=data?.time_of_day||'09:00';setModalTitle($('modal-rec-title'),data?.id?t('editRecurring'):t('newRecurring'));$('rc-del').style.display=data?.id?'block':'none';$('rc-save').textContent=data?.id?t('update'):t('create');onRecTypeChange();$('rc-team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`.replace(/undefined/g,'')).join('')}
 function closeRecModal(){$('modal-rec').classList.remove('v')}
 function populateRcCatSelect(preselCat,preselSub){
   const sel=$('rc-cat');
@@ -2662,7 +2664,7 @@ function applyTemplate(v){if(!v)return;useTemplate(parseInt(v))}
 function toggleQC(){const dd=$('qc-dropdown');const vis=dd.style.display!=='none';dd.style.display=vis?'none':'block';if(!vis){dd.innerHTML=allTmpls.length?allTmpls.map(tp=>`<div style="padding:6px 10px;cursor:pointer;border-radius:6px;font-size:11px;display:flex;align-items:center;gap:6px" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''" onclick="toggleQC();useTemplate(${tp.id})"><span>${tp.icon}</span><span style="flex:1">${esc(tp.name)}</span><span style="font-size:9px;color:var(--mt)">${tp.use_count||0}x</span></div>`).join(''):'<div style="padding:8px;font-size:11px;color:var(--mt)">'+t('noTemplates')+'</div>'}}
 document.addEventListener('click',e=>{const qc=$('qc-wrap');if(qc&&!qc.contains(e.target)){const dd=$('qc-dropdown');if(dd)dd.style.display='none'}});
 let tmplChecklist=[];
-function openTmplModal(data){$('modal-tmpl').classList.add('v');$('tt-id').value=data?.id||'';$('tt-name').value=data?.name||'';$('tt-title').value=data?.title_template||'';$('tt-desc').value=data?.description_text||'';$('tt-prio').value=data?.priority||'medium';$('tt-status').value=data?.status||'todo';$('tt-assign').value=data?.assignee_name||'';$('tt-offset').value=data?.due_offset_hours||'';$('tt-icon').value=data?.icon||'📋';$('tt-color').value=data?.color||'#3b82f6';populateTtCatSelect(data?.category||'',data?.subcategory||'');populateTtGroups(data);tmplChecklist=(data?.checklist||[]).map(c=>({title:c.title,assignee_name:c.assignee_name||''}));renderTmplChecklist();$('modal-tmpl-title').textContent=data?.id?t('editTemplate'):t('newTemplate');$('tt-del').style.display=data?.id?'block':'none';$('tt-team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`).join('').replace(/undefined/g,'')}
+function openTmplModal(data){$('modal-tmpl').classList.add('v');$('tt-id').value=data?.id||'';$('tt-name').value=data?.name||'';$('tt-title').value=data?.title_template||'';$('tt-desc').value=data?.description_text||'';$('tt-prio').value=data?.priority||'medium';$('tt-status').value=data?.status||'todo';$('tt-assign').value=data?.assignee_name||'';$('tt-offset').value=data?.due_offset_hours||'';$('tt-icon').value=data?.icon||'📋';$('tt-color').value=data?.color||'#3b82f6';populateTtCatSelect(data?.category||'',data?.subcategory||'');populateTtGroups(data);tmplChecklist=(data?.checklist||[]).map(c=>({title:c.title,assignee_name:c.assignee_name||''}));renderTmplChecklist();setModalTitle($('modal-tmpl-title'),data?.id?t('editTemplate'):t('newTemplate'));$('tt-del').style.display=data?.id?'block':'none';$('tt-team-dl').innerHTML=teamMembers.map(m=>`<option value="${m.first_name}${m.last_name?' '+m.last_name:''}">`).join('').replace(/undefined/g,'')}
 function closeTmplModal(){$('modal-tmpl').classList.remove('v')}
 function populateTtCatSelect(pc,ps){const s=$('tt-cat');s.innerHTML='<option value="">-- Select --</option>'+tCats.map(c=>`<option value="${c.name}"${c.name===pc?' selected':''}>${c.icon||''} ${c.name}</option>`).join('');onTtCatChange(ps)}
 function onTtCatChange(ps){const cat=$('tt-cat').value;const s=$('tt-sub');s.innerHTML='<option value="">-- Select --</option>';if(cat&&catSubMap[cat])s.innerHTML+=catSubMap[cat].map(x=>`<option value="${x}"${x===ps?' selected':''}>${x}</option>`).join('')}
@@ -4221,7 +4223,7 @@ let wgPendingMembers=[];
 async function showWGBuilder(editId){
   $('wg-id').value=editId||'';
   $('wg-name').value='';$('wg-desc').value='';$('wg-icon').value='\u{1F465}';$('wg-color').value='#3b82f6';
-  $('wg-builder-title').textContent=editId?'Edit Working Group':'New Working Group';
+  const _wgTitleSpan=$('wg-builder-title').querySelector('span');if(_wgTitleSpan)_wgTitleSpan.textContent=editId?'Edit Working Group':'New Working Group';
   wgPendingMembers=[];
   initWGIconPicker();
   const addSel=$('wg-add-member');
@@ -4257,7 +4259,7 @@ async function saveWorkingGroup(){
   try{
     if(id){
       await fetch(A+'/working-groups/'+id,{method:'PATCH',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
-      $('wg-builder-title').textContent='\u2705 Group Updated!';
+      const _us=$('wg-builder-title').querySelector('span');if(_us)_us.textContent='\u2705 Group Updated!';
     }else{
       const r=await fetch(A+'/working-groups',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify(body)});
       const d=await r.json();
@@ -4272,7 +4274,7 @@ async function saveWorkingGroup(){
         const mr=await fetch(A+'/working-groups/'+d.id+'/members',{headers:hdr()});
         const md=await mr.json();
         renderWGMembers(d.id,Array.isArray(md)?md:(md.members||[]));
-        $('wg-builder-title').textContent='\u2705 Group Created! Members saved.';
+        const _cs=$('wg-builder-title').querySelector('span');if(_cs)_cs.textContent='\u2705 Group Created! Members saved.';
       }
     }
     loadWorkingGroups();
@@ -4412,8 +4414,8 @@ function getAssigneeInitials(t){
   </div>
 
   <!-- Working Group Builder Modal -->
-  <div class="modal-overlay" id="wg-builder-modal"><div class="modal" style="max-width:520px">
-    <h3 id="wg-builder-title" data-i18n="newGroup">New Working Group</h3>
+  <div class="modal-overlay" id="wg-builder-modal" onclick="if(event.target===this)$('wg-builder-modal').classList.remove('v')"><div class="modal" style="max-width:520px">
+    <h3 id="wg-builder-title"><span data-i18n="newGroup">New Working Group</span><button class="modal-x" onclick="$('wg-builder-modal').classList.remove('v')">✕</button></h3>
     <input type="hidden" id="wg-id">
     <div style="margin-bottom:10px">
       <label style="font-size:11px;color:var(--mt)" data-i18n="groupName">Group Name</label>
