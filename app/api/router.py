@@ -1064,6 +1064,131 @@ async def ai_prioritize(request: Request, body: PrioritizeRequest, db: AsyncSess
     return prioritization
 
 
+
+# ─── AI Chat Context Builder ───
+async def build_ai_context(db: AsyncSession) -> str:
+    """Build live knowledge context for AI chat from database."""
+    from app.models.category import Category
+    from app.models.task_group import TaskGroup
+    from app.models.team_role import TeamRole
+    from sqlalchemy.orm import selectinload
+
+    parts = []
+
+    try:
+        # 1. TASKS — All tasks with details
+        tasks = (await db.execute(
+            select(Task).order_by(desc(Task.updated_at)).limit(100)
+        )).scalars().all()
+        if tasks:
+            lines = []
+            for t in tasks:
+                line = f"- [ID:{t.id}] [{t.status.value if t.status else 'todo'}] {t.title}"
+                if t.assignee_name: line += f" (assigned: {t.assignee_name})"
+                if t.priority: line += f" [priority: {t.priority.value}]"
+                if t.due_date: line += f" [due: {t.due_date.strftime('%Y-%m-%d')}]"
+                if t.category: line += f" [category: {t.category}]"
+                if t.description: line += f" — {t.description[:100]}"
+                lines.append(line)
+            parts.append(f"## Current Tasks ({len(tasks)} total)\n" + "\n".join(lines))
+
+        # 2. TEAM MEMBERS — All users with roles
+        members = (await db.execute(select(User).order_by(User.first_name))).scalars().all()
+        if members:
+            lines = []
+            for m in members:
+                name = f"{m.first_name or ''} {m.last_name or ''}".strip()
+                if not name: continue
+                line = f"- {name}"
+                if m.title: line += f" | Job: {m.title}"
+                if m.department: line += f" | Dept: {m.department}"
+                if m.email: line += f" | Email: {m.email}"
+                if m.phone: line += f" | Phone: {m.phone}"
+                if m.is_admin: line += " [ADMIN]"
+                lines.append(line)
+            if lines:
+                parts.append(f"## Team Members ({len(lines)})\n" + "\n".join(lines))
+
+        # 3. TEAM ROLES
+        roles = (await db.execute(select(TeamRole))).scalars().all()
+        if roles:
+            lines = [f"- {r.name}: {r.description or 'No description'}" for r in roles]
+            parts.append(f"## Team Roles\n" + "\n".join(lines))
+
+        # 4. WORKING GROUPS — with members
+        wgs = (await db.execute(select(WorkingGroup).where(WorkingGroup.is_active == True))).scalars().all()
+        if wgs:
+            lines = []
+            for wg in wgs:
+                line = f"- {wg.icon or ''} {wg.name}"
+                if wg.description: line += f": {wg.description[:100]}"
+                # Get members
+                wg_members = (await db.execute(
+                    select(User.first_name, User.last_name, WorkingGroupMember.role)
+                    .join(WorkingGroupMember, User.id == WorkingGroupMember.user_id)
+                    .where(WorkingGroupMember.group_id == wg.id)
+                )).all()
+                if wg_members:
+                    member_names = [f"{m[0] or ''} {m[1] or ''}".strip() + (f" ({m[2]})" if m[2] == 'leader' else '') for m in wg_members]
+                    line += f" | Members: {', '.join(member_names)}"
+                lines.append(line)
+            parts.append(f"## Working Groups ({len(wgs)})\n" + "\n".join(lines))
+
+        # 5. RECENT TELEGRAM MESSAGES — Last 30
+        msgs = (await db.execute(
+            select(Message).order_by(desc(Message.created_at)).limit(30)
+        )).scalars().all()
+        if msgs:
+            lines = []
+            for m in msgs:
+                if not m.text: continue
+                chat = m.chat_title or "DM"
+                sender = m.sender_name or "Unknown"
+                text = m.text[:150].replace("\n", " ")
+                lines.append(f"- [{chat}] {sender}: {text}")
+            if lines:
+                parts.append(f"## Recent Telegram Messages ({len(lines)})\n" + "\n".join(lines))
+
+        # 6. ACTIVE REMINDERS
+        reminders = (await db.execute(
+            select(Reminder).where(Reminder.is_sent == False).order_by(Reminder.remind_at)
+        )).scalars().all()
+        if reminders:
+            lines = [f"- {r.message} (remind at: {r.remind_at.strftime('%Y-%m-%d %H:%M') if r.remind_at else 'N/A'})" for r in reminders]
+            parts.append(f"## Active Reminders ({len(reminders)})\n" + "\n".join(lines))
+
+        # 7. CATEGORIES
+        cats = (await db.execute(
+            select(Category).options(selectinload(Category.subcategories))
+        )).scalars().all()
+        if cats:
+            lines = []
+            for c in cats:
+                subs = ", ".join([s.name for s in c.subcategories]) if c.subcategories else "none"
+                lines.append(f"- {c.icon or ''} {c.name}: subcategories=[{subs}]")
+            parts.append(f"## Categories\n" + "\n".join(lines))
+
+        # 8. TASK GROUPS
+        groups = (await db.execute(
+            select(TaskGroup).options(selectinload(TaskGroup.subgroups))
+        )).scalars().all()
+        if groups:
+            lines = []
+            for g in groups:
+                subs = ", ".join([s.name for s in g.subgroups]) if g.subgroups else "none"
+                lines.append(f"- {g.icon or ''} {g.name}: subgroups=[{subs}]")
+            parts.append(f"## Task Groups\n" + "\n".join(lines))
+
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"build_ai_context error: {e}")
+
+    # Cap total context size
+    result = "\n\n".join(parts)
+    if len(result) > 8000:
+        result = result[:8000] + "\n... (context truncated)"
+    return result
+
+
 # ─── AI Chat ───
 class ChatRequest(BaseModel):
     message: str
@@ -1075,7 +1200,10 @@ class ChatRequest(BaseModel):
 @router.post("/ai/chat")
 @limiter.limit("10/minute")
 async def ai_chat(request: Request, body: ChatRequest, db: AsyncSession = Depends(get_db), _auth: dict = Depends(require_auth)):
-    response, actions = await ai_engine.chat_with_actions(body.message, context=body.context or "", history=body.history)
+    # Auto-build live knowledge context from database
+    live_context = await build_ai_context(db)
+    full_context = live_context + ("\n\n" + body.context if body.context else "")
+    response, actions = await ai_engine.chat_with_actions(body.message, context=full_context, history=body.history)
     action_results = []
     if actions:
         from app.services.action_executor import execute_actions
@@ -1134,6 +1262,7 @@ async def ai_chat_with_file(
     request: Request,
     message: str = Form("Analyze this file"),
     file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
     _auth: dict = Depends(require_auth),
 ):
     """Chat with AI and attach a file for analysis."""
@@ -1147,8 +1276,11 @@ async def ai_chat_with_file(
     # Extract content
     file_data = await extract_text_from_file(file_bytes, file.filename)
 
-    # Call AI with file
-    response = await ai_engine.chat_with_file(message, file_data)
+    # Auto-build live knowledge context
+    live_context = await build_ai_context(db)
+
+    # Call AI with file + context
+    response = await ai_engine.chat_with_file(message, file_data, context=live_context)
     return {"response": response, "file_summary": file_data["summary"]}
 
 # ─── MoM Processor ───
