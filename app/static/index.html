@@ -2706,7 +2706,7 @@ async function loadRmHistory(){
 function setRmQuick(min){const d=new Date(Date.now()+min*60000);const pad=n=>String(n).padStart(2,'0');$('mr-at').value=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function remindAboutTask(){if(!tdTask)return;closeTD();openModal('remind');$('mr-msg').value='Follow up on: '+tdTask.title;$('mr-task').value=tdTask.id;setRmQuick(60)}
 async function populateRmTaskSelect(){const sel=$('mr-task');sel.innerHTML='<option value="">\u2014 None \u2014</option>';try{const r=await fetch(A+'/tasks?limit=200',{headers:hdr()});const d=await r.json();const tasks=(d.tasks||[]).filter(t=>t.status!=='done');sel.innerHTML+= tasks.map(t=>`<option value="${t.id}">#${t.id} ${t.title.slice(0,40)}</option>`).join('')}catch{}}
-let chL=false,chFile=null,chatHistory=[];function onFileSelect(){const f=$('chf').files[0];if(f){chFile=f;$('chfn').style.display='block';$('chfn').innerHTML=`📎 ${f.name} <button onclick="clearFile()" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:11px">✕</button>`}}
+let chL=false,chFile=null,chatHistory=[];const aiRawMap=new Map();function onFileSelect(){const f=$('chf').files[0];if(f){chFile=f;$('chfn').style.display='block';$('chfn').innerHTML=`📎 ${f.name} <button onclick="clearFile()" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:11px">✕</button>`}}
 function clearFile(){chFile=null;$('chf').value='';$('chfn').style.display='none'}
 /* ── Markdown Renderer ── */
 function renderMd(text){
@@ -2762,15 +2762,17 @@ function renderMd(text){
   return html;
 }
 function copyCode(id){const el=$(id);if(!el)return;navigator.clipboard.writeText(el.textContent).then(()=>{const btn=el.closest('.ch-code-block').querySelector('button');if(btn){const orig=btn.innerHTML;btn.innerHTML='✅ Copied!';setTimeout(()=>btn.innerHTML=orig,1500)}})}
-function copyMsg(btn){const bubble=btn.closest('.ch-b');if(!bubble)return;let raw=bubble.dataset.raw;if(raw){raw=raw.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');navigator.clipboard.writeText(raw)}else{const clone=bubble.cloneNode(true);const actions=clone.querySelector('.ch-actions');if(actions)actions.remove();navigator.clipboard.writeText(clone.textContent.trim())}const orig=btn.innerHTML;btn.innerHTML='✅ Copied';setTimeout(()=>btn.innerHTML=orig,1500)}
+function copyMsg(btn){const bubble=btn.closest('.ch-b');if(!bubble)return;let raw=aiRawMap.get(bubble.id);if(!raw){const clone=bubble.cloneNode(true);const actions=clone.querySelector('.ch-actions');if(actions)actions.remove();raw=clone.textContent.trim()}navigator.clipboard.writeText(raw);const orig=btn.innerHTML;btn.innerHTML='✅ Copied';setTimeout(()=>btn.innerHTML=orig,1500)}
 async function downloadDoc(btn,fmt){
   const bubble=btn.closest('.ch-b');if(!bubble)return;
-  // Get raw markdown from data attribute (preferred) or chatHistory fallback
-  let content=bubble.dataset.raw;
+  // Get raw markdown from JS Map (most reliable), then chatHistory, then DOM text
+  let content=aiRawMap.get(bubble.id);
   if(!content){
-    const idx=[...document.querySelectorAll('#chm .ch-b.ch-a[data-raw]')].indexOf(bubble);
+    // Try chatHistory by counting AI bubbles
+    const allAI=[...document.querySelectorAll('#chm .ch-b.ch-a')];
+    const idx=allAI.indexOf(bubble);
     const aiMsgs=chatHistory.filter(h=>h.role==='assistant');
-    content=aiMsgs[idx]?.content;
+    if(idx>=0&&aiMsgs[idx])content=aiMsgs[idx].content;
   }
   if(!content){
     // Last resort: extract text but strip action button text
@@ -2778,8 +2780,6 @@ async function downloadDoc(btn,fmt){
     const actions=clone.querySelector('.ch-actions');if(actions)actions.remove();
     content=clone.textContent.trim();
   }
-  // Decode HTML entities
-  content=content.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
   const tm=content.match(/^##?\s+(.+)$/m);
   const title=tm?tm[1].replace(/[^\w\s-]/g,'').trim():'Document';
   const orig=btn.innerHTML;
@@ -2797,10 +2797,10 @@ async function downloadDoc(btn,fmt){
 let aiMsgCounter=0;
 async function sendAI(){const i=$('chi'),m=i.value.trim();if((!m&&!chFile)||chL)return;i.value='';const c=$('chm'),dm=m||(chFile?`Analyze: ${chFile.name}`:'');c.innerHTML+=`<div class="ch-b ch-u">${esc(dm)}${chFile?' 📎':''}</div><div class="ch-b ch-a" id="chl"><div style="display:flex;align-items:center;gap:8px;color:var(--mt)"><span class="spin"></span>${chFile?'Processing file...':'Thinking...'}</div></div>`;c.scrollTop=c.scrollHeight;chatHistory.push({role:'user',content:dm});chL=true;try{let d;if(chFile){const fd=new FormData();fd.append('file',chFile);fd.append('message',m||'Analyze this file');d=await(await fetch(A+'/ai/chat-with-file',{method:'POST',headers:hdr(),body:fd})).json();clearFile()}else d=await(await fetch(A+'/ai/chat',{method:'POST',headers:{'Content-Type':'application/json',...hdr()},body:JSON.stringify({message:m,history:chatHistory.slice(-20)})})).json();$('chl').remove();const aiResp=d.response||'No response';chatHistory.push({role:'assistant',content:aiResp});const mid='ai-msg-'+(++aiMsgCounter);const hasStructured=aiResp.length>150&&(/^#{1,4}\s/m.test(aiResp)||/\n- /m.test(aiResp)||/\n\d+\.\s/m.test(aiResp)||/\*\*/m.test(aiResp));
 const dlBtns=hasStructured?'<button onclick="downloadDoc(this,\'docx\')" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#3b82f6;font-weight:600">📄 Download Word</button><button onclick="downloadDoc(this,\'pptx\')" style="background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.3);color:#a855f7;font-weight:600">📊 Download PowerPoint</button>':'';
-const escapedRaw=aiResp.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-c.innerHTML+=`<div class="ch-b ch-a" id="${mid}" data-raw="${escapedRaw}">${renderMd(aiResp)}<div class="ch-actions"><button onclick="copyMsg(this)">📋 Copy</button>${dlBtns}<button onclick="retryAI()">🔄 Retry</button></div></div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">❌ Error: ${esc(e.message||'Failed')}</div>`}chL=false;c.scrollTop=c.scrollHeight}
+aiRawMap.set(mid,aiResp);
+c.innerHTML+=`<div class="ch-b ch-a" id="${mid}">${renderMd(aiResp)}<div class="ch-actions"><button onclick="copyMsg(this)">📋 Copy</button>${dlBtns}<button onclick="retryAI()">🔄 Retry</button></div></div>`}catch(e){$('chl')?.remove();c.innerHTML+=`<div class="ch-b ch-a" style="color:var(--rd)">❌ Error: ${esc(e.message||'Failed')}</div>`}chL=false;c.scrollTop=c.scrollHeight}
 function retryAI(){if(chatHistory.length<2)return;chatHistory.pop();const lastUser=chatHistory.pop();if(lastUser)$('chi').value=lastUser.content;const msgs=document.querySelectorAll('#chm .ch-b');if(msgs.length>=2){msgs[msgs.length-1].remove();msgs[msgs.length-2].remove()}sendAI()}
-function newChat(){chatHistory=[];aiMsgCounter=0;$('chm').innerHTML='<div class="ch-b ch-a" style="color:var(--mt)">'+t('newChatStarted')+'</div>'}
+function newChat(){chatHistory=[];aiMsgCounter=0;aiRawMap.clear();$('chm').innerHTML='<div class="ch-b ch-a" style="color:var(--mt)">'+t('newChatStarted')+'</div>'}
 // ── AI Suggestions ──
 async function loadAISuggestions(){$('ai-suggestions').innerHTML='<div style="color:var(--mt)">\U0001f914 Analyzing your tasks...</div>';try{const d=await(await fetch(A+'/ai/suggestions',{headers:hdr()})).json();const s=d.suggestions||[];if(!s.length){$('ai-suggestions').innerHTML='<div style="color:var(--mt)">No suggestions at this time</div>';return}$('ai-suggestions').innerHTML=s.map(sg=>`<div style="padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div><div style="font-weight:600;font-size:12px">${sg.title}</div><div style="font-size:10px;color:var(--mt);margin-top:2px">${sg.rationale||''}</div><div style="font-size:9px;color:var(--ac);margin-top:2px">${sg.suggested_assignee?'\U0001f464 '+sg.suggested_assignee:''} ${sg.priority?'\u2022 '+sg.priority:''}</div></div><button class="btn p" style="padding:3px 10px;font-size:9px;white-space:nowrap" onclick="createFromSuggestion(this)" data-title="${sg.title}" data-assignee="${sg.suggested_assignee||''}" data-prio="${sg.priority||'medium'}">+ Create</button></div></div>`).join('')}catch(e){$('ai-suggestions').innerHTML='<div style="color:var(--rd)">Failed to load suggestions</div>'}}
 function createFromSuggestion(btn){const t=btn.dataset.title||'';const a=btn.dataset.assignee||'';const p=btn.dataset.prio||'medium';openModal('task',{title:t,assignee_name:a,priority:p})}

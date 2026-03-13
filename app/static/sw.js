@@ -3,13 +3,16 @@
  * Cache-first for static assets, network-first for API with fallback.
  * IndexedDB persistence + Background Sync for offline mutations.
  */
-const CACHE_VERSION = 'v63';
+const CACHE_VERSION = 'v64';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const API_CACHE = `api-${CACHE_VERSION}`;
 
 // Static assets to pre-cache
 const PRECACHE = [
   '/',
+  '/favicon.png',
+  '/favicon.svg',
+  '/favicon.ico',
   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap',
 ];
 
